@@ -94,7 +94,7 @@ fonts only.
 
 | Path | What it is |
 |---|---|
-| `index.html` | The home page: hero with the wordmark and the Early alpha pill, the board of Field Station (a picture of the real app, "Pictures" below), A look around (the other three pictures), What's new, Bring your schedules with you (scripts in, open formats out, the budget exchange file), Features, Why open files, Keyboard first, Command line and coding agents, The day out of days feeds the budget, Download (no release yet, build from source), Build it with us, FAQ |
+| `index.html` | The home page: hero with the wordmark and the Early alpha pill, the board of Field Station (a picture of the real app, "Pictures" below), A look around (the other three pictures), What's new, Yours to keep (why open files), Explain this count (real output from the invented sample), Bring your schedules with you (scripts in, open formats out, the budget exchange file), Features, Keyboard first, Command line and coding agents, The day out of days feeds the budget, Download (no release yet, build from source, and the platform status table), Help build it (a door for film knowledge and one for code), FAQ, and a footer linking the Method Production Suite |
 | `releases/index.html` | Every release note (generated block inside a hand-written page); empty for now |
 | `404.html` | Served for any address with no page. Its links start at the site root, so it is right on methodschedule.com |
 | `assets/tokens.css` | Brand colors and type, light and dark ([BRAND.md](BRAND.md)); Method Budget's token names and neutrals with our accent |
@@ -129,7 +129,8 @@ cd site && python3 -m http.server 8000    # then open http://127.0.0.1:8000/
 Method Budget (methodbudget.com) is the sister app, and methodproduction.com will be the
 suite's home (the plan: `../method-budget/docs/research/suite-site.md`). For now each
 product site links the other in its footer: ours says "Also: Method Budget" on the home
-page and the release notes page.
+page and the release notes page. The home page's footer also links methodproduction.com
+("Part of the Method Production Suite"), which is live.
 
 **For the owner, in the method-budget repository (not edited from here):** add the same
 line to its footer, in `site/index.html` and `site/releases/index.html`:
@@ -214,12 +215,12 @@ domain's DNS lives with the website.
 
 - **Make the repository public.** Until then the site's source, issue and discussion links
   only work for people with access.
-- **Turn on Discussions** (Repository Settings > General > Features); the site's
-  Discussions button and the issue chooser's "Questions and ideas" link go there. The
-  issue forms are in `.github/ISSUE_TEMPLATE/` (bug, feature, and a config with that
-  link).
-- **Support email**: `support@methodschedule.com`, a Porkbun forward, is planned but not
-  set up. Add it to the FAQ and the Build it with us band only once it delivers.
+- Discussions is on (2026-10-16); the site's Discussions links and the issue chooser's
+  "Questions and ideas" link go there. The issue forms are in `.github/ISSUE_TEMPLATE/`
+  (bug, feature, and a config with that link).
+- **Help goes through GitHub, not email** (the owner, 2026-10-16, for the whole suite):
+  bugs to Issues, questions to Discussions, private or business matters to
+  hello@methodproduction.com. Method Schedule has no email address of its own.
 - **A security policy** (`SECURITY.md`, or private vulnerability reporting turned on),
   then a "Security problems" contact link in `.github/ISSUE_TEMPLATE/config.yml`.
 - **Try it in your browser** (above).

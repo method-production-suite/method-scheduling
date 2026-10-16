@@ -83,7 +83,8 @@
         <a class="btn primary" href="#download">Get Method Schedule</a>
         <a class="btn ghost" href="#features">See what it does</a>
       </div>
-      <p class="fine">No account, no subscription, no cloud. The Mac comes first; Windows and Linux follow.</p>
+      <p class="fine">No subscription, and your schedule is a file you own. The Mac app comes
+        first, for Apple silicon; Windows and Linux: <a href="#help">help us get there</a>.</p>
     </div>
   </section>
 
@@ -149,6 +150,76 @@
         <p>The first release is on its way. Until then Method Schedule builds from source, and every feature listed here is in the code today.</p>
         <!-- whatsnew:end -->
       </div>
+    </div>
+  </section>
+
+  <section class="band" id="open-files" aria-labelledby="open-title">
+    <div class="wrap split">
+      <div>
+        <p class="kicker">Yours to keep</p>
+        <h2 id="open-title">Your schedule is a file you own</h2>
+        <p class="intro">A schedule is the record of every call a production made. It should
+          outlive any app, any subscription and any company, including this one.</p>
+        <ul class="points">
+          <li><strong>Free, for good.</strong> Open source under MIT or Apache-2.0, with no
+            account and no subscription, so it can't be taken away from you.</li>
+          <li><strong>Plain, documented JSON.</strong> Schedules are <code>.mtsc</code> files
+            with a published specification. Any tool can read them, today or in twenty years.</li>
+          <li><strong>Exact numbers.</strong> Page lengths are whole eighths and times whole
+            minutes, so the same schedule always produces the same bytes.</li>
+          <li><strong>Made for version control.</strong> Every sheet, strip and element keeps
+            its id through edits and moves, so files diff line by line and a git merge
+            driver combines two people's edits.</li>
+          <li><strong>On your disk, not ours.</strong> Save a schedule wherever you keep your
+            work. Nothing is uploaded, and the app goes online only to check for updates, which
+            you can turn off. It works offline.</li>
+          <li><strong>Nothing invents your schedule.</strong> There is no generative AI in the
+            app: every count comes from rules you can read and ask about.</li>
+        </ul>
+        <p class="fine"><a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/FORMAT.md" data-repo="docs/FORMAT.md">Read the file format</a></p>
+      </div>
+      <div>
+<pre class="code"><code><span class="c">// one breakdown sheet, as written in the file</span>
+{
+  <span class="k">"id"</span>: 31,
+  <span class="k">"scenes"</span>: "31",
+  <span class="k">"int_ext"</span>: "INT",
+  <span class="k">"set"</span>: "LIGHTHOUSE STAIRS",
+  <span class="k">"time_of_day"</span>: "NIGHT",
+  <span class="k">"eighths"</span>: 9,
+  <span class="k">"shoot_minutes"</span>: 75,
+  <span class="k">"synopsis"</span>: "Mara climbs to the lamp room.",
+  <span class="k">"elements"</span>: [6, 14, 15]
+}</code></pre>
+        <p class="caption">Lengths are eighths of a page (9 is 1 1/8), and fields left at
+          their default are left out, so a change to one scene is a change to a few lines of
+          the file.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="explain" aria-labelledby="explain-title">
+    <div class="wrap">
+      <p class="kicker">Explain this count</p>
+      <h2 id="explain-title">Every count explains itself</h2>
+      <p class="intro">Ask why an element's day out of days reads the way it does, and get
+        the answer date by date: the scenes it works, the rehearsal counted as worked, the
+        gaps that were held and why there was no drop. Cmd+I on any row in the app, or
+        <code>method-schedule explain</code> on the command line.</p>
+<pre class="term"><code><span class="p">$ </span>method-schedule explain saltmarsh-road.mtsc "THEO MARSH"
+"THEO MARSH" (Cast) on "Main" (board "Shooting Order"): work 7 + hold 1 = total 8, start 2027-04-08, finish 2027-04-19.
+Work 7: 5 shoot days worked, 1 event day counted as worked, 1 holiday counted as worked.
+No drop: no gap is 7 days or longer, so every gap is held.
+
+Day by day
+  SW   Thu 2027-04-08, shoot day 4: works (scene 3, scene 4); the first work day (S)
+  RH   Fri 2027-04-09, shoot day 5: rehearsal "Diner rehearsal" on 2027-04-09 (THEO MARSH, JONAH VALE), orange counts as worked; the day would be held, so it shows with H but counts as worked, not held
+  W    Mon 2027-04-12, shoot day 6: works (scene 17, scene 18)
+  H    Thu 2027-04-15, shoot day 9: held, a shoot day between work days with holds on
+  /    Fri 2027-04-16: a holiday inside the work span, holds on and outside any drop, so it counts as worked
+  WF   Mon 2027-04-19, shoot day 10: works (scene 36); the last work day (F)</code></pre>
+      <p class="fine">Shortened (the gaps and some days are left out). From the invented sample
+        production that <code>method-schedule sample --demo</code> writes.</p>
     </div>
   </section>
 
@@ -310,7 +381,7 @@
             <span class="group-teaser">Budget exchange file, Production tags from the script, Script revisions, and more</span>
           </summary>
           <ul class="feats">
-            <li><strong>Budget exchange file</strong> Shoot days and every element's day counts as one small, documented file a budgeting app can read.</li>
+            <li><strong>Budget exchange file</strong> Shoot days and every element's day counts as one small, documented file, written for Method Budget and open to any budgeting app.</li>
             <li><strong>Production tags from the script</strong> Bring in the props, wardrobe and other tags a tagged script already carries as elements.</li>
             <li><strong>Script revisions</strong> Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard and cut ones are marked omitted.</li>
             <li><strong>Day timeline</strong> Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.</li>
@@ -328,7 +399,7 @@
         <ul class="feats">
           <li><strong>Signed Mac app with updates</strong> A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.</li>
           <li><strong>Windows and Linux, tested</strong> Both build from the same code today; printing, keys and file types still need a hands-on check.</li>
-          <li><strong>Day counts into Method Budget</strong> Method Budget reading the exchange file, so shoot days and cast days arrive as the budget's globals.</li>
+          <li><strong>Day counts into Method Budget</strong> Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.</li>
           <li><strong>Try it in your browser</strong> The app with an invented schedule, running in the browser with nothing to install.</li>
           <li><strong>Daylight saving per location</strong> Sunrise, sunset and call times that follow each location's clock changes.</li>
         </ul>
@@ -337,48 +408,7 @@
     </div>
   </section>
 
-  <section class="band" id="open-files" aria-labelledby="open-title">
-    <div class="wrap split">
-      <div>
-        <p class="kicker">Why open files</p>
-        <h2 id="open-title">Your schedule is a file you own</h2>
-        <p class="intro">A schedule is the record of every call a production made. It should
-          outlive any app, any subscription and any company, including this one.</p>
-        <ul class="points">
-          <li><strong>Plain, documented JSON.</strong> Schedules are <code>.mtsc</code> files
-            with a published specification. Any tool can read them, today or in twenty years.</li>
-          <li><strong>Exact numbers.</strong> Page lengths are whole eighths and times whole
-            minutes, so the same schedule always produces the same bytes.</li>
-          <li><strong>Made for version control.</strong> Every sheet, strip and element keeps
-            its id through edits and moves, so files diff line by line and a git merge
-            driver combines two people's edits.</li>
-          <li><strong>On your disk, not ours.</strong> Save a schedule wherever you keep your
-            work. Nothing is uploaded, and the app goes online only to check for updates, which
-            you can turn off.</li>
-        </ul>
-        <p class="fine"><a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/FORMAT.md" data-repo="docs/FORMAT.md">Read the file format</a></p>
-      </div>
-      <div>
-<pre class="code"><code><span class="c">// one breakdown sheet, as written in the file</span>
-{
-  <span class="k">"id"</span>: 31,
-  <span class="k">"scenes"</span>: "31",
-  <span class="k">"int_ext"</span>: "INT",
-  <span class="k">"set"</span>: "LIGHTHOUSE STAIRS",
-  <span class="k">"time_of_day"</span>: "NIGHT",
-  <span class="k">"eighths"</span>: 9,
-  <span class="k">"shoot_minutes"</span>: 75,
-  <span class="k">"synopsis"</span>: "Mara climbs to the lamp room.",
-  <span class="k">"elements"</span>: [6, 14, 15]
-}</code></pre>
-        <p class="caption">Lengths are eighths of a page (9 is 1 1/8), and fields left at
-          their default are left out, so a change to one scene is a change to a few lines of
-          the file.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="band alt" id="keyboard" aria-labelledby="keys-title">
+  <section class="band" id="keyboard" aria-labelledby="keys-title">
     <div class="wrap split">
       <div>
         <p class="kicker">Keyboard first</p>
@@ -409,7 +439,7 @@
     </div>
   </section>
 
-  <section class="band" id="cli" aria-labelledby="cli-title">
+  <section class="band alt" id="cli" aria-labelledby="cli-title">
     <div class="wrap">
       <p class="kicker">Command line and coding agents</p>
       <h2 id="cli-title">The same engine, without the window</h2>
@@ -445,7 +475,7 @@
     </div>
   </section>
 
-  <section class="band alt" id="budget" aria-labelledby="budget-title">
+  <section class="band" id="budget" aria-labelledby="budget-title">
     <div class="wrap">
       <p class="kicker">Schedule to budget</p>
       <h2 id="budget-title">The day out of days feeds the budget</h2>
@@ -466,15 +496,16 @@
         </li>
         <li>
           <h3>Budget</h3>
-          <p>Method Budget turning those counts into its shoot day and cast globals is on its
-            roadmap. Any other budgeting tool can read the file too.</p>
+          <p>Method Budget's reader for the file is built; linking a schedule from inside its app,
+            so the counts become its shoot day and cast globals, is coming. Any other
+            budgeting tool can read the file too.</p>
         </li>
       </ol>
       <p class="fine"><a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/EXCHANGE.md" data-repo="docs/EXCHANGE.md">Read the exchange file spec</a></p>
     </div>
   </section>
 
-  <section class="band" id="download" aria-labelledby="download-title">
+  <section class="band alt" id="download" aria-labelledby="download-title">
     <div class="wrap">
       <p class="kicker">Download</p>
       <h2 id="download-title">Get Method Schedule</h2>
@@ -484,9 +515,9 @@
         <div class="card">
           <span class="badge">Coming</span>
           <h3>Mac app</h3>
-          <p>A Mac app for Apple silicon and Intel, signed and notarized by Apple so it opens
-            like any other app, comes with the first release. Windows and Linux builds
-            follow once they have had a hands-on test.</p>
+          <p>A Mac app for Apple silicon, signed and notarized by Apple so it opens like
+            any other app, comes with the first release. Windows and Linux installers are
+            built too, and wait on a hands-on test.</p>
           <p><a href="releases/">Release notes</a></p>
         </div>
         <div class="card">
@@ -498,6 +529,24 @@
             <a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/APP.md" data-repo="docs/APP.md">app guide</a>.</p>
         </div>
       </div>
+      <h3 class="table-title" id="platforms-title">Status, honestly</h3>
+      <div class="table-scroll">
+        <table class="platforms" aria-labelledby="platforms-title">
+          <thead>
+            <tr><th scope="col">Computer</th><th scope="col">Built</th><th scope="col">Signed</th><th scope="col">Tested</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Mac, Apple silicon</th><td>Yes, an app (<code>.dmg</code>)</td><td>Signed and notarized by Apple, from the first release</td><td>By a person throughout development, and by the automated tests weekly</td></tr>
+            <tr><th scope="row">Mac, Intel</th><td>No: the Mac app is for Apple silicon only</td><td></td><td></td></tr>
+            <tr><th scope="row">Windows, 64-bit</th><td>Yes, an installer (<code>.exe</code>)</td><td>Not yet: Windows will warn that the publisher is unknown</td><td>Automated tests weekly; never installed by a person yet</td></tr>
+            <tr><th scope="row">Linux, 64-bit</th><td>Yes, <code>.deb</code> and AppImage</td><td>Not signed</td><td>Automated tests on every change; never installed by a person yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fine">Not there yet: a published release (the first is being prepared),
+        updates inside the app on Windows and Linux, a hands-on check of printing, keys and
+        file types on Windows and Linux, and linking a schedule from inside Method Budget.
+        Windows and Linux: <a href="#help">help us get there</a>.</p>
       <div class="alpha-note">
         <span class="badge alpha">Early alpha</span>
         <p>Method Schedule is new and not released. Its counting rules are checked case by
@@ -508,24 +557,39 @@
     </div>
   </section>
 
-  <section class="band alt" id="help" aria-labelledby="help-title">
+  <section class="band" id="help" aria-labelledby="help-title">
     <div class="wrap">
-      <p class="kicker">Build it with us</p>
-      <h2 id="help-title">Found a bug? Missing something?</h2>
-      <p class="intro">Every report makes the next version better. A wrong count, a crash, a
-        script that doesn't import cleanly or a feature you lean on elsewhere: open an issue
-        and it goes straight to the people building the app.</p>
-      <div class="cta">
-        <a class="btn primary" href="https://github.com/method-production-suite/method-scheduling/issues/new?template=bug.yml">Report a bug</a>
-        <a class="btn ghost" href="https://github.com/method-production-suite/method-scheduling/issues/new?template=feature.yml">Ask for a feature</a>
-        <a class="btn ghost" href="https://github.com/method-production-suite/method-scheduling/discussions">Discussions</a>
+      <p class="kicker">Help build it</p>
+      <h2 id="help-title">Help put a real scheduling tool in everyone's hands</h2>
+      <p class="intro">Every report makes the next version better, and you don't need to
+        write code to make one. Found a bug? <a href="https://github.com/method-production-suite/method-scheduling/issues">Open an issue</a> (Help &gt;
+        Report a Bug fills one in for you). Have a question? Ask in
+        <a href="https://github.com/method-production-suite/method-scheduling/discussions">Discussions</a>.</p>
+      <div class="cards">
+        <div class="card">
+          <h3>If you make films</h3>
+          <p>Check the day out of days against your experience and tell us where a count
+            differs from what you would expect; the app's explanation of that count helps us
+            find out why. Tell us about the board and report layouts your productions use,
+            and send invented sample schedules.</p>
+          <p><a href="https://github.com/method-production-suite/method-scheduling/issues/new?template=bug.yml">Report a bug</a>
+            &middot; <a href="https://github.com/method-production-suite/method-scheduling/issues/new?template=feature.yml">Ask for a feature</a>
+            &middot; <a href="https://github.com/method-production-suite/method-scheduling/discussions">Discussions</a></p>
+        </div>
+        <div class="card">
+          <h3>If you write code</h3>
+          <p>Start with an issue labelled <a href="https://github.com/method-production-suite/method-scheduling/labels/good%20first%20issue">good first issue</a>.
+            One command checks everything:</p>
+          <pre><code>cargo test --workspace</code></pre>
+          <p><a href="https://github.com/method-production-suite/method-scheduling/blob/main/CONTRIBUTING.md" data-repo="CONTRIBUTING.md">How to contribute</a></p>
+        </div>
       </div>
-      <p class="fine">Please never attach a real schedule or script: an invented one that shows
-        the problem is always enough, and <code>method-schedule sample</code> makes one.</p>
+      <p class="fine">Please never attach or quote a real schedule or script: an invented one
+        that shows the problem is always enough, and <code>method-schedule sample</code> makes one.</p>
     </div>
   </section>
 
-  <section class="band" id="faq" aria-labelledby="faq-title">
+  <section class="band alt" id="faq" aria-labelledby="faq-title">
     <div class="wrap">
       <p class="kicker">FAQ</p>
       <h2 id="faq-title">Questions</h2>
@@ -556,13 +620,15 @@
         </details>
         <details>
           <summary>Which computers does it run on?</summary>
-          <p>The Mac comes first: the app is built and run there. Windows and Linux builds
-            compile from the same code and are waiting on a hands-on test.</p>
+          <p>The Mac comes first, for Apple silicon: the app is built and run there. Windows
+            and Linux installers are built from the same code and are waiting on a hands-on
+            test. See <a href="#download">Status, honestly</a>.</p>
         </details>
         <details>
           <summary>Does it work with Method Budget?</summary>
           <p>They share the open exchange file: Method Schedule writes the shoot days and day
-            counts today, and Method Budget reading them is on its roadmap. See
+            counts today, Method Budget's reader for the file is built, and linking a schedule from
+            inside Method Budget is coming. See
             <a href="#budget">The day out of days feeds the budget</a>.</p>
         </details>
         <details>
@@ -573,9 +639,16 @@
         </details>
         <details>
           <summary>How can I help?</summary>
-          <p>Try it, report what breaks, and send patches. Please never attach a real
+          <p>Check its counts against your experience, report what breaks, tell us about the
+            layouts your productions use, and send patches. Please never attach a real
             schedule to an issue: an invented one that shows the problem is always enough.
-            Start with the <a href="https://github.com/method-production-suite/method-scheduling" data-repo="">repository</a>.</p>
+            See <a href="#help">Help build it</a>.</p>
+        </details>
+        <details>
+          <summary>How do I get help?</summary>
+          <p>Found a bug? <a href="https://github.com/method-production-suite/method-scheduling/issues">Open an issue</a> (Help &gt; Report a Bug fills one
+            in for you). Have a question? Ask in <a href="https://github.com/method-production-suite/method-scheduling/discussions">Discussions</a>. For anything
+            private, write to <a href="mailto:hello@methodproduction.com">hello@methodproduction.com</a>.</p>
         </details>
       </div>
     </div>
@@ -596,7 +669,9 @@
       <a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/ROADMAP.md" data-repo="docs/ROADMAP.md">Roadmap</a>
       <a href="https://github.com/method-production-suite/method-scheduling/blob/main/CLEAN-ROOM.md" data-repo="CLEAN-ROOM.md">Clean room</a>
     </nav>
-    <p class="family">Also: <a href="https://methodbudget.com">Method Budget</a>, film and TV budgeting in the same open way.</p>
+    <p class="family">Part of the <a href="https://methodproduction.com">Method Production Suite</a>:
+      free, open tools for making films, from the first draft to the last shoot day. Also:
+      <a href="https://methodbudget.com">Method Budget</a>, film and TV budgeting in the same open way.</p>
     <p>Free and open source, dual-licensed under MIT or Apache-2.0. An independent,
       clean-room project by the Method Schedule contributors. Trademarks belong to their
       respective owners.</p>

@@ -390,7 +390,7 @@ ref = ["D25"]
 [[feature]]
 group = "beyond"
 title = "Budget exchange file"
-text = "Shoot days and every element's day counts as one small, documented file a budgeting app can read."
+text = "Shoot days and every element's day counts as one small, documented file, written for Method Budget and open to any budgeting app."
 status = "have"
 ref = ["EXP-06"]
 
@@ -474,7 +474,7 @@ status = "soon"
 [[feature]]
 group = "beyond"
 title = "Day counts into Method Budget"
-text = "Method Budget reading the exchange file, so shoot days and cast days arrive as the budget's globals."
+text = "Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built."
 status = "soon"
 
 [[feature]]

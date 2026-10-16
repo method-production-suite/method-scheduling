@@ -1,18 +1,77 @@
 # Method Schedule
 
-A free, open-source, local-first scheduling app for film and TV: script breakdown,
-stripboard, calendar, day out of days and reports. Files on disk, works offline, no
-accounts.
+Film and TV scheduling, from script to stripboard.
 
-Status: in development, not released. The engine, the command line and a first desktop
-app work; checks against real-world scheduling behavior are ongoing.
+A free, open-source scheduling app for film and TV: script breakdown, the stripboard with
+its day breaks and banners, the calendar, the day out of days and the reports a
+production runs on. No subscription, and your schedule is a file you own.
 
-Website: [methodschedule.com](https://methodschedule.com) (not published yet; docs/WEBSITE.md).
+- **Every count explains itself.** Ask why an actor works seven days and holds one, and
+  the day out of days answers date by date: which scenes, which rehearsal counted as
+  worked, which gap was held and why there was no drop (`method-schedule explain`, or
+  Cmd+I in the app).
+- **Shoot days go to the budget.** File > Export for Budget writes the shoot days and
+  each element's work, hold and travel days to one small file with a published spec
+  ([docs/EXCHANGE.md](docs/EXCHANGE.md)), written for
+  [Method Budget](https://methodbudget.com) and open to any budgeting app.
+- **Bring your scripts with you.** A Fountain or `.fdx` script comes in as one breakdown
+  sheet per scene, and later drafts merge into the schedule you already have.
+
+Status: early alpha, not released yet; it builds from source today.
+Website: [methodschedule.com](https://methodschedule.com).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/board-dark.png">
   <img src="assets/screens/board-light.png" alt="The stripboard of Field Station: four shoot days of scenes, banners and day breaks" width="1280">
 </picture>
+
+## Yours to keep
+
+- **Free, for good, and open source** (MIT OR Apache-2.0). No account and no
+  subscription.
+- **Your schedule is a plain file on your own disk**: a `.mtsc` file of documented JSON
+  ([the spec](docs/FORMAT.md)) that you can open in 20 years, whatever happens to any
+  company or to this project.
+- **Works offline.** Nothing is uploaded; the app goes online only to check for a newer
+  version of itself, and you can turn that off.
+- **Nothing invents your schedule.** There is no generative AI in the app: every count
+  comes from rules you can read and ask about.
+
+## Status, honestly
+
+| Computer | Built | Signed | Tested |
+| --- | --- | --- | --- |
+| Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple, from the first release | By a person throughout development, and by the automated tests weekly |
+| Mac, Intel | No: the Mac app is for Apple silicon only | | |
+| Windows, 64-bit | Yes, an installer (`.exe`) | Not yet: Windows will warn that the publisher is unknown | Automated tests weekly; never installed by a person yet |
+| Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests on every change; never installed by a person yet |
+
+Not there yet: a published release (the first is being prepared), updates inside the app
+on Windows and Linux, a hands-on check of printing, keys and file types on Windows and
+Linux, and linking a schedule from inside Method Budget. The full list is under
+[On the roadmap](#on-the-roadmap). Windows and Linux: help us get there.
+
+## Help build it
+
+**If you make films:** check the day out of days against your experience and tell us
+where a count differs from what you would expect (the app's explanation of that count
+helps us find out why); tell us about the board and report layouts your productions use;
+and contribute invented sample schedules. Help > Report a Bug in the app opens a
+prefilled issue, or [open one here](https://github.com/method-production-suite/method-scheduling/issues/new/choose).
+Never attach or quote a real schedule or script: an invented one that shows the problem
+is always enough, and `method-schedule sample` makes one.
+
+**If you write code:** start with an issue labelled
+[good first issue](https://github.com/method-production-suite/method-scheduling/labels/good%20first%20issue).
+`cargo test --workspace` checks everything, and [CONTRIBUTING.md](CONTRIBUTING.md) covers
+the rest.
+
+Found a bug? [Open an issue](https://github.com/method-production-suite/method-scheduling/issues) (Help > Report a Bug fills one in for you). Have a
+question? Ask in [Discussions](https://github.com/method-production-suite/method-scheduling/discussions). For anything private, write to
+[hello@methodproduction.com](mailto:hello@methodproduction.com).
+
+Method Schedule is part of the [Method Production Suite](https://methodproduction.com):
+free, open tools for making films, from the first draft to the last shoot day.
 
 ## Platforms
 
@@ -59,8 +118,9 @@ cargo run -p method-schedule-app
 ```
 
 Schedules are open, documented JSON files (`.mtsc`, docs/FORMAT.md) that diff and merge
-cleanly (docs/MERGE.md). Day counts can be exported for budgeting tools (docs/EXCHANGE.md),
-and coding agents can work on schedules through an MCP server (docs/MCP.md). The command
+cleanly (docs/MERGE.md). Day counts go to Method Budget and other budgeting tools through
+the exchange file (docs/EXCHANGE.md), and coding agents can work on schedules through an
+MCP server (docs/MCP.md). The command
 line and the MCP server also find and replace text across a schedule and list elements
 booked on one date in two sub-boards (`method-schedule find`, `replace`, `conflicts`).
 
@@ -137,7 +197,7 @@ docs/features.toml.
 
 ### Beyond the usual stripboard
 
-- **Budget exchange file.** Shoot days and every element's day counts as one small, documented file a budgeting app can read.
+- **Budget exchange file.** Shoot days and every element's day counts as one small, documented file, written for Method Budget and open to any budgeting app.
 - **Production tags from the script.** Bring in the props, wardrobe and other tags a tagged script already carries as elements.
 - **Script revisions.** Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard and cut ones are marked omitted.
 - **Day timeline.** Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.
@@ -152,7 +212,7 @@ docs/features.toml.
 
 - **Signed Mac app with updates.** A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.
 - **Windows and Linux, tested.** Both build from the same code today; printing, keys and file types still need a hands-on check.
-- **Day counts into Method Budget.** Method Budget reading the exchange file, so shoot days and cast days arrive as the budget's globals.
+- **Day counts into Method Budget.** Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.
 - **Try it in your browser.** The app with an invented schedule, running in the browser with nothing to install.
 - **Daylight saving per location.** Sunrise, sunset and call times that follow each location's clock changes.
 

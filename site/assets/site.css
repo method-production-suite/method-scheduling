@@ -222,6 +222,17 @@ kbd {
 }
 .keys .or { color: var(--muted); font-size: 13px; padding: 0 3px; }
 
+/* platform status table (download band) */
+.table-title { font-size: 18px; margin: 32px 0 12px; }
+.table-scroll { overflow-x: auto; }
+.platforms { width: 100%; min-width: 560px; border-collapse: collapse; background: var(--surface); border: 1px solid var(--rule); font-size: 15px; }
+.band.alt .platforms { background: var(--bg); }
+.platforms th, .platforms td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.platforms thead th { background: var(--surface-2); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+.platforms tbody th { white-space: nowrap; }
+.platforms td { color: var(--ink-soft); }
+.platforms tr:last-child th, .platforms tr:last-child td { border-bottom: 0; }
+
 /* command line and agents */
 .term {
   margin: 0; background: var(--term-bg); color: var(--term-ink); border-radius: 12px; padding: 18px 20px;
