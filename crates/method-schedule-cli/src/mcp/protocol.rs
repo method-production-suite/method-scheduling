@@ -31,6 +31,12 @@ use super::{limits, Config};
 
 /// The modern revision this server speaks.
 pub const MODERN: &str = "2026-07-28";
+
+/// How long a client may keep `server/discover` and `tools/list` before asking again, in
+/// milliseconds (revision 2026-07-28, "Caching"): an hour. The list is fixed for the life
+/// of the server process (`listChanged: false`), and a new version of the server is a new
+/// process, so an hour only bounds how long a long-running client keeps it.
+pub const LIST_TTL_MS: u64 = 3_600_000;
 /// The legacy revisions it answers `initialize` with, newest first.
 pub const LEGACY: &[&str] = &["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 /// The name the server reports.
@@ -247,6 +253,12 @@ impl Server {
             let mut result = self.dispatch(method, params, &Era::Modern)?;
             if let Value::Object(r) = &mut result {
                 r.insert("resultType".into(), json!("complete"));
+                // Cacheable results MUST carry caching hints (revision 2026-07-28): the
+                // tool list is the same for every caller of a local server, so public.
+                if matches!(method, "server/discover" | "tools/list") {
+                    r.insert("ttlMs".into(), json!(LIST_TTL_MS));
+                    r.insert("cacheScope".into(), json!("public"));
+                }
                 let meta = r
                     .entry("_meta")
                     .or_insert_with(|| Value::Object(Map::new()));

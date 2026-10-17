@@ -85,7 +85,10 @@ initializes again. A request whose `params._meta` carries
 also carry `io.modelcontextprotocol/clientCapabilities` (else `-32602`), any other version
 gets `-32022 Unsupported protocol version` with the supported list in `data`, and its
 result has `resultType: "complete"` and the server's name and version in
-`_meta["io.modelcontextprotocol/serverInfo"]`. A request with neither (and no handshake
+`_meta["io.modelcontextprotocol/serverInfo"]`. Under 2026-07-28, `server/discover` and
+`tools/list` also carry the revision's caching hints: `ttlMs: 3600000` (the list is fixed
+while the server runs, so a client may keep it an hour) and `cacheScope: "public"` (it is
+the same for every caller); earlier revisions have no such fields. A request with neither (and no handshake
 yet) gets `-32602` saying so; `ping` always works.
 
 **Results.** A tool result has two text blocks, a one or two sentence summary for a person

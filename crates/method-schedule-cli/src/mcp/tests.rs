@@ -10,7 +10,8 @@ use method_schedule_core::{fountain, Date, Schedule};
 use serde_json::{json, Value};
 
 use super::protocol::{
-    parse_line, read_line, run, spawn_reader, Incoming, Scripted, Server, LEGACY, MODERN,
+    parse_line, read_line, run, spawn_reader, Incoming, Scripted, Server, LEGACY, LIST_TTL_MS,
+    MODERN,
 };
 use super::{files, limits, schema, Config};
 
@@ -1523,6 +1524,64 @@ fn requests_before_initialize_and_modern_requests() {
         .handle(json!({"jsonrpc": "2.0", "id": 5, "method": "tools/list", "params": {"_meta": meta("1900-01-01")}}))
         .unwrap();
     assert_eq!(error_code(&r), -32022);
+    let _ = std::fs::remove_dir_all(&base);
+}
+
+/// Revision 2026-07-28's cacheable results (server/discover and tools/list) carry
+/// `ttlMs` and `cacheScope`; other results don't, and the earlier revisions never see
+/// them. Claude Code 2.1.280 speaks this revision and asked for the list again and again
+/// while the hints were missing.
+#[test]
+fn modern_lists_carry_caching_hints_and_legacy_lists_do_not() {
+    let (base, root) = temp_root("cache-hints");
+    let mut s = Server::new(&Config {
+        roots: vec![root],
+        read_only: false,
+    })
+    .unwrap();
+    let meta = json!({"io.modelcontextprotocol/protocolVersion": MODERN, "io.modelcontextprotocol/clientCapabilities": {}});
+    for (id, method) in [(1, "server/discover"), (2, "tools/list")] {
+        let r = s
+            .handle(
+                json!({"jsonrpc": "2.0", "id": id, "method": method, "params": {"_meta": meta}}),
+            )
+            .unwrap();
+        let result = &r["result"];
+        assert_eq!(result["resultType"], "complete", "{method}");
+        assert_eq!(result["ttlMs"], json!(LIST_TTL_MS), "{method}");
+        assert!(
+            result["ttlMs"].is_u64(),
+            "{method}: a whole number, never negative"
+        );
+        assert_eq!(result["cacheScope"], "public", "{method}");
+    }
+    let r = s
+        .handle(json!({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"_meta": meta, "name": "check", "arguments": {"path": "film.mtsc"}}}))
+        .unwrap();
+    assert!(
+        r["result"].get("ttlMs").is_none(),
+        "a tool call is not cacheable"
+    );
+    assert!(r["result"].get("cacheScope").is_none());
+    let _ = std::fs::remove_dir_all(&base);
+
+    let (base, root) = temp_root("cache-hints-legacy");
+    let mut s = Server::new(&Config {
+        roots: vec![root],
+        read_only: false,
+    })
+    .unwrap();
+    s.handle(json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}}))
+        .unwrap();
+    let r = s
+        .handle(json!({"jsonrpc": "2.0", "id": 2, "method": "tools/list"}))
+        .unwrap();
+    assert!(r["result"]["tools"].is_array());
+    assert!(
+        r["result"].get("ttlMs").is_none(),
+        "2025-06-18 has no caching hints"
+    );
+    assert!(r["result"].get("cacheScope").is_none());
     let _ = std::fs::remove_dir_all(&base);
 }
 

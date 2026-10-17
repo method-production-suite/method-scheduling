@@ -32,7 +32,7 @@ Size: **S** a day or two, **M** about a week, **L** more than a week.
   extras beyond the reference app (BYD-01 to BYD-12), a local signed Mac release
   script with a draft-release workflow (decision 196), the sample production and the
   user guide in the Help menu (decisions 198 and 199) and crash recovery as tests
-  (decision 200). Decisions run to 216.
+  (decision 200). Decisions run to 217.
 - **Not yet**: a notarized build anyone can download, a live site, Windows and Linux run
   by hand, M1's new UI seen in the real window (screen block 6), and the rows left below.
 

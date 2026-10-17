@@ -5328,3 +5328,25 @@ reachable for good, so rewriting `main` would not have hidden them.
   owner: GitHub never reads secrets back). The research notes stay: they restate the
   reference app's behavior in our own words, with no copied text (CLEAN-ROOM.md).
 
+## 217. Caching hints on the MCP server's lists (2026-10-16)
+
+A tester wiring up the suite reported that the newest Claude Code refuses the MCP tool list
+without `ttlMs` and `cacheScope` (routed by the suite's org session). Checked against the
+specification: revision 2026-07-28 ("Caching"; schema `CacheableResult`) says servers
+implementing it MUST put both on `server/discover`, `tools/list` and the other list and
+read results; `ttlMs` a whole number of milliseconds, never negative, and `cacheScope`
+`"public"` or `"private"`. Clients SHOULD treat a missing `ttlMs` as 0 (stale at once);
+the fields don't exist in earlier revisions. `resultType: "complete"`, which every result
+of this revision MUST carry, was already sent.
+
+- **What Claude Code does**: 2.1.280 speaks 2026-07-28 (`server/discover`, then
+  `tools/list` with `_meta`); a health check asked for the tool list four times while the
+  hints were missing, as for a list that is always stale.
+- **The answer**: on 2026-07-28 only, `server/discover` and `tools/list` carry
+  `ttlMs: 3600000` and `cacheScope: "public"`: the list is fixed for the life of the
+  process (`listChanged: false`) and the same for every caller of a local server. Tool
+  calls carry neither. Earlier revisions are unchanged.
+- Agreed with Method Budget so both servers answer the same way.
+- Test: `modern_lists_carry_caching_hints_and_legacy_lists_do_not` (mcp/tests.rs); the
+  replies to Claude Code's recorded requests were checked before and after by hand.
+
