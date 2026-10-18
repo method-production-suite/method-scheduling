@@ -26,7 +26,7 @@ section. Everything else on this page goes ahead without waiting.
   wrap; Layouts and Red Flag Types rename then click; K185 and K187 on paper; crash
   recovery in the window (`scripts/crash-check.sh`, M2); and in the reference app E-L5,
   E-S34 and the two report questions (M1's review row).
-- **A tagged Final Draft script** for IMP-04 (Final Draft is needed to make one).
+- **A tagged script in the .fdx format** for IMP-04, made in the app that writes it.
 - **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
