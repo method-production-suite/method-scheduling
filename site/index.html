@@ -72,7 +72,7 @@
           <img src="assets/brand/wordmark.svg" alt="Method Schedule" width="660" height="63">
         </picture>
       </h1>
-      <p class="status"><span class="badge alpha">Early alpha</span> Not released yet: it builds from source today. <a href="#help">Found a bug? Tell us.</a></p>
+      <p class="status"><span class="badge alpha">Early alpha</span> Version 0.1.0, for Macs with Apple silicon. <a href="#help">Found a bug? Tell us.</a></p>
       <p class="pitch">Film and TV scheduling, from script to stripboard.</p>
       <p class="lede">A free, open-source desktop app for shooting schedules: script
         breakdown, the stripboard with its day breaks and banners, the calendar, the day
@@ -149,7 +149,7 @@
         <p class="wn-ver">Method Schedule 0.1.0</p>
         <p>The first release: a free, open scheduling app for film and TV that keeps your schedule in a plain file you own. It is an early alpha, for trying things out on invented productions before you trust it with a real shoot.</p>
         <ul class="wn-list">
-          <li><strong>Import a script.</strong> Fountain and Final Draft scripts come in as one breakdown sheet per scene, with their page lengths, and later drafts merge into the schedule you already have.</li>
+          <li><strong>Import a script.</strong> Fountain (.fountain) and .fdx scripts come in as one breakdown sheet per scene, with their page lengths, and later drafts merge into the schedule you already have.</li>
           <li><strong>Break it down.</strong> Cast, props, wardrobe, vehicles and every other category on each sheet, with quick add and elements you can link, merge and renumber.</li>
           <li><strong>Schedule on a stripboard.</strong> Drag strips into days, add banners and day breaks, break the board automatically by pages or time, and keep several boards and sub-boards for different plans.</li>
           <li><strong>Three looks.</strong> Paper, the default, follows your computer's light or dark setting; Graphite is always dark; Ledger is a full-color board like a printed one. Choose in Settings.</li>
@@ -358,7 +358,7 @@ Day by day
         </details>
         <details class="group" id="g-files">
           <summary>
-            <span class="group-head"><span class="group-title">Files and safety</span> <span class="group-count">6</span></span>
+            <span class="group-head"><span class="group-title">Files and safety</span> <span class="group-count">7</span></span>
             <span class="group-teaser">Open file format, Never lose work, Undo, and more</span>
           </summary>
           <ul class="feats">
@@ -368,6 +368,7 @@ Day by day
             <li><strong>Templates and layout files</strong> Start a schedule from a template of your categories, elements, boards and layouts, and share layouts as files.</li>
             <li><strong>Several windows</strong> One schedule per window, each with its own undo, autosave and recovery, and a list of recent files.</li>
             <li><strong>What changed and merge</strong> See every change between two schedules in plain words, and merge two copies that changed apart, with real clashes listed for you to pick.</li>
+            <li><strong>Signed Mac app with updates</strong> A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.</li>
           </ul>
         </details>
         <details class="group" id="g-keys">
@@ -405,7 +406,6 @@ Day by day
       <section class="soon" aria-labelledby="g-soon">
         <h3 id="g-soon">On the roadmap</h3>
         <ul class="feats">
-          <li><strong>Signed Mac app with updates</strong> A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.</li>
           <li><strong>Windows and Linux, tested</strong> Both build from the same code today; printing, keys and file types still need a hands-on check.</li>
           <li><strong>Day counts into Method Budget</strong> Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.</li>
           <li><strong>Try it in your browser</strong> The app with an invented schedule, running in the browser with nothing to install.</li>
@@ -517,15 +517,16 @@ Day by day
     <div class="wrap">
       <p class="kicker">Download</p>
       <h2 id="download-title">Get Method Schedule</h2>
-      <p class="intro">There is no release yet. Until the first one, build it from source in a
-        few minutes with nothing but Rust.</p>
+      <p class="intro">Version 0.1.0 is out for Macs with Apple silicon. On any other
+        computer, build it from source in a few minutes with nothing but Rust.</p>
       <div class="cards">
         <div class="card">
-          <span class="badge">Coming</span>
+          <span class="badge now">Available now</span>
           <h3>Mac app</h3>
-          <p>A Mac app for Apple silicon, signed and notarized by Apple so it opens like
-            any other app, comes with the first release. Windows and Linux installers are
-            built too, and wait on a hands-on test.</p>
+          <p>For Apple silicon, signed and notarized by Apple so it opens like any other
+            app, and it keeps itself up to date. Windows and Linux installers are built
+            too, and wait on a hands-on test.</p>
+          <p><a class="btn primary" href="https://github.com/method-production-suite/method-scheduling/releases/latest/download/Method-Schedule-macOS.dmg">Download for Mac</a></p>
           <p><a href="releases/">Release notes</a></p>
         </div>
         <div class="card">
@@ -544,20 +545,19 @@ Day by day
             <tr><th scope="col">Computer</th><th scope="col">Built</th><th scope="col">Signed</th><th scope="col">Tested</th></tr>
           </thead>
           <tbody>
-            <tr><th scope="row">Mac, Apple silicon</th><td>Yes, an app (<code>.dmg</code>)</td><td>Signed and notarized by Apple, from the first release</td><td>By a person throughout development, and by the automated tests weekly</td></tr>
+            <tr><th scope="row">Mac, Apple silicon</th><td>Yes, an app (<code>.dmg</code>)</td><td>Signed and notarized by Apple</td><td>By a person throughout development, and by the automated tests weekly</td></tr>
             <tr><th scope="row">Mac, Intel</th><td>No: the Mac app is for Apple silicon only</td><td></td><td></td></tr>
             <tr><th scope="row">Windows, 64-bit</th><td>Yes, an installer (<code>.exe</code>)</td><td>Not yet: Windows will warn that the publisher is unknown</td><td>Automated tests weekly; never installed by a person yet</td></tr>
             <tr><th scope="row">Linux, 64-bit</th><td>Yes, <code>.deb</code> and AppImage</td><td>Not signed</td><td>Automated tests on every change; never installed by a person yet</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="fine">Not there yet: a published release (the first is being prepared),
-        updates inside the app on Windows and Linux, a hands-on check of printing, keys and
+      <p class="fine">Not there yet: updates inside the app on Windows and Linux, a hands-on check of printing, keys and
         file types on Windows and Linux, and linking a schedule from inside Method Budget.
         Windows and Linux: <a href="#help">help us get there</a>.</p>
       <div class="alpha-note">
         <span class="badge alpha">Early alpha</span>
-        <p>Method Schedule is new and not released. Its counting rules are checked case by
+        <p>Method Schedule is new. Its counting rules are checked case by
           case, but you will find rough edges, and a count is worth a second look before a
           schedule goes out. Keep a copy of schedules that matter, and when something looks
           wrong, <a href="#help">tell us</a>: bugs get fixed fast at this stage.</p>

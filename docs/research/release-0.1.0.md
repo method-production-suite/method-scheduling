@@ -9,17 +9,17 @@ Each line of the suite's release checklist (`RELEASE-CHECKLIST.md` in the organi
 | Line | Status |
 |---|---|
 | Version bumped | Done: `0.1.0` in the root `Cargo.toml`, the one place. |
-| Every check green | On the release pull request's CI: format, lint, tests, cargo-deny, the crate-age check, the site check and notes-check. |
+| Every check green | To confirm on the release pull request's CI before the tag: format, lint, tests, cargo-deny, the crate-age check, the site check and notes-check. Locally, notes-check and the site check pass. |
 | Pictures retaken | Done: `node scripts/capture-screens.mjs` from Field Station. Board and import changed (the full-width board and the new top bar); the day out of days and command line pictures came out byte-identical. Old and new compared side by side. |
-| Release notes written | Done: [docs/releases/0.1.0.md](../releases/0.1.0.md), `notes-check` says ready. Three pictures; known gaps at the end. |
+| Release notes written | Done: [docs/releases/0.1.0.md](../releases/0.1.0.md), `notes-check` says ready. Three pictures, drawn on the release notes page from `site/img`; formats named, not other vendors' apps; known gaps at the end. |
 | Helpers named | Done: the Thanks section names masyarakatai. |
-| README updated | Done: the macOS row of the platform table. Windows and Linux rows unchanged (built by CI, not yet installed by a person). |
+| README updated | Done: the status line and the macOS rows of both platform tables; the home page's hero and Download section link `releases/latest/download/Method-Schedule-macOS.dmg`, which only resolves once the release is published, so this PR merges after publishing. Windows and Linux rows unchanged (built by CI, not yet installed by a person). |
 
 ## The release (the owner's go-ahead)
 
 | Line | Status |
 |---|---|
-| Tag `v0.1.0` | Waiting on the owner: the eight release secrets on the public repository, then a yes to tag. The release pull request merges together with that yes, since merging it puts 0.1.0 in the site's What's new. |
+| Tag `v0.1.0` | Waiting on the owner: the eight release secrets on the public repository, then a yes to tag. The release pull request merges only after the release is published: it puts 0.1.0 on the site and links the download. |
 | A person checks the draft | After the tag: install the `.dmg` on an Apple silicon Mac, open Field Station, check the update archive and `latest.json` are attached and signed. |
 | Installer names version-free | Built in: `release.yml` names them `Method-Schedule-macOS.dmg` and so on. |
 | Publish | The owner, after the draft check. |

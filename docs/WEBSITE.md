@@ -73,9 +73,10 @@ moves.
 "What's new" takes the newest release note by version number (a prerelease sorts before
 its release): its `# ` title, its first paragraph and up to six bullets, with bold kept
 and links reduced to their text. The release notes page renders every note in full,
-newest first, each with an anchor (`releases/#v0-1-0`). There are no release notes yet
-(`docs/releases/` does not exist), so both say so: "No release yet", and that the app
-builds from source.
+newest first, each with an anchor (`releases/#v0-1-0`). A picture in a note is a line of
+its own, `![alt](../../assets/screens/board-light.png)`; the page draws it from `site/img`
+by file name (the `-dark` capture in a dark scheme), and the script stops if that file
+isn't there. With no notes at all, both say "No release yet".
 
 Exit codes: 0 done or up to date, 1 out of date (`--check`), 2 the input is wrong (the
 message names the entry and the problem; nothing was written).

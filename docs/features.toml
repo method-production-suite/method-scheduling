@@ -463,7 +463,8 @@ ref = ["BYD-02", "D207"]
 group = "files"
 title = "Signed Mac app with updates"
 text = "A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date."
-status = "soon"
+status = "have"
+ref = ["D196"]
 
 [[feature]]
 group = "files"
