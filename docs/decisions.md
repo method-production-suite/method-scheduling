@@ -5410,3 +5410,12 @@ main with its author kept, and finished here.
   and APP.md list them. The file format change is additive: older files read as before.
 - Tests: the contribution's switch-date tests; a format round trip for both rules.
 
+## 221. Strip designer "scale to content" dropped (2026-10-18)
+
+Built on the recommendation (the roadmap's "Waiting on the owner"; reversible). The gap
+noted in entries 87 and 185 was a "scale to content" option in the reference app's strip
+designer, still to be looked at. Screen block 6 looked: its control is "Scale height", and
+ticking it changed nothing visible in the preview. Our strips already take as many board
+lines as their layout has (one to four, entry 87), so there is nothing to scale. The row
+leaves M1; if the owner wants it, it comes back as a strip height option.
+
