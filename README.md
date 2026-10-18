@@ -77,7 +77,7 @@ free, open tools for making films, from the first draft to the last shoot day.
 
 | Computer | Download | Status |
 |---|---|---|
-| macOS, Apple silicon | `Method-Schedule-macOS.dmg` | Not released yet: build it from source (below). The app is checked by hand on a Mac. |
+| macOS, Apple silicon | `Method-Schedule-macOS.dmg` | Signed and notarized from 0.1.0. Checked by hand on a Mac. |
 | Windows, x64 | `Method-Schedule-windows-x64-setup.exe` | Built by CI, never installed by a person yet. Reports welcome. |
 | Linux, x64 | `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` | Built by CI, never installed by a person yet. Reports welcome. |
 
