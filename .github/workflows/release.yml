@@ -240,7 +240,16 @@ jobs:
           set -euo pipefail
           for app in "target/$TARGET/release/bundle/macos/"*.app; do
             codesign --verify --deep --strict --verbose=2 "$app"
-            lipo -archs "$app/Contents/MacOS/"*
+            # Apple silicon only: every executable must be exactly arm64, not x86_64 or
+            # universal.
+            for exe in "$app/Contents/MacOS/"*; do
+              archs="$(lipo -archs "$exe")"
+              if [ "$archs" != arm64 ]; then
+                echo "::error::$(basename "$exe") is built for '$archs', not arm64 alone."
+                exit 1
+              fi
+              echo "$(basename "$exe"): $archs"
+            done
             if [ "${MACOS_NOTARIZE:-no}" = yes ]; then
               xcrun stapler validate "$app"
               spctl --assess --type execute --verbose=4 "$app"
@@ -366,7 +375,10 @@ jobs:
           version="${TAG#v}"
           notes="$RUNNER_TEMP/notes.md"
           if [ -f "docs/releases/$version.md" ]; then
-            cp "docs/releases/$version.md" "$notes"
+            # The note's pictures are relative to docs/releases/; a release page needs
+            # them as addresses of the tagged files.
+            sed "s#](\.\./\.\./#](https://github.com/$GITHUB_REPOSITORY/raw/$TAG/#g" \
+              "docs/releases/$version.md" > "$notes"
           else
             echo "Draft: write docs/releases/$version.md from the decisions since the last tag before publishing." > "$notes"
           fi

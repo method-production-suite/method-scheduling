@@ -17,7 +17,7 @@ production runs on. No subscription, and your schedule is a file you own.
 - **Bring your scripts with you.** A Fountain or `.fdx` script comes in as one breakdown
   sheet per scene, and later drafts merge into the schedule you already have.
 
-Status: early alpha, not released yet; it builds from source today.
+Status: early alpha. Version 0.1.0 is out for Macs with Apple silicon; elsewhere it builds from source.
 Website: [methodschedule.com](https://methodschedule.com).
 
 <picture>
@@ -41,14 +41,13 @@ Website: [methodschedule.com](https://methodschedule.com).
 
 | Computer | Built | Signed | Tested |
 | --- | --- | --- | --- |
-| Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple, from the first release | By a person throughout development, and by the automated tests weekly |
+| Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple | By a person throughout development, and by the automated tests weekly |
 | Mac, Intel | No: the Mac app is for Apple silicon only | | |
 | Windows, 64-bit | Yes, an installer (`.exe`) | Not yet: Windows will warn that the publisher is unknown | Automated tests weekly; never installed by a person yet |
 | Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests on every change; never installed by a person yet |
 
-Not there yet: a published release (the first is being prepared), updates inside the app
-on Windows and Linux, a hands-on check of printing, keys and file types on Windows and
-Linux, and linking a schedule from inside Method Budget. The full list is under
+Not there yet: updates inside the app on Windows and Linux, a hands-on check of printing,
+keys and file types on Windows and Linux, and linking a schedule from inside Method Budget. The full list is under
 [On the roadmap](#on-the-roadmap). Windows and Linux: help us get there.
 
 ## Help build it
@@ -77,7 +76,7 @@ free, open tools for making films, from the first draft to the last shoot day.
 
 | Computer | Download | Status |
 |---|---|---|
-| macOS, Apple silicon | `Method-Schedule-macOS.dmg` | Not released yet: build it from source (below). The app is checked by hand on a Mac. |
+| macOS, Apple silicon | `Method-Schedule-macOS.dmg` | Signed and notarized from 0.1.0. Checked by hand on a Mac. |
 | Windows, x64 | `Method-Schedule-windows-x64-setup.exe` | Built by CI, never installed by a person yet. Reports welcome. |
 | Linux, x64 | `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` | Built by CI, never installed by a person yet. Reports welcome. |
 
@@ -186,6 +185,7 @@ docs/features.toml.
 - **Templates and layout files.** Start a schedule from a template of your categories, elements, boards and layouts, and share layouts as files.
 - **Several windows.** One schedule per window, each with its own undo, autosave and recovery, and a list of recent files.
 - **What changed and merge.** See every change between two schedules in plain words, and merge two copies that changed apart, with real clashes listed for you to pick.
+- **Signed Mac app with updates.** A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.
 
 ### Keyboard and command line
 
@@ -210,7 +210,6 @@ docs/features.toml.
 
 ### On the roadmap
 
-- **Signed Mac app with updates.** A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.
 - **Windows and Linux, tested.** Both build from the same code today; printing, keys and file types still need a hands-on check.
 - **Day counts into Method Budget.** Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.
 - **Try it in your browser.** The app with an invented schedule, running in the browser with nothing to install.
