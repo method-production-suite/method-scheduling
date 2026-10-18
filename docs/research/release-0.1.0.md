@@ -19,7 +19,7 @@ Each line of the suite's release checklist (`RELEASE-CHECKLIST.md` in the organi
 
 | Line | Status |
 |---|---|
-| Tag `v0.1.0` | Waiting on the owner: the eight release secrets on the public repository, then a yes to tag. The release pull request merges only after the release is published: it puts 0.1.0 on the site and links the download. |
+| Tag `v0.1.0` | Waiting on the owner: the eight release secrets on the public repository, then a yes to tag. The order is fixed by `release.yml`, which takes the draft's notes from `docs/releases/0.1.0.md` in the tagged tree: merge this pull request, tag `v0.1.0` on that merge, check and publish the draft, then MOrg syncs the site. MOrg holds the sync until the release is published, since the site's download link only resolves then. Between the merge and publishing, the README's download link on GitHub leads nowhere. |
 | A person checks the draft | After the tag: install the `.dmg` on an Apple silicon Mac, open Field Station, check the update archive and `latest.json` are attached and signed. |
 | Installer names version-free | Built in: `release.yml` names them `Method-Schedule-macOS.dmg` and so on. |
 | Publish | The owner, after the draft check. |
