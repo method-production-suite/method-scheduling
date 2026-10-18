@@ -116,6 +116,7 @@ next build, and the site links to it.
 | Keys: the reference app's menu keys mapped to Ctrl, conflicts with system keys | S | D79, D106 |
 | Single instance handling and the system recent documents list | S | APP.md "Not yet" |
 | File associations for `.mtsc` and `.mtst` | S | |
+| The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. Also carries the release-workflow fix that compiles before any signing key is unpacked (local branch `ci/compile-before-secrets`) | M | D213, D214, SUITE-STANDARDS.md section 1 |
 
 **Exit**: the live check list from screen block 3 passes on both systems, and their
 installers update themselves.
