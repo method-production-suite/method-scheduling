@@ -1,13 +1,16 @@
 # Least privilege by default. Pin all actions to full commit SHAs (pinact run).
 name: ci
+# One run per change (SUITE-STANDARDS.md section 6): pushes to main, and pull requests.
+# A newer push to a pull request cancels its older run; runs on main always finish.
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   build:
     runs-on: ubuntu-latest
