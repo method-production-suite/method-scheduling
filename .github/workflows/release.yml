@@ -240,7 +240,16 @@ jobs:
           set -euo pipefail
           for app in "target/$TARGET/release/bundle/macos/"*.app; do
             codesign --verify --deep --strict --verbose=2 "$app"
-            lipo -archs "$app/Contents/MacOS/"*
+            # Apple silicon only: every executable must be exactly arm64, not x86_64 or
+            # universal.
+            for exe in "$app/Contents/MacOS/"*; do
+              archs="$(lipo -archs "$exe")"
+              if [ "$archs" != arm64 ]; then
+                echo "::error::$(basename "$exe") is built for '$archs', not arm64 alone."
+                exit 1
+              fi
+              echo "$(basename "$exe"): $archs"
+            done
             if [ "${MACOS_NOTARIZE:-no}" = yes ]; then
               xcrun stapler validate "$app"
               spctl --assess --type execute --verbose=4 "$app"
