@@ -9,9 +9,34 @@ Refs: `D` entries in `docs/decisions.md`, behavior notes by number
 in `docs/parity/features.csv`.
 Size: **S** a day or two, **M** about a week, **L** more than a week.
 
+## Waiting on the owner
+
+Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads this
+section. Everything else on this page goes ahead without waiting.
+
+**Go-aheads**
+- **Release secrets for the public repository** (none set yet): the eight in
+  RELEASING.md, set with the two commands there. Needed before any signed build.
+- **Tag v0.1.0** once the secrets are in and the release PR (the notes and the release
+  checklist walked) has landed. Then check the draft release and publish it.
+
+**Needs the owner's hands or hardware**
+- **Screen block 7**, one unattended block: a file opened from the Finder opens in its
+  own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past
+  wrap; Layouts and Red Flag Types rename then click; K185 and K187 on paper; crash
+  recovery in the window (`scripts/crash-check.sh`, M2); and in the reference app E-L5,
+  E-S34 and the two report questions (M1's review row).
+- **A tagged Final Draft script** for IMP-04 (Final Draft is needed to make one).
+- **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
+
+**Decisions** (each with a recommendation; reversible ones are built on it)
+- Strip designer "scale to content" (D87, D185): **built on the recommendation, dropped**
+  (D221). The reference app's "Scale height" changed nothing visible (screen block 6), and
+  strips already size to their lines.
+
 ---
 
-## Where we are (2026-10-15)
+## Where we are (2026-10-18)
 
 - **Parity** ([docs/parity/PARITY.md](parity/PARITY.md)): every v1 feature (108 of 108)
   and every later feature is built; 13 rows are skipped as out of scope. 99.4% of the
@@ -32,9 +57,10 @@ Size: **S** a day or two, **M** about a week, **L** more than a week.
   extras beyond the reference app (BYD-01 to BYD-12), a local signed Mac release
   script with a draft-release workflow (decision 196), the sample production and the
   user guide in the Help menu (decisions 198 and 199) and crash recovery as tests
-  (decision 200). Decisions run to 220.
-- **Not yet**: a notarized build anyone can download, a live site, Windows and Linux run
-  by hand, M1's new UI seen in the real window (screen block 6), and the rows left below.
+  (decision 200). Decisions run to 221.
+- **Not yet**: a notarized build anyone can download, Windows and Linux run by hand, the
+  checks screen block 6 didn't run, and the rows left below. The site is live and the
+  repository public (decisions 209, 216).
 
 Parity upkeep: edit `docs/parity/features.csv` when a feature or a check lands, then run
 `python3 scripts/parity.py --snapshot` (docs/parity/README.md).
@@ -49,9 +75,7 @@ outside downloads it.
 | Item | Size | Refs |
 |---|---|---|
 | Open engine checks still to see in the reference app: whether a fixed built-in category set exists beyond the cast (E-L5), and whether an element left off the board counts in a category's element count (E-S34); every other queued check was answered in screen block 4 (behavior note 27) | S | engine-checks.md queue |
-| Known gap from decisions: strip designer scale to content (needs a look at the reference app's style panel; D87, D185) | S | decisions.md |
-| Review, DOOD and reports: in screen block 6, look at whether the reference app's spreadsheets follow a report's filters and without holds (they ignore its date range, note 27, as ours, D59), and whether a cast member off the board has a name with Cast names on (ours none, D142) | S | feature-review-2026-10-13.md, RPT-03, RPT-10 |
-| Screen block 7: a file opened from the Finder opens in its own window (decision 219); and what block 6 didn't run (docs/research/screen-block-6.md, "Not run"): K184 Find with the board beside the board; M192 Day Timeline past wrap on a day with shoot times; Layouts and Red Flag Types rename then click; K185 and K187 on paper; and in the reference app E-L5 and E-S34. Block 6 (2026-10-17) passed G167 to G171, J179 to J182, K183, K186, K188, M193, M194 and the new screens; its four look bugs are fixed (decision 218) | S | screen-block-6.md |
+| Screen block 7: a file opened from the Finder opens in its own window (decision 219); and what block 6 didn't run (docs/research/screen-block-6.md, "Not run"): K184 Find with the board beside the board; M192 Day Timeline past wrap on a day with shoot times; Layouts and Red Flag Types rename then click; K185 and K187 on paper; and in the reference app E-L5 and E-S34, and whether its spreadsheets follow a report's filters and without holds and whether a cast member off the board gets a name with Cast names on (RPT-03, RPT-10). Block 6 (2026-10-17) passed G167 to G171, J179 to J182, K183, K186, K188, M193, M194 and the new screens; its four look bugs are fixed (decision 218) | S | screen-block-6.md |
 | Live checks still open: IMP-04 (needs a tagged Final Draft script), DOD-06 and DOD-07 in the window, BYD-10 (behavior note 27's small items passed in screen block 6) | S | behavior note 27 |
 
 **Exit**: every review finding fixed or written up as a decision; no open engine check
@@ -71,7 +95,7 @@ schedule.
 | The auto-updater: built, with the owner's public key (D213, D214); still the owner's: `TAURI_SIGNING_PRIVATE_KEY` and its password in the repository's secrets, the repository public, and a first published release | S | D197, D213, D214, APP.md |
 | The release workflow: `release.yml` drafts a release with unsigned builds for all three systems on a tag, signing steps skipped until secrets exist (D196); still to add: the update manifest, and signing secrets when the owner wants CI to sign | S | `.github/workflows/release.yml` |
 | Release notes on the site's release page, written from the decisions since the last tag | S | WEBSITE.md |
-| The website: live on methodschedule.com through the suite website (decision 209); still to do: make the repository public, turn on Discussions, the support email, a security policy | S | WEBSITE.md "For the owner: still to do" |
+| The website: live on methodschedule.com through the suite website (decision 209); the repository public with Discussions (decision 216), help through GitHub with no email address of our own (WEBSITE.md), the security policy from the organization's `.github` repository: done | S | WEBSITE.md |
 | Crash recovery in the real window: run `scripts/crash-check.sh` in a screen block (the saving code is tested, D200) | S | APP.md "Saving and recovery" |
 
 **Exit**: a signed build installs on a clean Mac without warnings, updates itself to the
@@ -137,9 +161,9 @@ exchange at version 1 read by Method Budget.
 
 ---
 
-## Decisions needed from the owner
+## Decisions settled
 
-None open (2026-10-15).
+Open decisions live in "Waiting on the owner" at the top.
 
 Settled and dropped from this table: Fountain lines per page, 56 (7 lines an eighth) with
 a setting to change it (D195); signing the Mac build with the company's Developer ID, and
