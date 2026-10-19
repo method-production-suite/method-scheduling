@@ -5419,3 +5419,21 @@ ticking it changed nothing visible in the preview. Our strips already take as ma
 lines as their layout has (one to four, entry 87), so there is nothing to scale. The row
 leaves M1; if the owner wants it, it comes back as a strip height option.
 
+## 222. The browser build: a window-free session crate and a WebAssembly host, after 0.1.0 (2026-10-18)
+
+- **Asked by the owner** (2026-10-18), for a partner's web app: the same split Method
+  Budget made (its decisions 70 to 73), so Method Schedule's page can run in a browser
+  with the engine built to WebAssembly.
+- **The crates**: `method-schedule-core` and `method-schedule-format` stay as they are;
+  new `method-schedule-session` takes everything about an open schedule that needs no
+  window, with `Host::dispatch` over the desktop's commands; new `method-schedule-web`
+  holds the wasm-bindgen exports and the page's invoke shim. `method-schedule-app`
+  re-exports what moved, so the desktop, its tests and the CLI and MCP server don't change.
+- **Seams**: an injected clock (`Instant` and `SystemTime` panic on wasm32), no file I/O
+  in the session (bytes and names in, bytes out), a picture store for elements' and
+  scenes' images (read from beside the file today), and sharing left to the partner.
+- **Assumed partner terms**, Method Budget's of 2026-10-12, until the owner says otherwise.
+  The open questions are in ROADMAP.md's Waiting on the owner, each built on its
+  recommendation.
+- **Order**: M2b, after v0.1.0 is tagged and ahead of M3. Plan, map and phases:
+  docs/research/web-session.md.

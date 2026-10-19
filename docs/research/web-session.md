@@ -1,6 +1,7 @@
 # Method Schedule in a browser: the window-free session (plan)
 
-Status: **a plan, nothing built** (2026-10-16). Written because a partner asked whether
+Status: **a plan, nothing built** (written 2026-10-16, brought up to date 2026-10-18 when
+the owner asked for it to be built, decision 222). Written because a partner asked whether
 Method Schedule can run in their web app. It follows the way Method Budget did it
 (`../method-budget/docs/research/web-session.md`, decisions 70 to 73 there, all built on
 2026-10-12), so the two apps offer a partner the same shape. Read that note first: this one
@@ -28,21 +29,40 @@ It starts further along than Method Budget did.
 | The page's one way out | `invoke()` in api.js | `invoke()` in `ui/js/api.js`, through one ordered queue |
 | A browser stand-in | none before phase 2 | `harness/fake-tauri.js` (3,500 lines) already runs the whole page in a browser for tests, with the real page and fake data |
 
-## WebAssembly hazards found (by reading, not yet by `cargo check --target wasm32`)
+## WebAssembly hazards found
+
+`method-schedule-core` and `method-schedule-format` both pass
+`cargo check --target wasm32-unknown-unknown --locked` today (2026-10-18), with no change.
+That proves less than it seems: on that target `std::time::SystemTime::now` and
+`Instant::now` compile and then panic when called, and `std::fs` compiles and fails at run
+time. So each hazard below is a call to find and route through a seam, not a build error.
+
 
 - **Clocks**: `std::time::Instant` in `src/session.rs` (quick repeats joining one undo step,
-  autosave's quiet period); `SystemTime::now` in `method-schedule-format/src/exchange.rs`
-  (`utc_today`, the exchange file's stamped date; it already prefers the local time zone
-  through its own `local` code). Both need the injected clock, as Method Budget's
-  `method_session::clock`.
+  autosave's quiet period) and in `budgets.rs` (timing in its tests); `SystemTime::now` in
+  `view.rs` (`today()`, the Calendar tab's month when a sub-board has no start date) and in
+  `method-schedule-format/src/exchange.rs` (`utc_today`, the exchange file's stamped date;
+  its local-time code is behind `cfg` for macOS, Linux and Windows and falls back to UTC
+  elsewhere, so it builds for wasm32). All need the injected clock, as Method Budget's
+  `method_session::clock`. `diffmerge.rs`'s file modified times are the desktop's side.
 - **Files**: `std::fs` in the desktop-only modules (`safety`, `safety_app`, `safety_crash`,
   `outside`, `export`, `templates`, `windows`) and in the file side of `elements` (images),
   `reports` (printing), `help` and `docs`. None of it moves; the moved logic takes bytes.
-- **Threads**: only in tests (`layouts.rs` runs one test on a thread).
+- **Images**: an element's and a scene's pictures are stored as paths beside the schedule
+  and read from disk each time the page asks (`elements::read_image`, `split::sheet_image`).
+  The browser has no disk next to the file, so pictures need their own seam (below).
+- **Threads**: only in tests and the desktop's own modules (`diffmerge.rs`'s file pick,
+  `safety_crash.rs`, `updater.rs`).
 - **Process ids and randomness**: the engine's ids come from the schedule's own `next_id`
   counter (deterministic); `testgen` and `sample` use their own seeded generator. Nothing
   reads `std::process::id` outside the desktop's recovery names. To be confirmed by the
   wasm check.
+- **Randomness**: no `rand` or `getrandom` in anything that moves. `getrandom` is in
+  Cargo.lock only under Tauri and the updater; phase 1's CI check runs `cargo tree -i
+  getrandom --target wasm32-unknown-unknown -p method-schedule-session` and fails if it
+  appears.
+- **Sunrise and sunset**: `method-schedule-core`'s `solar.rs` is arithmetic on `f64` with
+  its own daylight saving rules, no time zone database, so it builds and runs the same.
 - **Printing**: macOS's own print operation (`pdf_mac.rs`) stays on the desktop; a browser
   prints the page's report pages itself (report.js already lays them out as Letter pages).
 - **Dependencies**: nothing to add. `wasm-bindgen` and `js-sys` are already in Cargo.lock
@@ -88,16 +108,16 @@ module the Open and Save dialogs and the reading and writing of files.
 
 ## The commands
 
-Of the 171 desktop commands (counted 2026-10-16; the suite-standard work is adding Help and
-updater commands now):
+Of the 171 desktop commands (the full list by kind is at the end):
 
 | Kind | About | Commands |
 |---|---|---|
-| **Move as they are** (one call into window-free code) | 130 | every view (`get_view`, `board_view`, `dood_grid`, `elements_view`, `calendar_view`, `red_flags_view`, `conflicts_view`, `report_data`, `timeline_data`, `call_sheet_data`, ...), every edit to strips, boards, sheets, elements, categories, properties, red flags, the calendar, layouts, reports, locks and locations, undo and redo, find and replace, merge preview and apply |
+| **Move as they are** (one call into window-free code) | 131 | every view (`get_view`, `board_view`, `dood_grid`, `elements_view`, `calendar_view`, `red_flags_view`, `conflicts_view`, `report_data`, `timeline_data`, `call_sheet_data`, ...), every edit to strips, boards, sheets, elements, categories, properties, red flags, the calendar, layouts, reports, locks and locations, undo and redo, find and replace, merge preview and apply |
+| **Pictures** (through the image store, below) | 2 | `element_image`, `sheet_image` |
 | **Files in** (the host takes `file: {name, bytes}` where the desktop shows an Open dialog) | 11 | `open_schedule`, `import_script`, `import_script_tags`, `revise_pick`, `merge_pick_file`, `what_changed`, `add_element_image`, `add_sheet_image`, `import_layouts`, `new_from_template`, `open_sample` (the sample's bytes are built in) |
 | **Files out** (the host replies with `downloads: [{name, bytes}]` where the desktop shows a Save dialog) | 6 | `save_schedule` (as the host's `save_mtsc`), `export_report`, `export_budget`, `export_call_sheet`, `export_layouts`, `save_template` |
 | **The host's own** | 3 | `open_mtsc {name, text}`, `save_mtsc {doc, name?}`, `host_info` (the desktop gets one too) |
-| **Desktop only** (no host form; the shim answers quietly or says "That is only in the Method Schedule app, not in the browser.") | about 21 | windows (`new_window`, `open_in_new_window`, `close_window`), autosave and recovery (`set_autosave`, `open_pending`, `open_recent`, `recovery_list`, `open_recovered`, `discard_recovered`), outside changes and backups (`outside_check`, `outside_resolve`, `backup_list`, `revert_to_backup`), the updater and its notes (`update_status`, `update_restart`, `update_whats_new`, `whats_new`), `print_report` (the browser prints the pages itself), `open_link` (the shim opens a tab), `preferences` and `set_preferences` (the shim keeps them in the page's own storage) |
+| **Desktop only** (no host form; the shim answers quietly or says "That is only in the Method Schedule app, not in the browser.") | 21 | windows (`new_window`, `open_in_new_window`, `close_window`), autosave and recovery (`set_autosave`, `open_pending`, `open_recent`, `recovery_list`, `open_recovered`, `discard_recovered`), outside changes and backups (`outside_check`, `outside_resolve`, `backup_list`, `revert_to_backup`), the updater and its notes (`update_status`, `update_restart`, `update_whats_new`, `whats_new`), `print_report` (the browser prints the pages itself), `open_link` (the shim opens a tab), `preferences` and `set_preferences` (the shim keeps them in the page's own storage) |
 
 The contract is Method Budget's, word for word where it can be: the desktop's names and
 JSON; `doc` names the open schedule; errors are `UnknownCommand`, `BadArguments` and
@@ -115,6 +135,10 @@ switch for a partner's viewer; `COMMANDS_VERSION` goes up only when a caller wou
 - **Windows**: on the desktop each schedule has its own window (decision 88) and the
   clipboard crosses windows (decision 183). In the host, open schedules are tabs of one
   page and share one clipboard.
+- **Pictures**: a small `ImageStore` the host hands the session: `get(name) -> bytes` and
+  `put(bytes, type) -> name`. On the desktop it reads and writes beside the schedule as
+  today; in a browser the partner keeps the bytes in their storage. `add_element_image`
+  and `add_sheet_image` take `file: {name, bytes}`.
 - **Sharing**: Method Schedule's merge and outside-change guard are file-based (decisions
   25, 26, 179 to 182). Nothing of it is in the browser build; a partner's server would do
   sharing (one editor at a time, others read-only), as with Method Budget.
@@ -168,15 +192,80 @@ STANDARDS.md); sharing them saves most of phase 2's writing once.
 - Clean room both ways: the partner sends no code to this repository, and nothing derived
   from another program's files or code enters it (CLEAN-ROOM.md).
 
+## The partner's terms, assumed
+
+Until the owner says otherwise, Method Budget's partner answers of 2026-10-12 (decisions 70
+to 73 there) stand for Method Schedule too: schedules live in the partner's storage as
+`.mtsc` text in and out; sharing is their server's (one editor at a time, the others read
+only); the host has a read-only switch for viewers; clean room both ways.
+
 ## Open questions for the owner and the partner
+
+Each is also in ROADMAP.md's "Waiting on the owner", with the recommendation built on.
 
 1. Does the partner want to host the whole page, or call the engine (views and edits as
    JSON) from their own interface? The first is phases 1 to 2; the second needs only 1
    and 1b, plus documenting each command's reply (docs/APP.md has most of it).
+   **Recommended and built on: the whole page**, as with Method Budget; 1 and 1b serve
+   the second either way.
 2. Where do their schedules live, and do they need several people on one schedule? Both
    are theirs in Method Budget's model.
-3. Read-only viewers (a crew member looking at the board) as well as editors?
+3. What must a read-only viewer still do? **Recommended**: every view, Find, printing and
+   Save as PDF, the call sheet and the exports (they change nothing); refused: every edit,
+   undo and redo, imports. The switch refuses by command, as in Method Budget.
 4. Phone or tablet? The page is laid out for a computer (decision 53's density); a phone
    layout is separate work, as Method Budget decided.
 5. Should the shim, the xtask and the smoke test move into `method-libs` first, so both
-   apps share them?
+   apps share them? **Recommended**: copy Method Budget's now and move both later, so this
+   isn't waiting on another repository.
+6. Does the demo ship at methodschedule.com/try/? **Recommended**: yes, with Field Station,
+   as phase 3, once the partner build works; it follows the site's release rule, so it goes
+   live with the release that carries it.
+
+## Every command, by kind
+
+The 171 commands registered in `app.rs` on 2026-10-18 (module prefixes left off).
+
+- **Move as they are** (131): `get_view`, `dood_grid`, `explain_count`, `find_text`,
+  `replace_text`, `conflicts_view`, `new_schedule`, `undo`, `redo`, `move_strips`,
+  `insert_day_break`, `delete_strips`, `insert_banner`, `set_banner`, `sort_strips`,
+  `set_strip_layout`, `set_strip_colors`, `set_day_look`, `continue_scene`, `add_layout`,
+  `save_layout`, `rename_layout`, `move_layout`, `delete_layout`, `use_layout`,
+  `use_one_line_layout`, `auto_day_breaks`, `remove_day_breaks`, `set_start_date`,
+  `show_board`, `add_board`, `duplicate_board`, `rename_board`, `move_board`,
+  `delete_board`, `add_sub_board`, `rename_sub_board`, `move_sub_board`,
+  `delete_sub_board`, `get_sheet`, `set_sheet_field`, `set_sheet_pages`, `tag_element`,
+  `set_quantity`, `create_element`, `untag_element`, `new_sheet`, `delete_sheet`,
+  `merge_sheets_preview`, `merge_sheets`, `duplicate_sheets`, `copy_strips`,
+  `paste_strips`, `copy_elements`, `paste_elements`, `elements_view`, `add_category`,
+  `set_category_field`, `move_category`, `delete_category`, `apply_category_defaults`,
+  `set_element_field`, `merge_elements`, `move_element`, `renumber_elements`,
+  `delete_element`, `element_days`, `add_property`, `rename_property`, `move_property`,
+  `delete_property`, `set_property_multi_line`, `set_property_value`, `set_links`,
+  `remove_element_image`, `red_flags_view`, `set_red_flag`, `delete_red_flag`,
+  `add_red_flag_type`, `rename_red_flag_type`, `move_red_flag_type`,
+  `delete_red_flag_type`, `add_standard_red_flag_types`, `add_red_flags`,
+  `delete_red_flags`, `calendar_view`, `set_calendar_hidden`, `set_day_kind`,
+  `set_weekly_off`, `save_event`, `delete_event`, `report_data`, `report_list`,
+  `save_report`, `duplicate_report`, `move_report`, `delete_report`, `set_production`,
+  `set_calendar_fields`, `save_header_layout`, `delete_header_layout`,
+  `move_header_layout`, `set_dood_codes`, `set_prep_wrap`, `merge_preview`,
+  `merge_apply`, `revise_apply`, `timeline_data`, `set_call_time`, `set_long_day`,
+  `push_past_wrap`, `locations_data`, `set_location`, `rest_data`, `set_turnaround`,
+  `locks_data`, `lock_schedule`, `delete_lock`, `drift_data`, `pin_strips`,
+  `suggest_order`, `apply_suggested_order`, `call_sheet_data`, `shoot_day_count`,
+  `board_view`, `remove_sheet_image`, `set_sheet_field_order`, `move_event_to`,
+  `set_red_flag_type_color`, `user_guide`, `notices`.
+- **Pictures, through the image store** (2): `element_image`, `sheet_image`.
+- **Files in** (11): `open_schedule`, `import_script`, `import_script_tags`,
+  `revise_pick`, `merge_pick_file`, `what_changed`, `add_element_image`,
+  `add_sheet_image`, `import_layouts`, `new_from_template`, `open_sample`.
+- **Files out** (6): `save_schedule`, `export_report`, `export_budget`,
+  `export_call_sheet`, `export_layouts`, `save_template`.
+- **Desktop only, no host form** (21): `set_autosave`, `open_pending`, `open_recent`,
+  `recovery_list`, `open_recovered`, `discard_recovered`, `close_window`, `new_window`,
+  `open_in_new_window`, `outside_check`, `outside_resolve`, `backup_list`,
+  `revert_to_backup`, `update_status`, `update_restart`, `update_whats_new`, `whats_new`,
+  `print_report` (the browser prints the page), `open_link` (the shim opens a tab),
+  `preferences` and `set_preferences` (the shim keeps them in the page's storage).
+- **New, the host's own** (3): `open_mtsc`, `save_mtsc`, `host_info`.
