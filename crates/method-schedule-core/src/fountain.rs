@@ -502,17 +502,29 @@ Yippee.
 
     #[test]
     fn a_two_space_line_keeps_a_speech_going() {
-        let two =
-            "INT. HUT - NIGHT\n\nMARA\nFirst part.\n  \nSecond part.\n\nDELACROIX ^\nAt once.\n";
-        let s = parse(two);
-        assert_eq!(s.scenes[0].characters, ["MARA", "DELACROIX"]);
-        // The same speech with a truly blank line: the second part is action, a line
-        // shorter as dialogue, and the cast is unchanged.
-        let blank = parse(&two.replace("\n  \n", "\n\n"));
-        assert_eq!(blank.scenes[0].characters, s.scenes[0].characters);
-        // A line of spaces that isn't exactly two is blank, as before.
-        let three = parse(&two.replace("\n  \n", "\n   \n"));
-        assert_eq!(three.scenes[0].characters, s.scenes[0].characters);
+        // Eight second paragraphs, each one line as action (60 wide) and two as dialogue
+        // (35 wide): kept as dialogue, the scene runs 8 lines longer.
+        let para = "These words run past thirty-five but stay under sixty.";
+        let mut two = String::from("INT. HUT - NIGHT\n\nMARA\nFirst part.\n");
+        for _ in 0..8 {
+            two.push_str(&format!("  \n{para}\n"));
+        }
+        two.push_str("\nDELACROIX ^\nAt once.\n\nINT. YARD - DAY\n\nWind.\n");
+        let kept = parse(&two);
+        assert_eq!(kept.scenes[0].characters, ["MARA", "DELACROIX"]);
+        // The same with truly blank lines: each second paragraph is action.
+        let split = parse(&two.replace("  \n", "\n"));
+        assert_eq!(split.scenes[0].characters, kept.scenes[0].characters);
+        let lines = |s: &ImportedScript| s.scenes[0].length.0 * LINES_PER_PAGE / 8;
+        assert!(
+            lines(&kept) > lines(&split),
+            "{:?} vs {:?}",
+            kept.scenes[0].length,
+            split.scenes[0].length
+        );
+        // A line of three spaces is blank, as before.
+        let three = parse(&two.replace("  \n", "   \n"));
+        assert_eq!(three.scenes[0].length, split.scenes[0].length);
     }
 
     #[test]
