@@ -3585,4 +3585,77 @@ mod tests {
             Some(cast)
         );
     }
+
+    #[test]
+    fn the_view_lists_boards_and_draws_the_one_shown_with_banners() {
+        let mut s = harbor();
+        let b = s.schedule().boards[0].id.0;
+        let sb = s.schedule().boards[0].sub_boards[0].id.0;
+        let ids: Vec<u32> = s.schedule().boards[0]
+            .boneyard
+            .iter()
+            .map(|x| x.id.0)
+            .collect();
+        s.edit(|x| board::move_strips(x, b, &ids[..2], Some(sb), 0))
+            .unwrap();
+        s.edit(|x| board::insert_banner(x, sb, 1, "Lunch", "0:45"))
+            .unwrap();
+        s.edit(|x| board::insert_day_break(x, sb, 3)).unwrap();
+        let v = view(&s, None).unwrap();
+        let day = &v.board.sub_boards[0].days[0];
+        assert_eq!(day.strips[1].kind, "banner");
+        assert_eq!(
+            (day.strips[1].text.as_str(), day.strips[1].duration.as_str()),
+            ("Lunch", "0:45")
+        );
+        assert_eq!(day.scenes, 2);
+        let copy = s
+            .edit(|x| board::duplicate_board(x, b, "Rain plan"))
+            .unwrap();
+        s.edit(|x| board::rename_board(x, b, "Dry")).unwrap();
+        let names: Vec<_> = view(&s, None)
+            .unwrap()
+            .boards
+            .into_iter()
+            .map(|x| x.name)
+            .collect();
+        assert_eq!(names, ["Dry", "Rain plan"]);
+        s.show_board(method_schedule_core::model::BoardId(copy))
+            .unwrap();
+        let v = view(&s, None).unwrap();
+        assert_eq!(v.board.id, copy);
+        assert_eq!(v.board.name, "Rain plan");
+        // The copy's sub-board has its own id; the other tabs take it.
+        let csb = v.board.sub_boards[0].id;
+        assert_ne!(csb, sb);
+        assert!(dood_grid(s.schedule(), csb, None).is_ok());
+        assert!(calendar_view(s.schedule(), csb, None, None).is_ok());
+        assert!(elements_view(s.schedule(), csb, None, None).is_ok());
+        assert!(dood_grid(s.schedule(), 9999, None).is_err());
+        assert!(crate::explain::explain_count(s.schedule(), csb, 1).is_err());
+        // A sheet's place is on the board it is asked about.
+        let sheet = v.board.sub_boards[0].days[0].strips[0].sheet.unwrap();
+        let shown = sheet_view(s.schedule(), copy, Some(sheet), None)
+            .unwrap()
+            .unwrap();
+        assert!(shown.place.starts_with("Main, day 1"), "{}", shown.place);
+        s.edit(|x| {
+            board::move_strips(
+                x,
+                copy,
+                &[v.board.sub_boards[0].days[0].strips[0].id],
+                None,
+                0,
+            )
+        })
+        .unwrap();
+        let moved = sheet_view(s.schedule(), copy, Some(sheet), None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(moved.place, "Boneyard");
+        let still = sheet_view(s.schedule(), b, Some(sheet), None)
+            .unwrap()
+            .unwrap();
+        assert!(still.place.starts_with("Main, day 1"), "{}", still.place);
+    }
 }

@@ -1,5 +1,5 @@
-# SUITE-STANDARDS.md section 6: version updates grouped into one pull request a week per
-# ecosystem, never for releases younger than the 14-day crate cooldown. Security updates
+# SUITE-STANDARDS.md section 6: version updates grouped into one pull request a month per
+# group, never for releases younger than the 14-day crate cooldown. Security updates
 # are GitHub's own and stay separate, one pull request each, so a fix is never held up
 # by a batch. Actions are left out: they stay pinned to the suite's shared SHAs, which MOrg
 # moves for every repository at once.
@@ -8,19 +8,18 @@ updates:
   - package-ecosystem: cargo
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     cooldown:
       default-days: 14
     groups:
       # The Tauri family moves together or not at all: tauri, tauri-build and the
       # plugins are released as matched sets (tauri 2.12 wants tauri-build 2.7), and
       # the CLI version in scripts/install-tauri-cli.sh goes with them by hand. Listed first, so these
-      # never land in the weekly group.
+      # never land in the monthly group.
       tauri:
         applies-to: version-updates
         patterns: ["tauri", "tauri-*"]
-      cargo-weekly:
+      cargo-monthly:
         applies-to: version-updates
         patterns: ["*"]
     open-pull-requests-limit: 2

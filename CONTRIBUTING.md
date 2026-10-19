@@ -40,7 +40,19 @@ cargo run -p method-schedule-app                       # the window
 ```
 
 Linux needs the WebKitGTK development packages to build the window; the list is in
-[docs/APP.md](docs/APP.md#run-and-build). The app guide also covers the architecture and
+[docs/APP.md](docs/APP.md#run-and-build).
+
+**Before you open a pull request, run the full check on your own computer:**
+
+```bash
+cargo xtask ci
+```
+
+It runs formatting, clippy, every test, the page's tests (Node, which comes with most
+systems), the site and brand checks and the WebAssembly check, and ends with
+`xtask ci: passed (...)`. Paste that line into the pull request. GitHub runs only the two
+quick dependency checks on a pull request; the full build runs weekly on macOS, Windows
+and Linux, and again for every release. The app guide also covers the architecture and
 how the window is tested.
 
 ## Making a change
