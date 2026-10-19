@@ -10,9 +10,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# A run by hand (say, on release day) waits for the night's run rather than cancelling it.
 concurrency:
   group: platforms-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   gate:
     # Skips the night when main's HEAD is the commit the last green nightly tested. A run
