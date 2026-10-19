@@ -323,6 +323,19 @@ pub(crate) fn everything() -> Schedule {
     s.plan.omitted.push(last);
     let first = s.boards[0].sub_boards[0].strips[0].id;
     s.plan.pinned.push(first);
+    // What was shot (decision 224): every key, a scene finished on the day.
+    s.plan.days_shot.push(method_schedule_core::plan::DayShot {
+        day: brk,
+        date: "2027-03-02".parse().ok(),
+        call: Some(420),
+        wrap: Some(1500),
+    });
+    s.plan.scenes_shot.push(method_schedule_core::plan::SceneShot {
+        sheet: s.sheets[0].id,
+        day: brk,
+        eighths: method_schedule_core::Eighths(4),
+        complete: true,
+    });
     s.check().unwrap();
     s
 }
