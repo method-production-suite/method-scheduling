@@ -5458,3 +5458,21 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   is what `method-schedule budget` writes from the fixture.
 - **Still to come** (M2c): pictures on elements, Help > Open Sample switching to Field
   Station, and Field Station on first launch.
+
+## 224. What was shot: days and scenes as shot, in the plan (2026-10-19)
+
+- **Asked by Method Day** (the call sheet and production report app), so a day's production
+  report can write what was shot back into the schedule. Its session accepted the shape.
+- **The keys**: `plan.days_shot` (per day break: the date shot, actual call and wrap, each
+  optional; wrap up to 2880 minutes, after the call) and `plan.scenes_shot` (per scene and
+  day: eighths shot, and `complete` on the day that finished it, once per scene). Additive,
+  left out while empty, so older files read and write back byte for byte; ids that no longer
+  exist are dropped by the next plan edit, as for every plan key. Merges treat them per day
+  and per scene and day.
+- **Partial is eighths**, not scene parts: a production report records pages in eighths.
+- **The reader stays strict**: a file with these keys doesn't open in 0.1.0. A reserved
+  `extensions` object, kept and written back untouched, for additions from other apps, is
+  the owner's decision (ROADMAP.md, Waiting on the owner).
+- **Still to come**: the board marking shot scenes, pages left, and shot against planned in
+  the reports.
+

@@ -213,6 +213,8 @@ by the next plan edit; they are never an error.
 | `locks` | array of [lock](#lock) | empty | Schedule locks, to report drift against. |
 | `pinned` | array of integers | empty | Scene strip ids the strip order suggestion leaves in place. |
 | `omitted` | array of integers | empty | Sheet ids a script revision no longer has (kept, not deleted). |
+| `days_shot` | array of [day shot](#day-shot) | empty | Each shoot day as it was shot, written back by a production report (decisions.md, entry 224). One per day break. |
+| `scenes_shot` | array of [scene shot](#scene-shot) | empty | What was shot of each scene on each day (entry 224). One per scene and day. |
 
 #### Location
 
@@ -223,6 +225,31 @@ by the next plan edit; they are never an error.
 | `longitude_microdeg` | integer | | Millionths of a degree, east positive, -180000000 to 180000000. |
 | `utc_offset_minutes` | integer | 0 | Minutes ahead of UTC, -840 to 840: the standard offset when `daylight_saving` names a rule, else the offset on the shoot dates. |
 | `daylight_saving` | string | none | When the clocks are an hour ahead of the standard offset (decisions.md, entry 193): `us_canada` (from the second Sunday of March to the first Sunday of November), `eu` (from the last Sunday of March to the last Sunday of October), `australia` (Australia's south-east, from the first Sunday of October to the first Sunday of April; Queensland, the Northern Territory and Western Australia have no daylight saving, so no rule) or `new_zealand` (from the last Sunday of September to the first Sunday of April; decision 220). Left out for none; `none` written, another spelling or another rule is refused. |
+
+#### Day shot
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `day` | integer | | The day break strip that closes the day, as in `call_times`. |
+| `date` | date | none | The date it was actually shot, which may differ from the planned date. |
+| `call` | integer | none | The actual call, minutes after midnight (0 to 1439). |
+| `wrap` | integer | none | The actual wrap, minutes after the call day's midnight (1 to 2880; past midnight is past 1440), after the call when both are given. |
+
+An entry with none of `date`, `call` and `wrap` is refused: leave it out.
+
+#### Scene shot
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `sheet` | integer | | The sheet. |
+| `day` | integer | | The day break of the day it was shot on, which need not be the day it is planned on. |
+| `eighths` | integer | | How much of the scene was shot that day, in eighths of a page (0 to 7992). |
+| `complete` | boolean | `false` | `true` on the day that finished the scene, at most once per sheet. `false` written is refused (left out instead). |
+
+An entry with no eighths that doesn't finish its scene is refused: leave it out. A scene
+shot over two days has two entries, the second with `complete`. A file without these keys
+reads and writes back byte for byte; a reader that doesn't know them (Method Schedule 0.1.0)
+refuses the file, as it refuses any unknown key.
 
 #### Lock
 
