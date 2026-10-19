@@ -168,6 +168,7 @@ every picture retaken.
 | Item | Size | Refs |
 |---|---|---|
 | Builds and installers: the NSIS setup on Windows, AppImage and `.deb` on Linux, under version-free names (built unsigned by `release.yml`, D196, D210); Windows ships unsigned for the first alpha, SmartScreen warning accepted | M | D196, D210 |
+| The Tauri family to 2.12: tauri 2.12.x, tauri-build 2.7.x, the plugins and `TAURI_CLI_VERSION` in one PR, each at least 14 days old, the lock checked by the crate-age and deny jobs (Dependabot keeps them in a group of their own) | S | MReview on #38 |
 | CI: run `platforms.yml` on every release tag as well as weekly, and add Linux app builds | S | `.github/workflows/platforms.yml` |
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
 | Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |
