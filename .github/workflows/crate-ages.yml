@@ -1,0 +1,21 @@
+# Checks every crate in Cargo.lock against the 14-day rule once a week, so a crate that
+# slipped in (or was yanked since) is caught even when nothing changes. ci.yml checks a
+# pull request's new crates and the whole lock on every push to main. Least privilege;
+# actions pinned to full commit SHAs.
+name: crate-ages
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cooldown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check every crate's age
+        run: python3 scripts/check-crate-ages.py
