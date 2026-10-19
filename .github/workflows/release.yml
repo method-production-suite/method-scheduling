@@ -147,6 +147,24 @@ jobs:
           fi
           { echo "MACOS_SIGN=$sign"; echo "MACOS_NOTARIZE=$notarize"; echo "UPDATER=$updater"; } >> "$GITHUB_ENV"
 
+      # All compiling (build scripts and proc macros from third-party crates included)
+      # happens here, before any signing material is unpacked or handed to a step. The
+      # steps after this one only bundle, sign and notarize what was built.
+      - name: Compile
+        working-directory: crates/method-schedule-app
+        env:
+          TARGET: ${{ matrix.target }}
+          CI: "true"
+        run: |
+          set -euo pipefail
+          args=(build --no-bundle)
+          if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
+          # The same configuration the bundle step uses, so nothing is rebuilt there.
+          if [ "${UPDATER:-no}" = yes ]; then
+            args+=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
+          fi
+          cargo tauri "${args[@]}" -- --locked
+
       - name: Import the Developer ID certificate (macOS)
         if: runner.os == 'macOS' && env.MACOS_SIGN == 'yes'
         env:
@@ -188,7 +206,7 @@ jobs:
           printf '%s' "$AC_API_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
           echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
 
-      - name: Build bundles
+      - name: Bundle
         working-directory: crates/method-schedule-app
         env:
           BUNDLES: ${{ matrix.bundles }}
@@ -201,7 +219,8 @@ jobs:
           CI: "true"
         run: |
           set -euo pipefail
-          args=(build --bundles "$BUNDLES")
+          # Bundles what the Compile step built; it doesn't compile.
+          args=(bundle --bundles "$BUNDLES")
           if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
           # The Tauri CLI notarizes and staples the app when these are set, and signs with a
           # real identity only when APPLE_SIGNING_IDENTITY is set.
@@ -215,7 +234,7 @@ jobs:
             args+=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
           fi
           unset NOTARY_KEY_ID NOTARY_ISSUER UPDATER_PRIVATE_KEY UPDATER_PRIVATE_KEY_PASSWORD
-          cargo tauri "${args[@]}" -- --locked
+          cargo tauri "${args[@]}"
 
       - name: Sign, notarize and staple the disk image (macOS)
         if: runner.os == 'macOS' && env.MACOS_NOTARIZE == 'yes'
