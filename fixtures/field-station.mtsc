@@ -2394,8 +2394,8 @@
             "name": "Main",
             "start": "2027-05-03",
             "calendar": {
-              "prep_start": "2027-04-26",
-              "wrap_end": "2027-05-28"
+              "prep_start": "2027-04-05",
+              "wrap_end": "2027-06-09"
             },
             "strips": [
               {

@@ -5447,7 +5447,8 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **The shape agreed with Method Budget**: 18 shoot days, Monday 2027-05-03 to Wednesday
   2027-05-26; Cold Spring field station 12, Kettle Lake boathouse 3 (one company move),
   Hollins Ridge fire road 3; a Second Unit for the drive on the fire road (scenes 21, 39,
-  74) on day 14 beside the main unit; prep from 2027-04-26, wrap to 2027-05-28.
+  74) on day 14 beside the main unit; prep from 2027-04-05 and wrap to 2027-06-09 (four weeks and two, as Method Budget's
+  sample pays them).
 - **What the sample shows**: 90 scenes; nine cast, one of them silent (ANSEL); an element
   in every category, read off the script by what each scene says, with background counts;
   three locations on the map; banners for lunch, the moves and the second unit; call

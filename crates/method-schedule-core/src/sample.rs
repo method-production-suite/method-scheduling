@@ -1088,11 +1088,11 @@ pub fn field_station() -> Schedule {
         let call = if nights { 16 * 60 } else { 7 * 60 };
         crate::plan::set_call_time(&mut s, end, Some(call)).expect("a day break");
     }
-    // Five prep weeks' worth of days on the calendar's ends, for the budget's prep and
-    // wrap: prep from Monday 26 April, wrap to Friday 28 May.
+    // Prep and wrap for the budget's exchange, as Method Budget's sample pays them: four
+    // weeks of prep from Monday 5 April, two weeks of wrap to Wednesday 9 June.
     let calendar = s.calendar_mut(b, main).expect("main");
-    calendar.prep_start = Some(Date::from_ymd(2027, 4, 26).expect("valid"));
-    calendar.wrap_end = Some(Date::from_ymd(2027, 5, 28).expect("valid"));
+    calendar.prep_start = Some(Date::from_ymd(2027, 4, 5).expect("valid"));
+    calendar.wrap_end = Some(Date::from_ymd(2027, 6, 9).expect("valid"));
     // Red flags: a fitting and travel in prep, and the ranger would rather not work the
     // ridge's last day (soft, so the board marks it without refusing anything).
     s.standard_red_flag_types();
