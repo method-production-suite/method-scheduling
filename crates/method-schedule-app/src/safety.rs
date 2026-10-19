@@ -1431,7 +1431,10 @@ pub(crate) mod tests {
         fs::write(&a, "{}").unwrap();
         let a = fs::canonicalize(a).unwrap();
         // The first shape is read, then written back as the suite's list.
-        fs::write(&store, format!(r#"{{"files": ["{}", ""]}}"#, a.display())).unwrap();
+        // Built with serde_json, as the app wrote it: a Windows path's backslashes are
+        // escaped in JSON.
+        let first = serde_json::json!({ "files": [a.to_str().unwrap(), ""] });
+        fs::write(&store, serde_json::to_vec(&first).unwrap()).unwrap();
         let mut r = RecentFiles::load(Some(store.clone()));
         assert_eq!(r.paths(), std::slice::from_ref(&a));
         assert!(
