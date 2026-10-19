@@ -7,22 +7,29 @@
 //! [`elements`] and [`calendar`] hold the edits; [`view`] is what the page draws;
 //! [`clipboard`] cut, copy and paste; [`conflicts`], [`conflictmarks`] and [`redflags`]
 //! the Conflicts tab, the marks on strips and red flags; [`explain`] the Day out of days
-//! tab's Explain panel; [`safety`] the file-free half of keeping files safe; [`clock`]
-//! the time the host hands in. `method-schedule-app` re-exports these under their old
+//! tab's Explain panel; [`find`] Find and Replace; [`events`], [`breakdown`] and
+//! [`flagcolors`] moving calendar events, the breakdown sheet's design and red flag
+//! colors; [`split`] a scene's images and the board beside the board; [`safety`] the
+//! file-free half of keeping files safe; [`clock`] the time the host hands in. `method-schedule-app` re-exports these under their old
 //! names; the rest of its window-free modules follow (docs/research/web-session.md).
 
 pub mod board;
+pub mod breakdown;
 pub mod calendar;
 pub mod clipboard;
 pub mod clock;
 pub mod conflictmarks;
 pub mod conflicts;
 pub mod elements;
+pub mod events;
 pub mod explain;
+pub mod find;
+pub mod flagcolors;
 pub mod redflags;
 pub mod safety;
 pub mod session;
 pub mod sheet;
+pub mod split;
 pub mod view;
 
 pub use session::Session;
