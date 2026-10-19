@@ -1825,7 +1825,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -1842,7 +1842,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -1851,11 +1851,11 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-core"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "method-schedule-format"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "method-schedule-core",
  "serde",
@@ -1864,7 +1864,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-session"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -4928,7 +4928,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "yoke"
