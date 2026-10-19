@@ -140,7 +140,14 @@ pub fn parse_with(text: &str, lines_per_page: u32) -> ImportedScript {
             }
             let mut height = 1;
             i += 1;
-            while i < lines.len() && !lines[i].trim().is_empty() {
+            // A line of exactly two spaces keeps the speech going: a second paragraph of
+            // the same dialogue (Fountain's rule), one blank line on the page.
+            while i < lines.len() && (!lines[i].trim().is_empty() || is_dialogue_gap(lines[i])) {
+                if is_dialogue_gap(lines[i]) {
+                    height += 1;
+                    i += 1;
+                    continue;
+                }
                 let d = lines[i].trim();
                 let width = if d.starts_with('(') {
                     PAREN_WIDTH
@@ -345,6 +352,11 @@ fn is_character(t: &str) -> bool {
     name.chars().any(|c| c.is_alphabetic()) && !name.chars().any(|c| c.is_lowercase())
 }
 
+/// Fountain's two-space line inside dialogue: the speech goes on after a blank line.
+fn is_dialogue_gap(line: &str) -> bool {
+    line.trim_end_matches('\r') == "  "
+}
+
 /// The name without `@`, extensions in parentheses or the dual-dialogue `^`.
 pub(crate) fn character_name(t: &str) -> String {
     let t = t.strip_prefix('@').unwrap_or(t);
@@ -486,6 +498,33 @@ Yippee.
         assert!(s.scenes[2].characters.is_empty());
         // Forced with @, mixed case kept.
         assert_eq!(s.scenes[3].characters, ["McCLANE"]);
+    }
+
+    #[test]
+    fn a_two_space_line_keeps_a_speech_going() {
+        // Eight second paragraphs, each one line as action (60 wide) and two as dialogue
+        // (35 wide): kept as dialogue, the scene runs 8 lines longer.
+        let para = "These words run past thirty-five but stay under sixty.";
+        let mut two = String::from("INT. HUT - NIGHT\n\nMARA\nFirst part.\n");
+        for _ in 0..8 {
+            two.push_str(&format!("  \n{para}\n"));
+        }
+        two.push_str("\nDELACROIX ^\nAt once.\n\nINT. YARD - DAY\n\nWind.\n");
+        let kept = parse(&two);
+        assert_eq!(kept.scenes[0].characters, ["MARA", "DELACROIX"]);
+        // The same with truly blank lines: each second paragraph is action.
+        let split = parse(&two.replace("  \n", "\n"));
+        assert_eq!(split.scenes[0].characters, kept.scenes[0].characters);
+        let lines = |s: &ImportedScript| s.scenes[0].length.0 * LINES_PER_PAGE / 8;
+        assert!(
+            lines(&kept) > lines(&split),
+            "{:?} vs {:?}",
+            kept.scenes[0].length,
+            split.scenes[0].length
+        );
+        // A line of three spaces is blank, as before.
+        let three = parse(&two.replace("  \n", "   \n"));
+        assert_eq!(three.scenes[0].length, split.scenes[0].length);
     }
 
     #[test]
