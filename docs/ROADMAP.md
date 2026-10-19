@@ -15,10 +15,10 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None pending. v0.1.0 was published on 2026-10-19 after the owner checked it on his Mac,
-  and methodschedule.com follows it. The next release (0.2.0) will be proposed here when M2b
-  or M2c has something people can use; before tagging, the weekly full build runs by hand
-  on the release commit (RELEASING.md).
+- **Tag v0.2.0** once the release pull request has merged and the weekly full build is
+  green on that commit (MOrg brings it to the owner). Then check the draft with the four
+  tests in [research/release-0.2.0.md](research/release-0.2.0.md), the first being the
+  first real update, 0.1.0 to 0.2.0, and publish.
 
 **Needs the owner's hands or hardware**
 - **Screen block 7**, one block on the owner's screen, asked for through MOrg (the suite
@@ -162,10 +162,9 @@ exchange file. Alongside M2b.
 | Item | Size | Refs |
 |---|---|---|
 | Pictures on elements: a few props and vehicles, drawn (not generated), kept beside the fixture | S | D223 |
-| Help > Open Sample opens Field Station (today: Saltmarsh Road) as an untitled copy marked Sample, never the bundled file | S | help.rs |
-| First launch with nothing to open: Field Station as that untitled copy, with a quiet line saying so; a setting to turn it off | S | safety_app.rs, reportsetup.rs |
 
-Done (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
+Done: Help > Open Sample opens Field Station, untitled, and the first launch with nothing
+to open shows it once (2026-10-19). Earlier (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
 script, our first 11 scenes kept; Field Station rebuilt from it with the real importer
 (18 days, three locations, a second unit, nine cast with one silent, an element in every
 category, background counts, banners, call times, red flags, prep 2027-04-05 to wrap
