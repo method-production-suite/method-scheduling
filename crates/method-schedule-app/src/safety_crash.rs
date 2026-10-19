@@ -114,7 +114,12 @@ mod tests {
         rename(&filed, "Edited, not saved");
         for state in [&untitled, &filed] {
             assert_eq!(
-                autosave(state, &safety, Instant::now(), true),
+                autosave(
+                    state,
+                    &safety,
+                    method_schedule_session::clock::mono_ms(),
+                    true
+                ),
                 Autosaved::Recovery
             );
         }
@@ -237,7 +242,12 @@ mod tests {
             assert!(msg.contains("Save As") && !msg.contains('!'), "{msg}");
             assert_eq!(fs::read_to_string(&path).unwrap(), saved);
             assert!(state.lock().is_dirty(), "still unsaved");
-            let Autosaved::Failed(said) = autosave(&state, &safety, Instant::now(), true) else {
+            let Autosaved::Failed(said) = autosave(
+                &state,
+                &safety,
+                method_schedule_session::clock::mono_ms(),
+                true,
+            ) else {
                 panic!("expected a failed autosave");
             };
             assert!(said.contains("the disk is full"), "{said}");
@@ -295,7 +305,12 @@ mod tests {
                 "Couldn't save film.mtsc: the file or its folder is locked or read-only. \
                  Nothing was written. Use Save As to keep your changes in another file."
             );
-            let Autosaved::Failed(said) = autosave(&state, &safety, Instant::now(), true) else {
+            let Autosaved::Failed(said) = autosave(
+                &state,
+                &safety,
+                method_schedule_session::clock::mono_ms(),
+                true,
+            ) else {
                 panic!("expected a failed autosave");
             };
             assert!(said.contains("locked or read-only"), "{said}");
@@ -330,7 +345,12 @@ mod tests {
             crate::safety_app::open_path(&state, &safety, &path).unwrap();
             rename(&state, "After the crash");
             assert!(matches!(
-                autosave(&state, &safety, Instant::now(), true),
+                autosave(
+                    &state,
+                    &safety,
+                    method_schedule_session::clock::mono_ms(),
+                    true
+                ),
                 Autosaved::Failed(_)
             ));
         }
@@ -380,7 +400,12 @@ mod tests {
             fs::write(&path, "their version").unwrap();
             rename(&state, "Mine");
             assert!(matches!(
-                autosave(&state, &safety, Instant::now(), true),
+                autosave(
+                    &state,
+                    &safety,
+                    method_schedule_session::clock::mono_ms(),
+                    true
+                ),
                 Autosaved::Conflict(_)
             ));
             // The app dies with the question unanswered.
@@ -403,7 +428,12 @@ mod tests {
         }
         // Autosave leaves theirs alone; the copy is kept until a Save.
         assert_eq!(
-            autosave(&state, &safety, Instant::now(), true),
+            autosave(
+                &state,
+                &safety,
+                method_schedule_session::clock::mono_ms(),
+                true
+            ),
             Autosaved::Nothing
         );
         assert_eq!(fs::read_to_string(&path).unwrap(), "their version");

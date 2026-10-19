@@ -1752,6 +1752,16 @@ fn is_app_url(url: &tauri::Url) -> bool {
 }
 
 pub fn run() {
+    // The session's clock (method-schedule-session's clock.rs) before anything reads the
+    // time: the system's. SystemClock exists only with the `std-clock` feature, so a
+    // desktop build without it doesn't compile, rather than running on a stopped clock.
+    let installed = method_schedule_session::clock::install(Box::new(
+        method_schedule_session::clock::SystemClock,
+    ));
+    assert!(
+        installed,
+        "the session clock was read before the app installed it"
+    );
     let context = tauri::generate_context!();
 
     let nav_guard = tauri::plugin::Builder::<tauri::Wry>::new("nav-guard")

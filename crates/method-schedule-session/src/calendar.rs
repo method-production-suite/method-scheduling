@@ -236,8 +236,8 @@ mod tests {
     /// sample date; the weeks view's dates keep no blank line above their strips.
     #[test]
     fn date_hints_are_forms_and_weeks_cells_are_tight() {
-        const DATES_JS: &str = include_str!("../ui/js/dates.js");
-        const CSS: &str = include_str!("../ui/styles.css");
+        const DATES_JS: &str = include_str!("../../method-schedule-app/ui/js/dates.js");
+        const CSS: &str = include_str!("../../method-schedule-app/ui/styles.css");
         let hint = DATES_JS
             .split("export function datePlaceholder()")
             .nth(1)

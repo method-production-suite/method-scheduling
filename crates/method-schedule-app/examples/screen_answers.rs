@@ -9,7 +9,7 @@
 
 use std::path::Path;
 
-use method_schedule_app::session::{import_notice, Session};
+use method_schedule_app::session::{import_notice, Session, SessionFiles};
 use method_schedule_app::view::{dood_grid_with, view, GridOpts};
 use method_schedule_core::sample::FIELD_STATION_SCRIPT;
 

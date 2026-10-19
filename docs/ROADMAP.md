@@ -117,14 +117,19 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| `method-schedule-session`: the window-free modules moved with their tests, routed through the clock, the desktop re-exporting them | L | web-session.md phase 1 |
+| `method-schedule-session`, the rest of the window-free modules: `find`, `events`, `breakdown`, `flagcolors`, `split`, the data side of `reports`, `reportsetup`, `layouts`, `plan` and `diffmerge`, and `docs` | M | web-session.md phase 1 |
 | `Host::dispatch`, `COMMANDS`, `COMMANDS_VERSION`; files in and out as base64; the picture store; `host_info`; the read-only switch | M | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the
 crate itself with Method Budget's injected clock and `cargo xtask wasm-check` in CI, which
-also fails if `getrandom` appears under the session.
+also fails if `getrandom` appears under the session. Then the core of the session moved:
+`session`, `board`, `sheet`, `elements`, `calendar`, `view`, `clipboard`, `conflicts`,
+`conflictmarks`, `explain` and `redflags`, with the file-free half of `safety` (the disk
+stamp's data, recovery keys, the autosave rule on the clock). The desktop keeps reading and
+writing files (`SessionFiles`, `StampAt`, the image reader and picker) and installs the
+system clock at startup.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.

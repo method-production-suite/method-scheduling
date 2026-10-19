@@ -14,7 +14,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use tauri::menu::{MenuItem, MenuItemKind, PredefinedMenuItem};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, WebviewWindow};
@@ -26,7 +26,9 @@ use crate::safety::{
     self, Backups, RecentFiles, RecoveryEntry, RecoveryStore, Settings, BACKUP_GAP,
 };
 use crate::session::Session;
+use crate::session::SessionFiles;
 use crate::view::View;
+use method_schedule_session::clock;
 
 /// Events to the page.
 /// A file to open arrived from the system; the payload is its name.
@@ -201,9 +203,9 @@ pub enum Autosaved {
     Conflict(String),
 }
 
-/// One autosave pass at `now`. `force` skips the waiting (the window lost focus, the app
-/// is closing).
-pub fn autosave(state: &AppState, safety: &Safety, now: Instant, force: bool) -> Autosaved {
+/// One autosave pass at `now` (milliseconds on `clock::mono_ms`). `force` skips the
+/// waiting (the window lost focus, the app is closing).
+pub fn autosave(state: &AppState, safety: &Safety, now: u64, force: bool) -> Autosaved {
     let _w = lock(&safety.writer);
     if state.discarded() {
         return Autosaved::Nothing;
@@ -360,7 +362,7 @@ pub fn leaving(state: &AppState, safety: &Safety) {
     if state.discarded() {
         return;
     }
-    autosave(state, safety, Instant::now(), true);
+    autosave(state, safety, clock::mono_ms(), true);
     let _w = lock(&safety.writer);
     let mut s = state.lock();
     if !s.is_dirty() && s.has_recovery() {
@@ -420,7 +422,7 @@ fn autosave_one<R: Runtime>(
     safety: &Safety,
     force: bool,
 ) {
-    let done = autosave(state, safety, Instant::now(), force);
+    let done = autosave(state, safety, clock::mono_ms(), force);
     match done {
         Autosaved::File => {
             *lock(&state.autosave_error) = None;
@@ -747,8 +749,8 @@ mod tests {
             .unwrap();
     }
 
-    fn later() -> Instant {
-        Instant::now() + AUTOSAVE_QUIET + Duration::from_secs(1)
+    fn later() -> u64 {
+        clock::mono_ms() + AUTOSAVE_QUIET.as_millis() as u64 + 1_000
     }
 
     #[test]
@@ -764,7 +766,7 @@ mod tests {
         rename(&state, "Changed");
         // Still typing: nothing yet.
         assert_eq!(
-            autosave(&state, &safety, Instant::now(), false),
+            autosave(&state, &safety, clock::mono_ms(), false),
             Autosaved::Nothing
         );
         assert_eq!(autosave(&state, &safety, later(), false), Autosaved::File);

@@ -126,6 +126,7 @@ pub fn doc_of<R: Runtime>(window: &WebviewWindow<R>) -> Arc<AppState> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::session::SessionFiles;
 
     #[test]
     fn each_window_has_its_own_schedule() {

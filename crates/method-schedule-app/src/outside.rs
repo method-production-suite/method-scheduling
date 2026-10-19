@@ -28,8 +28,10 @@ use method_schedule_core::diff::diff;
 use crate::app::{finish, AppState, CmdResult};
 use crate::diffmerge::{utc_minutes, Theirs};
 use crate::docs::Doc;
+use crate::safety::StampAt;
 use crate::safety::{self, content_hash, DiskCheck, DiskStamp};
 use crate::safety_app::{self, Safety};
+use crate::session::SessionFiles;
 use crate::session::{parse_schedule, read_schedule};
 use crate::view::View;
 
@@ -452,10 +454,11 @@ mod tests {
     use crate::safety_app::{autosave, save, Autosaved};
     use std::collections::BTreeMap;
     use std::fs;
-    use std::time::{Duration, Instant};
 
-    fn later() -> Instant {
-        Instant::now() + safety::AUTOSAVE_QUIET + Duration::from_secs(1)
+    fn later() -> u64 {
+        method_schedule_session::clock::mono_ms()
+            + safety::AUTOSAVE_QUIET.as_millis() as u64
+            + 1_000
     }
 
     fn rename(state: &AppState, title: &str) {

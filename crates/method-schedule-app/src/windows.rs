@@ -14,6 +14,7 @@ use tauri_plugin_dialog::DialogExt;
 use crate::app::{AppState, CmdResult, MAIN};
 use crate::docs::Docs;
 use crate::safety_app::{self, Safety};
+use crate::session::SessionFiles;
 use crate::session::{self, Session};
 
 /// The labels of the windows opened after the main one, as the capability names them.
