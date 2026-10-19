@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 import tomllib
+import urllib.error
 import urllib.request
 
 UA = "method-schedule cooldown check (private repository)"
@@ -33,12 +34,22 @@ def external_packages(lock_text):
     }
 
 
-def published(name, version):
+def published(name, version, tries=6):
     req = urllib.request.Request(
         f"https://crates.io/api/v1/crates/{name}/{version}", headers={"User-Agent": UA}
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        v = json.load(r)["version"]
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                v = json.load(r)["version"]
+            break
+        except urllib.error.HTTPError as e:
+            # crates.io limits how fast one address may ask (429), and has bad moments
+            # (5xx): wait as asked, or longer each time, then ask again.
+            if (e.code != 429 and e.code < 500) or attempt == tries - 1:
+                raise
+            wait = e.headers.get("Retry-After", "")
+            time.sleep(int(wait) if wait.isdigit() else 5 * 2**attempt)
     return dt.datetime.fromisoformat(v["created_at"].replace("Z", "+00:00")), v["yanked"]
 
 
