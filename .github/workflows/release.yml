@@ -48,7 +48,7 @@ jobs:
   check:
     name: tag and version
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -75,6 +75,11 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Every crate in the lock is at least 14 days old
+        # SUITE-STANDARDS.md section 6: before anything is built or signed, the whole
+        # Cargo.lock, not only what changed. The script has no exception list, so
+        # nothing is skipped. Build and draft both need this job.
+        run: python3 scripts/check-crate-ages.py
 
   build:
     name: build (${{ matrix.name }})
