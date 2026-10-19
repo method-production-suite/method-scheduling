@@ -52,6 +52,9 @@ commands for each step; how the build, signing and updates work is in
 
 ## The release
 
+- **The weekly full build on the release commit:** run `platforms` by hand (Actions >
+  platforms > Run workflow, on main) and wait for green before tagging (SUITE-STANDARDS.md
+  section 6).
 - **Tag** on main: `git tag vX.Y.Z && git push origin vX.Y.Z` (as the owner's
   account, through the repository's credential helper). `release.yml` drafts the release
   with `Method-Schedule-macOS.dmg`, `Method-Schedule-windows-x64-setup.exe`,

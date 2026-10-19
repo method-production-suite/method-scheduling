@@ -1,7 +1,9 @@
-# Builds and tests on macOS and Windows as well as Linux. Weekly and on demand only:
-# on a private repository macOS minutes count ten times and Windows twice, so this does
-# not run on every push (ci.yml does Linux on every push). Least privilege; actions
-# pinned to full commit SHAs.
+# The weekly full build (SUITE-STANDARDS.md section 6, "CI, ArtCraft-style"): pull requests
+# run only the quick dependency checks (ci.yml), so the build and every test run here, once
+# a week on main and by hand, on macOS, Windows and Linux. A week when main hasn't moved
+# since the last green run is skipped. Run it by hand on the release commit and wait for
+# green before tagging; release.yml builds all three again before anything is signed. It
+# saves each system's cache. Least privilege; actions pinned to full commit SHAs.
 name: platforms
 on:
   schedule:
@@ -9,11 +11,123 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# A run by hand (say, on release day) waits for the week's run rather than cancelling it.
 concurrency:
   group: platforms-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+# No incremental build and line tables only for debug information: smaller, quicker builds.
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 jobs:
+  gate:
+    # Skips the week when main's HEAD is the commit the last green run tested. A run by
+    # hand always goes ahead.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      run: ${{ steps.last.outputs.run }}
+    steps:
+      - name: The last green run's commit
+        id: last
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          last="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/platforms.yml/runs?branch=main&status=success&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // ""')"
+          if [ "$last" = "$GITHUB_SHA" ]; then
+            echo "main is still $GITHUB_SHA, which the last green run tested: skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  linux:
+    # Everything that used to run on each pull request: format, lint, the whole test
+    # suite, the WebAssembly check, the page's own tests, the site and brand checks, and
+    # the performance budgets.
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Restore the cache
+        id: cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev build-essential pkg-config libgtk-3-dev
+      - name: Rust components
+        run: |
+          rustup component add clippy rustfmt
+          rustup target add wasm32-unknown-unknown
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Test
+        run: cargo test --workspace --locked
+      - name: The browser's crates build for WebAssembly
+        # docs/research/web-session.md: method-schedule-session (and the engine and
+        # format under it) must stay free of files, threads, clocks and randomness.
+        run: cargo xtask wasm-check
+      - name: Page logic tests
+        # crates/method-schedule-app/ui/js/logic.js under Node's built-in test runner,
+        # which the runner image has; no npm (decisions.md, entry 137).
+        run: node --test crates/method-schedule-app/page-tests/logic.test.mjs
+      - name: Feature list, site and brand files are up to date
+        run: |
+          python3 scripts/site.py --check
+          python3 scripts/make-brand.py --check
+      - name: Save the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+      - name: Rust budgets
+        # Performance budgets at 1,500 strips (decisions.md, entries 176 to 178 and 191):
+        # release builds only, each timing the median of 15 runs, scaled for the runner's
+        # speed. The Rust budget writes the board view the page's budget then draws.
+        env:
+          METHOD_SCHEDULE_VIEW_DUMP: ${{ runner.temp }}/board-view.json
+        run: cargo test --release --workspace --locked -- --ignored budget --nocapture
+      - name: Page budget
+        env:
+          METHOD_SCHEDULE_VIEW: ${{ runner.temp }}/board-view.json
+        run: node --test crates/method-schedule-app/page-tests/board-budget.mjs
+
   test:
+    # The whole test suite on macOS and Windows.
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -24,5 +138,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Restore the cache
+        id: cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
       - name: Test
         run: cargo test --workspace --locked
+      - name: Save the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ steps.cache.outputs.cache-primary-key }}
