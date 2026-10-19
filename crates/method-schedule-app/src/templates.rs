@@ -45,7 +45,7 @@ fn folder<R: Runtime>(window: &WebviewWindow<R>) -> Option<PathBuf> {
     let dir = window
         .app_handle()
         .path()
-        .app_data_dir()
+        .app_local_data_dir()
         .ok()?
         .join("Templates");
     std::fs::create_dir_all(&dir).ok()?;

@@ -418,7 +418,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) {
     let current = app.package_info().version.to_string();
     let settings_file = app
         .path()
-        .app_data_dir()
+        .app_local_data_dir()
         .ok()
         .map(|d| d.join("updates.json"));
     let mut settings = settings_file

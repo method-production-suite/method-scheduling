@@ -410,7 +410,7 @@ pub fn path_from_args(args: impl IntoIterator<Item = std::ffi::OsString>) -> Opt
 /// Sets everything up when the app starts: the data folder, the menu's recent list and
 /// Autosave check, a file named on the command line, and the autosave timer.
 pub fn init<R: Runtime>(app: &AppHandle<R>) {
-    let dir = app.path().app_data_dir().ok();
+    let dir = app.path().app_local_data_dir().ok();
     if let Some(d) = &dir {
         let _ = safety::create_private_dir(d);
     }
