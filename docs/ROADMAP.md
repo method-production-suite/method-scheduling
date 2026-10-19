@@ -134,6 +134,22 @@ unchanged, and CI checks both.
 
 ---
 
+## M2c The Field Station showcase
+
+**Goal**: the app opens a rich invented sample that shows every feature (SUITE-STANDARDS.md
+section 8, the owner, 2026-10-18), and it matches Method Budget's sample through the real
+exchange file. Alongside M2b.
+
+| Item | Size | Refs |
+|---|---|---|
+| The shared shape, agreed with Method Budget (2026-10-18): 18 shoot days, Mon 2027-05-03 to Wed 2027-05-26 (weeks of 5, 5, 5, 3), 5 prep and 2 wrap days; Cold Spring field station 12 days, Hollins Ridge fire road 3, Kettle Lake boathouse 3 (one company move); DELACROIX, MARA, TEO, IVERSEN and four day players; Background with counts; a 1-day Second Unit for the ridge drive (day 14) | S | D215 |
+| The script grown to about 80 pages and 90 scenes, invented, neutral title page kept: Storyteller's to extend or ours to send back (asked 2026-10-18) | M | fixtures/scripts/field-station.fountain |
+| Field Station rebuilt from it with the real importer: every element category, banners and day breaks, the calendar, red flags, a call sheet, pictures on elements; its exchange file sent to Method Budget with its `days_hash`; every picture retaken with Budget's | M | `method-schedule sample --field-station`, capture-screens.mjs |
+| Help > Open Sample opens Field Station (today: Saltmarsh Road) as an untitled copy marked Sample, never the bundled file | S | help.rs |
+| First launch with nothing to open: Field Station as that untitled copy, with a quiet line saying so; a setting to turn it off | S | safety_app.rs, reportsetup.rs |
+
+---
+
 ## M3 Windows and Linux
 
 **Goal**: the same app, tested by hand, on Windows (WebView2) and Linux (WebKitGTK).
