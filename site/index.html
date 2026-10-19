@@ -72,7 +72,7 @@
           <img src="assets/brand/wordmark.svg" alt="Method Schedule" width="660" height="63">
         </picture>
       </h1>
-      <p class="status"><span class="badge alpha">Early alpha</span> Version 0.1.0, for Macs with Apple silicon. <a href="#help">Found a bug? Tell us.</a></p>
+      <p class="status"><span class="badge alpha">Early alpha</span> The latest version is out for Macs with Apple silicon. <a href="#help">Found a bug? Tell us.</a></p>
       <p class="pitch">Film and TV scheduling, from script to stripboard.</p>
       <p class="lede">A free, open-source desktop app for shooting schedules: script
         breakdown, the stripboard with its day breaks and banners, the calendar, the day
@@ -245,7 +245,7 @@ Day by day
             and its speaking characters as cast.</p>
           <ul class="fmt-list">
             <li><span>Fountain</span> Plain-text screenplays</li>
-            <li><span>Final Draft</span> Script files (.fdx), production tags included</li>
+            <li><span>.fdx</span> Script files, production tags included</li>
             <li><span>Revisions</span> A new draft merged in, tags and places kept</li>
           </ul>
         </div>
@@ -407,7 +407,6 @@ Day by day
         <h3 id="g-soon">On the roadmap</h3>
         <ul class="feats">
           <li><strong>Windows and Linux, tested</strong> Both build from the same code today; printing, keys and file types still need a hands-on check.</li>
-          <li><strong>Day counts into Method Budget</strong> Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.</li>
           <li><strong>Try it in your browser</strong> The app with an invented schedule, running in the browser with nothing to install.</li>
           <li><strong>Daylight saving per location</strong> Sunrise, sunset and call times that follow each location's clock changes.</li>
         </ul>
@@ -473,7 +472,7 @@ Day by day
         <div class="card">
           <span class="badge now">Available now</span>
           <h3>Coding agents</h3>
-          <p>An MCP server lets Claude Code and other agents import a script, fill in
+          <p>An MCP server lets coding agents import a script, fill in
             breakdown sheets, move strips, set day breaks and read the day out of days
             through the same engine. It only touches the folders you allow and nothing is
             sent anywhere.
@@ -504,8 +503,7 @@ Day by day
         </li>
         <li>
           <h3>Budget</h3>
-          <p>Method Budget's reader for the file is built; linking a schedule from inside its app,
-            so the counts become its shoot day and cast globals, is coming. Any other
+          <p>Method Budget reads it and sets its shoot day and cast globals from it. Any other
             budgeting tool can read the file too.</p>
         </li>
       </ol>
@@ -517,7 +515,7 @@ Day by day
     <div class="wrap">
       <p class="kicker">Download</p>
       <h2 id="download-title">Get Method Schedule</h2>
-      <p class="intro">Version 0.1.0 is out for Macs with Apple silicon. On any other
+      <p class="intro">The latest version is out for Macs with Apple silicon. On any other
         computer, build it from source in a few minutes with nothing but Rust.</p>
       <div class="cards">
         <div class="card">
@@ -548,12 +546,12 @@ Day by day
             <tr><th scope="row">Mac, Apple silicon</th><td>Yes, an app (<code>.dmg</code>)</td><td>Signed and notarized by Apple</td><td>By a person throughout development, and by the automated tests weekly</td></tr>
             <tr><th scope="row">Mac, Intel</th><td>No: the Mac app is for Apple silicon only</td><td></td><td></td></tr>
             <tr><th scope="row">Windows, 64-bit</th><td>Yes, an installer (<code>.exe</code>)</td><td>Not yet: Windows will warn that the publisher is unknown</td><td>Automated tests weekly; never installed by a person yet</td></tr>
-            <tr><th scope="row">Linux, 64-bit</th><td>Yes, <code>.deb</code> and AppImage</td><td>Not signed</td><td>Automated tests on every change; never installed by a person yet</td></tr>
+            <tr><th scope="row">Linux, 64-bit</th><td>Yes, <code>.deb</code> and AppImage</td><td>Not signed</td><td>Automated tests weekly; never installed by a person yet</td></tr>
           </tbody>
         </table>
       </div>
       <p class="fine">Not there yet: updates inside the app on Windows and Linux, a hands-on check of printing, keys and
-        file types on Windows and Linux, and linking a schedule from inside Method Budget.
+        file types on Windows and Linux.
         Windows and Linux: <a href="#help">help us get there</a>.</p>
       <div class="alpha-note">
         <span class="badge alpha">Early alpha</span>
@@ -634,9 +632,9 @@ Day by day
         </details>
         <details>
           <summary>Does it work with Method Budget?</summary>
-          <p>They share the open exchange file: Method Schedule writes the shoot days and day
-            counts today, Method Budget's reader for the file is built, and linking a schedule from
-            inside Method Budget is coming. See
+          <p>Yes. Method Schedule writes the shoot days and day counts to one open exchange file,
+            and Method Budget 0.5 and later reads it and sets its globals from them, after showing
+            you every change. Any other budgeting tool can read the file too. See
             <a href="#budget">The day out of days feeds the budget</a>.</p>
         </details>
         <details>

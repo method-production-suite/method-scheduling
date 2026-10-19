@@ -474,12 +474,6 @@ status = "soon"
 
 [[feature]]
 group = "beyond"
-title = "Day counts into Method Budget"
-text = "Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built."
-status = "soon"
-
-[[feature]]
-group = "beyond"
 title = "Try it in your browser"
 text = "The app with an invented schedule, running in the browser with nothing to install."
 status = "soon"
