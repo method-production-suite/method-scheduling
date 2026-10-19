@@ -914,6 +914,15 @@ front instead, decisions.md, entry 86): on macOS the app receives an open event,
 on the command line (`method-schedule-app film.mtsc` works too). When several files arrive, the
 first one opens. There is no single-instance handling yet on Windows and Linux.
 
+**The launcher's switches** (SUITE-STANDARDS.md section 2): `--check-for-updates` does
+Help > Check for Updates as the app starts, and `--open-sample` opens the sample (as Help >
+Open Sample) when no file is named. Open Recent's list is `recent.json` in the data folder
+(`~/Library/Application Support/com.methodschedule.desktop` on macOS,
+`%LOCALAPPDATA%\com.methodschedule.desktop` on Windows (the launcher reads `%APPDATA%`, then `%LOCALAPPDATA%`), `~/.local/share/com.methodschedule.desktop`
+on Linux), in the suite's shape: `[{"path": "/abs", "opened": "<RFC 3339>"}]`, newest
+first, so the launcher can show it. The app's first shape (`{"files": [...]}`) is still
+read and is written back in the new one.
+
 **Crash recovery, tested** (decisions.md, entry 200; `src/safety_crash.rs`). Each promise
 above has a test against the saving code: a child process running the same code is
 killed with `kill -9` mid-edit and the next run offers and reopens its recovery copies
