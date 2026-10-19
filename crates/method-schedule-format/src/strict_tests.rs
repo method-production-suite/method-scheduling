@@ -330,12 +330,14 @@ pub(crate) fn everything() -> Schedule {
         call: Some(420),
         wrap: Some(1500),
     });
-    s.plan.scenes_shot.push(method_schedule_core::plan::SceneShot {
-        sheet: s.sheets[0].id,
-        day: brk,
-        eighths: method_schedule_core::Eighths(4),
-        complete: true,
-    });
+    s.plan
+        .scenes_shot
+        .push(method_schedule_core::plan::SceneShot {
+            sheet: s.sheets[0].id,
+            day: brk,
+            eighths: method_schedule_core::Eighths(4),
+            complete: true,
+        });
     s.check().unwrap();
     s
 }
