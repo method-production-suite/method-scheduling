@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, GeoLocation, Lock, LockedScene, Plan, Turnaround, DEFAULT_LONG_DAY,
+    CallTime, DayShot, GeoLocation, Lock, LockedScene, Plan, SceneShot, Turnaround,
+    DEFAULT_LONG_DAY, MAX_WRAP,
 };
+use method_schedule_core::Eighths;
 
 use method_schedule_core::solar::DaylightSaving;
 
@@ -33,6 +35,35 @@ pub(crate) struct FilePlan {
     pinned: Vec<u32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     omitted: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    days_shot: Vec<FileDayShot>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    scenes_shot: Vec<FileSceneShot>,
+}
+
+/// A shoot day as shot (decision 224): what a production report wrote back.
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileDayShot {
+    day: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    call: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wrap: Option<u32>,
+}
+
+/// Part of a scene shot on one day (decision 224).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileSceneShot {
+    sheet: u32,
+    day: u32,
+    eighths: u32,
+    /// Left out when this day didn't finish the scene; `false` written is refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    complete: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -94,6 +125,26 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
         return None;
     }
     Some(FilePlan {
+        days_shot: p
+            .days_shot
+            .iter()
+            .map(|d| FileDayShot {
+                day: d.day.0,
+                date: d.date.map(|x| x.to_string()),
+                call: d.call,
+                wrap: d.wrap,
+            })
+            .collect(),
+        scenes_shot: p
+            .scenes_shot
+            .iter()
+            .map(|x| FileSceneShot {
+                sheet: x.sheet.0,
+                day: x.day.0,
+                eighths: x.eighths.0,
+                complete: x.complete.then_some(true),
+            })
+            .collect(),
         locations: p
             .locations
             .iter()
@@ -248,6 +299,74 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             board: BoardId(l.board),
             made: l.made.as_deref().map(date).transpose()?,
             scenes,
+        });
+    }
+    for d in f.days_shot {
+        if p.days_shot.iter().any(|x| x.day.0 == d.day) {
+            return Err(bad(format!("day {} is reported shot twice", d.day)));
+        }
+        if d.date.is_none() && d.call.is_none() && d.wrap.is_none() {
+            return Err(bad(format!(
+                "day {} is reported shot with no date, call or wrap: leave it out",
+                d.day
+            )));
+        }
+        if d.call.is_some_and(|m| m >= 24 * 60) {
+            return Err(bad(format!("day {}'s actual call is past 23:59", d.day)));
+        }
+        if d.wrap.is_some_and(|m| m == 0 || m > MAX_WRAP)
+            || matches!((d.call, d.wrap), (Some(c), Some(w)) if w <= c)
+        {
+            return Err(bad(format!(
+                "day {}'s actual wrap is out of range (1 to {MAX_WRAP}) or not after its call",
+                d.day
+            )));
+        }
+        p.days_shot.push(DayShot {
+            day: StripId(d.day),
+            date: d.date.as_deref().map(date).transpose()?,
+            call: d.call,
+            wrap: d.wrap,
+        });
+    }
+    for x in f.scenes_shot {
+        if x.complete == Some(false) {
+            return Err(default_given("complete", "false"));
+        }
+        let complete = x.complete == Some(true);
+        if p.scenes_shot
+            .iter()
+            .any(|o| o.sheet.0 == x.sheet && o.day.0 == x.day)
+        {
+            return Err(bad(format!(
+                "sheet {} is reported shot twice on day {}",
+                x.sheet, x.day
+            )));
+        }
+        if complete
+            && p.scenes_shot
+                .iter()
+                .any(|o| o.sheet.0 == x.sheet && o.complete)
+        {
+            return Err(bad(format!("sheet {} is reported finished twice", x.sheet)));
+        }
+        if x.eighths == 0 && !complete {
+            return Err(bad(format!(
+                "sheet {} is reported shot on day {} with no eighths and not finished: leave it out",
+                x.sheet, x.day
+            )));
+        }
+        if x.eighths > method_schedule_core::model::MAX_SHEET_EIGHTHS {
+            return Err(bad(format!(
+                "sheet {} reports too many eighths shot",
+                x.sheet
+            )));
+        }
+        p.scenes_shot.push(SceneShot {
+            sheet: SheetId(x.sheet),
+            day: StripId(x.day),
+            eighths: Eighths(x.eighths),
+            complete,
         });
     }
     p.pinned = f.pinned.into_iter().map(StripId).collect();

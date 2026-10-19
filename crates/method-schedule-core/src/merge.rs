@@ -907,6 +907,11 @@ fn remap(s: &mut Schedule, map: &BTreeMap<u32, u32>) {
     }
     let p = &mut s.plan;
     p.call_times.iter_mut().for_each(|c| m(&mut c.day.0));
+    p.days_shot.iter_mut().for_each(|d| m(&mut d.day.0));
+    for x in &mut p.scenes_shot {
+        m(&mut x.day.0);
+        m(&mut x.sheet.0);
+    }
     p.turnarounds.iter_mut().for_each(|x| m(&mut x.category.0));
     p.pinned.iter_mut().for_each(|x| m(&mut x.0));
     p.omitted.iter_mut().for_each(|x| m(&mut x.0));
@@ -1450,6 +1455,45 @@ impl M<'_> {
                     )
                 },
                 |c| clock_text(c.minutes as i32),
+            ),
+            days_shot: merge_keyed(
+                cx,
+                "plan:day_shot",
+                &b.days_shot,
+                &o.days_shot,
+                &t.days_shot,
+                |d| d.day.0,
+                |d| format!("The day closed by {} as shot", self.strip_name_by_id(d.day)),
+                |d| {
+                    let date = d.date.map_or("no date".to_string(), |x| x.to_string());
+                    let time = |m: Option<u32>| m.map_or("?".to_string(), |m| clock_text(m as i32));
+                    format!("{date}, call {}, wrap {}", time(d.call), time(d.wrap))
+                },
+            ),
+            scenes_shot: merge_keyed(
+                cx,
+                "plan:scene_shot",
+                &b.scenes_shot,
+                &o.scenes_shot,
+                &t.scenes_shot,
+                |x| format!("{}:{}", x.sheet.0, x.day.0),
+                |x| {
+                    format!(
+                        "What was shot of {} on the day closed by {}",
+                        [self.o, self.t, self.b]
+                            .iter()
+                            .find_map(|s| s.sheet(x.sheet))
+                            .map_or(GONE_SHEET.to_string(), sheet_name),
+                        self.strip_name_by_id(x.day)
+                    )
+                },
+                |x| {
+                    format!(
+                        "{} eighths{}",
+                        x.eighths.0,
+                        if x.complete { ", finished" } else { "" }
+                    )
+                },
             ),
             long_day: field(
                 cx,

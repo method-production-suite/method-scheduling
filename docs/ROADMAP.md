@@ -31,6 +31,13 @@ section. Everything else on this page goes ahead without waiting.
 - **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
+- **Unknown keys in a schedule file** (D224). Today the reader refuses any key it doesn't
+  know, which catches typos, hand edits gone wrong and files from a newer version before
+  anything is lost; the cost is that a file another app adds a key to won't open in an older
+  Method Schedule. **Recommended**: keep the reader strict, and add one reserved `extensions`
+  object (at the top level and on each object) that the reader keeps and writes back
+  untouched, for additions from other apps or newer versions. Not built: it changes what
+  every schedule file may hold.
 - **The browser build** (D222): **decided by the owner** (2026-10-18), all five as
   recommended. The partner hosts the whole page; Method Budget's partner terms apply; a
   read-only viewer keeps views, Find, printing, the call sheet and exports, with edits
@@ -212,6 +219,7 @@ kept or offered as a pick, in tests and in a live run.
 
 | Item | Size | Refs |
 |---|---|---|
+| What was shot, shown: the board marks scenes shot (dimmed when finished), pages left by day and sub-board, shot against planned in the reports, from `plan.days_shot` and `plan.scenes_shot` (D224; the keys are in, written by a production report) | M | D224, FORMAT.md |
 | Call sheets beyond the printed sheet (decision 207): crew calls, an advance schedule for the next days, a map; distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Try it in your browser: the engine as WebAssembly at `/try/` with an invented schedule | L | WEBSITE.md "Try it in your browser, later" |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east and New Zealand's (others keep a typed offset today) | S | D72, D193, D220, BYD-08 |

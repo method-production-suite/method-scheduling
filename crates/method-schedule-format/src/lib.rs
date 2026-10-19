@@ -2784,6 +2784,81 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn days_and_scenes_as_shot_round_trip_and_are_checked() {
+        use method_schedule_core::plan::{DayShot, SceneShot};
+        use method_schedule_core::Eighths;
+        let mut s = sample();
+        let breaks: Vec<_> = s.boards[0].sub_boards[0]
+            .strips
+            .iter()
+            .filter(|x| x.kind == StripKind::DayBreak)
+            .map(|x| x.id)
+            .collect();
+        let (d1, sheet) = (breaks[0], s.sheets[0].id);
+        // A scene started one day and finished the next, from a production report.
+        s.plan.days_shot.push(DayShot {
+            day: d1,
+            date: "2027-03-02".parse().ok(),
+            call: Some(420),
+            wrap: Some(1500),
+        });
+        s.plan.scenes_shot.push(SceneShot {
+            sheet,
+            day: d1,
+            eighths: Eighths(5),
+            complete: false,
+        });
+        let d2 = *breaks.get(1).unwrap_or(&d1);
+        if d2 != d1 {
+            s.plan.scenes_shot.push(SceneShot {
+                sheet,
+                day: d2,
+                eighths: Eighths(3),
+                complete: true,
+            });
+        }
+        s.check().unwrap();
+        let text = to_string(&s);
+        assert!(text.contains("\"days_shot\""), "{text}");
+        assert!(text.contains("\"wrap\": 1500"), "past midnight is fine");
+        assert!(!text.contains("\"complete\": false"), "false is left out");
+        let back = from_str(&text).unwrap();
+        assert_eq!(back, s);
+        assert_eq!(to_string(&back), text);
+        assert_eq!(
+            back.plan.eighths_shot(sheet),
+            Eighths(if d2 != d1 { 8 } else { 5 })
+        );
+        // Refused: a wrap before the call or past two days, a call past 23:59, false
+        // written, an empty day, nothing shot and not finished, the same sheet twice on a day.
+        for (from, to) in [
+            ("\"wrap\": 1500", "\"wrap\": 400"),
+            ("\"wrap\": 1500", "\"wrap\": 2881"),
+            ("\"call\": 420", "\"call\": 1440"),
+            (
+                "\"eighths\": 5",
+                "\"eighths\": 5,\n          \"complete\": false",
+            ),
+            ("\"eighths\": 5", "\"eighths\": 0"),
+            ("\"date\": \"2027-03-02\"", "\"date\": \"2027-02-30\""),
+        ] {
+            assert!(text.contains(from), "{from}");
+            let bad = text.replacen(from, to, 1);
+            assert!(from_str(&bad).is_err(), "{to}");
+        }
+        let mut twice = s.clone();
+        twice.plan.scenes_shot.push(s.plan.scenes_shot[0]);
+        assert!(twice.check().is_err());
+        assert!(from_str(&to_string(&twice)).is_err());
+        // A file without them is untouched (the sample has none).
+        let plain = sample();
+        assert_eq!(
+            to_string(&from_str(&to_string(&plain)).unwrap()),
+            to_string(&plain)
+        );
+    }
+
+    #[test]
     fn plan_round_trips_and_stays_out_while_empty() {
         use method_schedule_core::plan::{set_call_time, set_turnaround, GeoLocation};
         let mut s = sample();

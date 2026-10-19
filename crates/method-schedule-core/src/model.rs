@@ -5247,6 +5247,8 @@ impl Schedule {
         t.sheets.clear();
         t.plan.locks.clear();
         t.plan.call_times.clear();
+        t.plan.days_shot.clear();
+        t.plan.scenes_shot.clear();
         t.plan.pinned.clear();
         t.plan.omitted.clear();
         for e in &mut t.elements {

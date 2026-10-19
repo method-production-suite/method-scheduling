@@ -39,6 +39,40 @@ pub struct Plan {
     pub pinned: Vec<StripId>,
     /// Sheets a script revision no longer has. Kept, not deleted.
     pub omitted: Vec<SheetId>,
+    /// What each shoot day was when it was shot: its date, call and wrap (decision 224;
+    /// written by a production report, such as Method Day's).
+    pub days_shot: Vec<DayShot>,
+    /// What was shot of each scene on each day: eighths, and whether that finished it.
+    pub scenes_shot: Vec<SceneShot>,
+}
+
+/// A shoot day as shot. Each part is left unknown (`None`) until reported.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DayShot {
+    /// The day break that closes the day, as in [`CallTime`].
+    pub day: StripId,
+    /// The date it was shot; may differ from the planned date.
+    pub date: Option<Date>,
+    /// The actual call, minutes after midnight, 0 to 1439.
+    pub call: Option<u32>,
+    /// The actual wrap, minutes after the call day's midnight, up to 2880 (past midnight
+    /// is past 1440). After the call when both are known.
+    pub wrap: Option<u32>,
+}
+
+/// The longest a wrap may run: the end of the next day.
+pub const MAX_WRAP: u32 = 48 * 60;
+
+/// Part of a scene shot on one day.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SceneShot {
+    pub sheet: SheetId,
+    /// The day break of the day it was shot on, which need not be the day it is planned on.
+    pub day: StripId,
+    /// How much of the scene was shot that day.
+    pub eighths: crate::Eighths,
+    /// This day finished the scene. At most one entry per scene.
+    pub complete: bool,
 }
 
 /// A location name with its place on the map.
@@ -183,6 +217,26 @@ impl Plan {
     pub fn is_omitted(&self, sheet: SheetId) -> bool {
         self.omitted.contains(&sheet)
     }
+
+    /// The day closed by `day` as shot, if reported.
+    pub fn day_shot(&self, day: StripId) -> Option<&DayShot> {
+        self.days_shot.iter().find(|d| d.day == day)
+    }
+
+    /// Everything reported shot of a scene, day by day in the order written.
+    pub fn shot_of(&self, sheet: SheetId) -> impl Iterator<Item = &SceneShot> {
+        self.scenes_shot.iter().filter(move |x| x.sheet == sheet)
+    }
+
+    /// Whether a scene is reported finished.
+    pub fn is_complete(&self, sheet: SheetId) -> bool {
+        self.shot_of(sheet).any(|x| x.complete)
+    }
+
+    /// Eighths reported shot of a scene, over every day.
+    pub fn eighths_shot(&self, sheet: SheetId) -> crate::Eighths {
+        crate::Eighths(self.shot_of(sheet).map(|x| x.eighths.0).sum())
+    }
 }
 
 fn refuse(why: &str) -> Error {
@@ -222,6 +276,39 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
         }
         if !days.insert(c.day) {
             return broken(format!("day {} has two call times", c.day.0));
+        }
+    }
+    let mut shot_days = HashSet::new();
+    for d in &p.days_shot {
+        if !shot_days.insert(d.day) {
+            return broken(format!("day {} is reported shot twice", d.day.0));
+        }
+        if d.call.is_some_and(|m| m >= 24 * 60) {
+            return broken(format!("day {}'s actual call is past 23:59", d.day.0));
+        }
+        if d.wrap.is_some_and(|m| m == 0 || m > MAX_WRAP)
+            || matches!((d.call, d.wrap), (Some(c), Some(w)) if w <= c)
+        {
+            return broken(format!(
+                "day {}'s actual wrap is out of range or not after its call",
+                d.day.0
+            ));
+        }
+    }
+    let mut shots = HashSet::new();
+    let mut finished = HashSet::new();
+    for x in &p.scenes_shot {
+        if !shots.insert((x.sheet, x.day)) {
+            return broken(format!(
+                "sheet {} is reported shot twice on day {}",
+                x.sheet.0, x.day.0
+            ));
+        }
+        if x.eighths.0 > crate::model::MAX_SHEET_EIGHTHS {
+            return broken(format!("sheet {} reports too many eighths shot", x.sheet.0));
+        }
+        if x.complete && !finished.insert(x.sheet) {
+            return broken(format!("sheet {} is reported finished twice", x.sheet.0));
         }
     }
     if p.long_day.is_some_and(|m| m == 0 || m > 24 * 60) {
@@ -318,6 +405,9 @@ pub fn tidy(s: &mut Schedule) {
     let boards: HashSet<BoardId> = s.boards.iter().map(|b| b.id).collect();
     let p = &mut s.plan;
     p.call_times.retain(|c| breaks.contains(&c.day));
+    p.days_shot.retain(|d| breaks.contains(&d.day));
+    p.scenes_shot
+        .retain(|x| breaks.contains(&x.day) && sheets.contains(&x.sheet));
     p.turnarounds.retain(|t| cats.contains(&t.category));
     p.pinned.retain(|x| strips.contains(x));
     p.omitted.retain(|x| sheets.contains(x));
@@ -587,6 +677,12 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     if a.call_times != b.call_times {
         out.push("call times changed".to_string());
     }
+    if a.days_shot != b.days_shot {
+        out.push("days as shot changed".to_string());
+    }
+    if a.scenes_shot != b.scenes_shot {
+        out.push("scenes shot changed".to_string());
+    }
     if a.long_day != b.long_day {
         out.push(format!(
             "long day limit {} -> {}",
@@ -821,5 +917,41 @@ mod tests {
         );
         remove_day_breaks(&mut s, board, sub).unwrap();
         assert!(s.plan.call_times.is_empty(), "removed with their breaks");
+    }
+
+    #[test]
+    fn what_was_shot_is_checked_counted_and_dropped_with_its_day() {
+        use crate::days::remove_day_breaks;
+        let (mut s, board, sub, _) = crate::timeline::tests::split_two_days();
+        let (d1, d2) = (breaks(&s)[0], breaks(&s)[1]);
+        let sheet = s.sheets[0].id;
+        s.plan.days_shot.push(DayShot {
+            day: d1,
+            date: None,
+            call: Some(400),
+            wrap: Some(1460),
+        });
+        for (day, eighths, complete) in [(d1, 3, false), (d2, 2, true)] {
+            s.plan.scenes_shot.push(SceneShot {
+                sheet,
+                day,
+                eighths: crate::Eighths(eighths),
+                complete,
+            });
+        }
+        s.check().unwrap();
+        assert_eq!(s.plan.eighths_shot(sheet), crate::Eighths(5));
+        assert!(s.plan.is_complete(sheet));
+        assert_eq!(s.plan.day_shot(d1).and_then(|d| d.wrap), Some(1460));
+        // Finished twice, or a wrap before its call: refused.
+        let mut bad = s.clone();
+        bad.plan.scenes_shot[0].complete = true;
+        assert!(bad.check().is_err());
+        let mut bad = s.clone();
+        bad.plan.days_shot[0].wrap = Some(300);
+        assert!(bad.check().is_err());
+        // The day breaks go, and what was shot on them goes with them.
+        remove_day_breaks(&mut s, board, sub).unwrap();
+        assert!(s.plan.days_shot.is_empty() && s.plan.scenes_shot.is_empty());
     }
 }
