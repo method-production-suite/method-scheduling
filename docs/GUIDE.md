@@ -5,10 +5,12 @@ day and where to look after that. The app shows this same guide under Help > Use
 
 ## Getting started
 
-Choose **Help > Open Sample**. It opens *Saltmarsh Road*, a small invented feature: eight
-cast, 37 scenes, a main unit of eleven shoot days and a second unit of two, banners, a
-holiday, a fitting, a rehearsal, travel days and a red flag. It opens as a new, untitled
-schedule, so nothing you try in it changes the copy the app ships. Move strips, break days
+Choose **Help > Open Sample**. It opens *Field Station*, an invented feature: 90 scenes,
+nine cast (one of them never speaks), 18 shoot days at three locations with a company move,
+a second unit for a day, something in every breakdown category, banners, call times and
+red flags. The first time the app starts with nothing to open, it shows you this sample on
+its own. It opens as a new, untitled schedule, so nothing you try in it changes what the
+app ships. Move strips, break days
 again, look at the day out of days, print a report. When you want to keep it, Save asks
 where.
 

@@ -74,10 +74,15 @@ impl Safety {
             s.tidy();
         }
         let settings_file = dir.map(|d| d.join("settings.json"));
-        let settings = settings_file
+        let mut settings = settings_file
             .as_deref()
             .map(Settings::load)
             .unwrap_or_default();
+        // A settings file means the app has run here before (0.1.0 wrote one before the
+        // first-launch sample existed): no sample sprung on them.
+        if settings_file.as_deref().is_some_and(Path::is_file) {
+            settings.sample_shown = true;
+        }
         Safety {
             store,
             backups: dir.map(|d| Backups::new(&d.join("Backups"))),
@@ -105,6 +110,20 @@ impl Safety {
         if let Some(f) = &self.settings_file {
             let _ = s.save(f);
         }
+    }
+
+    /// True once, on the first launch: the sample hasn't been shown and no file was opened
+    /// first. Either way, from now on it never is again (Help > Open Sample still is).
+    pub fn first_launch_sample(&self, opening_a_file: bool) -> bool {
+        let mut s = lock(&self.settings);
+        if s.sample_shown {
+            return false;
+        }
+        s.sample_shown = true;
+        if let Some(f) = &self.settings_file {
+            let _ = s.save(f);
+        }
+        !opening_a_file
     }
 
     pub fn set_autosave(&self, on: bool) {
@@ -417,10 +436,13 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) {
     app.manage(Safety::new(dir.as_deref()));
     refresh_menu(app);
     let early = lock(&EARLY_OPEN).take();
-    if let Some(p) = early.or_else(|| path_from_args(std::env::args_os().skip(1))) {
-        *lock(&app.state::<Safety>().pending_open) = Some(p);
-    } else if launch_from_args(std::env::args_os().skip(1)).open_sample {
-        *lock(&app.state::<Safety>().pending_sample) = true;
+    let file = early.or_else(|| path_from_args(std::env::args_os().skip(1)));
+    let safety = app.state::<Safety>();
+    let first = safety.first_launch_sample(file.is_some());
+    if let Some(p) = file {
+        *lock(&safety.pending_open) = Some(p);
+    } else if first || launch_from_args(std::env::args_os().skip(1)).open_sample {
+        *lock(&safety.pending_sample) = true;
     }
     let handle = app.clone();
     std::thread::spawn(move || loop {
@@ -685,7 +707,12 @@ pub async fn open_pending<R: Runtime>(
             let next = crate::help::sample_session()?;
             replace(&state, &safety, next);
             refresh_menu(window.app_handle());
-            return app::finish(&window, &state.lock(), None).map(Some);
+            return app::finish(
+                &window,
+                &state.lock(),
+                Some(crate::help::SAMPLE_NOTICE.to_string()),
+            )
+            .map(Some);
         }
         return Ok(None);
     };
@@ -767,6 +794,32 @@ pub fn discard_recovered(safety: State<'_, Safety>, key: String) -> Vec<Recovery
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_sample_shows_on_the_first_launch_only() {
+        let dir = crate::safety::tests::temp_dir("first-launch");
+        // A brand-new data folder: the first launch with nothing to open gets it, once.
+        let first = Safety::new(Some(&dir));
+        assert!(first.first_launch_sample(false));
+        assert!(!first.first_launch_sample(false), "never twice");
+        drop(first);
+        assert!(
+            !Safety::new(Some(&dir)).first_launch_sample(false),
+            "nor after a restart"
+        );
+        // A person who opens their own file first never gets it.
+        let fresh = crate::safety::tests::temp_dir("first-launch-file");
+        let s = Safety::new(Some(&fresh));
+        assert!(!s.first_launch_sample(true));
+        assert!(!s.first_launch_sample(false));
+        // Someone with settings from an earlier version has launched before.
+        let old = crate::safety::tests::temp_dir("first-launch-old");
+        std::fs::write(old.join("settings.json"), r#"{"autosave": true}"#).unwrap();
+        assert!(!Safety::new(Some(&old)).first_launch_sample(false));
+        for d in [dir, fresh, old] {
+            std::fs::remove_dir_all(d).unwrap();
+        }
+    }
 
     #[test]
     fn the_launchers_switches_are_read_and_the_rest_ignored() {

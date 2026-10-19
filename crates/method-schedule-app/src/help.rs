@@ -4,10 +4,13 @@
 //! the three web pages it opens in the browser (the website, the suite's website and a
 //! pre-filled bug report), a fixed list so the page can't ask for any other address.
 //!
-//! The sample is `resources/sample.mtsc`, the invented production
-//! `method_schedule_core::sample::demo` makes (`method-schedule sample --demo` writes the
-//! same bytes; a test below holds the two together). Help > Open Sample opens it as a new,
-//! untitled schedule. The guide is docs/GUIDE.md, shown read-only in the page.
+//! The sample is Field Station, the suite's shared invented feature
+//! (`method_schedule_core::sample::field_station`, decision 223): Help > Open Sample opens it
+//! as a new, untitled schedule, and so does the first launch with nothing to open, once
+//! (SUITE-STANDARDS.md section 8). `resources/sample.mtsc` is the smaller demo production
+//! (`method-schedule sample --demo` writes the same bytes; a test below holds the two
+//! together), kept for the command line's tests. The guide is docs/GUIDE.md, shown
+//! read-only in the page.
 
 use tauri::{Manager, Runtime, WebviewWindow};
 
@@ -41,11 +44,16 @@ pub const SUITE: &str = "https://methodproduction.com";
 pub const NEW_ISSUE: &str =
     "https://github.com/method-production-suite/method-scheduling/issues/new";
 
-/// The sample as a new session: untitled, with nothing unsaved, so the first Save asks
-/// where and the copy built into the app is never written.
+/// What the window says when the sample opens (Help > Open Sample, the first launch,
+/// `--open-sample`).
+pub const SAMPLE_NOTICE: &str = "The Field Station sample: an invented production, untitled until you save it. Help > Open Sample brings it back any time.";
+
+/// The sample, Field Station (the suite's shared invented feature, decision 223), as a new
+/// session: untitled, marked "(sample)" in its title, with nothing unsaved, so the first
+/// Save asks where and nothing built into the app is ever written.
 pub fn sample_session() -> Result<Session, String> {
-    let schedule = method_schedule_format::from_str(SAMPLE)
-        .map_err(|e| format!("The sample can't be read: {e}"))?;
+    let mut schedule = method_schedule_core::sample::field_station();
+    schedule.title = "Field Station (sample)".to_string();
     Ok(Session::with_schedule(schedule, None))
 }
 
@@ -61,15 +69,7 @@ pub async fn open_sample<R: Runtime>(
         return Ok(None);
     }
     safety_app::replace(&state, &window.state::<Safety>(), next);
-    finish(
-        &window,
-        &state.lock(),
-        Some(
-            "The sample production, Saltmarsh Road: invented, and untitled until you save it."
-                .into(),
-        ),
-    )
-    .map(Some)
+    finish(&window, &state.lock(), Some(SAMPLE_NOTICE.into())).map(Some)
 }
 
 /// Help > User Guide: the guide's text, for the page to show.
@@ -288,8 +288,8 @@ mod tests {
         assert_eq!(s.display_name(), "Untitled");
         assert!(!s.is_dirty());
         assert!(!s.can_autosave_to_file());
-        assert_eq!(s.schedule().title, "Saltmarsh Road (sample)");
-        assert_eq!(s.schedule().sheets.len(), 37);
+        assert_eq!(s.schedule().title, "Field Station (sample)");
+        assert_eq!(s.schedule().sheets.len(), 90);
     }
 
     #[test]
