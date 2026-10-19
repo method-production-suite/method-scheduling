@@ -24,18 +24,19 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+
+pub use method_schedule_session::safety::{
+    autosave_due, content_hash, new_recovery_key, path_hash, valid_key, DiskCheck, DiskStamp,
+    AUTOSAVE_MAX_WAIT, AUTOSAVE_QUIET,
+};
 
 /// Schedule and script files larger than this are refused before they are read, so a stray
 /// huge file can't stall the app. The same limit as the command line.
 pub const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
 
-/// Autosave waits for this long without a change...
-pub const AUTOSAVE_QUIET: Duration = Duration::from_secs(3);
-/// ...but never longer than this after the first change it hasn't saved.
-pub const AUTOSAVE_MAX_WAIT: Duration = Duration::from_secs(30);
 /// File > Open Recent shows this many files.
 pub const RECENT_LIMIT: usize = 10;
 /// Backups kept per file.
@@ -45,14 +46,6 @@ pub const BACKUPS_KEPT: usize = 5;
 pub const BACKUP_GAP: Duration = Duration::from_secs(10 * 60);
 /// The extension recovery copies and backups are written with (the schedule file's).
 const EXT: &str = "mtsc";
-
-/// Whether an autosave is due: quiet for [`AUTOSAVE_QUIET`] since `last_change`, or
-/// [`AUTOSAVE_MAX_WAIT`] since `pending_since`, the first change not yet written anywhere.
-pub fn autosave_due(now: Instant, last_change: Instant, pending_since: Option<Instant>) -> bool {
-    let waited = |t: Instant| now.saturating_duration_since(t);
-    waited(last_change) >= AUTOSAVE_QUIET
-        || pending_since.is_some_and(|t| waited(t) >= AUTOSAVE_MAX_WAIT)
-}
 
 // ---------------------------------------------------------------------------
 // Names
@@ -68,33 +61,6 @@ fn unique() -> String {
         std::process::id(),
         N.fetch_add(1, Ordering::Relaxed)
     )
-}
-
-/// A stable 64-bit FNV-1a hash of a path, as 16 hex digits. Stable across runs and Rust
-/// versions (std's hasher is not), so a file's backups stay in one folder.
-pub fn path_hash(path: &Path) -> String {
-    format!(
-        "{:016x}",
-        content_hash(path.as_os_str().to_string_lossy().as_bytes())
-    )
-}
-
-/// A fresh recovery key for an open schedule: unique, so two copies of the app (or an old
-/// crash's copy of the same file) never write over each other. It starts with the path's
-/// hash, or `untitled`.
-pub fn new_recovery_key(path: Option<&Path>) -> String {
-    let base = path.map(path_hash).unwrap_or_else(|| "untitled".into());
-    format!("{base}-{}", unique())
-}
-
-/// Keys name files in the recovery folder, and the web view hands them back (to open or
-/// discard an entry), so only plain names are accepted.
-pub fn valid_key(key: &str) -> bool {
-    !key.is_empty()
-        && key.len() <= 96
-        && key
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
 /// Milliseconds since the Unix epoch.
@@ -339,59 +305,30 @@ pub fn same_file(a: &Path, b: &Path) -> bool {
         )
 }
 
-/// A 64-bit FNV-1a hash of file content: enough to tell versions apart.
-pub fn content_hash(bytes: &[u8]) -> u64 {
-    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-    for b in bytes {
-        h ^= u64::from(*b);
-        h = h.wrapping_mul(0x0100_0000_01b3);
-    }
-    h
-}
-
-/// The content of a file as the app last read or wrote it, to notice another program
-/// (a sync service, another computer, another app) changing it since: its size, its
-/// modification time and a hash of its content (decisions.md, entry 179).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct DiskStamp {
-    pub len: u64,
-    pub hash: u64,
-    /// When the file was last modified, as read just after this session read or wrote it.
-    /// Only a shortcut for [`DiskStamp::quick_check`]: the content decides.
-    pub modified: Option<SystemTime>,
-}
-
-/// How a file on disk compares with its [`DiskStamp`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DiskCheck {
-    /// The content we last read or wrote.
-    Same,
-    /// Different content, or a file we couldn't read.
-    Changed,
-    /// The file is gone (moved or deleted); a save puts it back.
-    Missing,
-}
-
-impl DiskStamp {
-    pub fn of(bytes: &[u8]) -> DiskStamp {
-        DiskStamp {
-            len: bytes.len() as u64,
-            hash: content_hash(bytes),
-            modified: None,
-        }
-    }
-
+/// Makes and checks [`DiskStamp`]s against files: the desktop's half of the stamp, whose
+/// data lives in the session crate.
+pub trait StampAt {
     /// The stamp of `bytes`, just read from or written to `path`, with the file's time.
-    pub fn at(bytes: &[u8], path: &Path) -> DiskStamp {
+    fn at(bytes: &[u8], path: &Path) -> DiskStamp;
+    /// Reads `path` and compares its content with this stamp. Always reads and hashes:
+    /// a write is refused on what the file holds, not on its size or time.
+    fn check(&self, path: &Path) -> DiskCheck;
+    /// [`StampAt::check`] for the check when the window gets focus: a file whose size
+    /// and modification time are both as stamped is taken as the same without reading
+    /// it, a different size is a change without reading it, and anything else (a new
+    /// time, no time to compare) is read and hashed. Never used to allow a write.
+    fn quick_check(&self, path: &Path) -> DiskCheck;
+}
+
+impl StampAt for DiskStamp {
+    fn at(bytes: &[u8], path: &Path) -> DiskStamp {
         DiskStamp {
             modified: fs::metadata(path).and_then(|m| m.modified()).ok(),
             ..DiskStamp::of(bytes)
         }
     }
 
-    /// Reads `path` and compares its content with this stamp. Always reads and hashes:
-    /// a write is refused on what the file holds, not on its size or time.
-    pub fn check(&self, path: &Path) -> DiskCheck {
+    fn check(&self, path: &Path) -> DiskCheck {
         match fs::read(path) {
             Ok(bytes) if self.matches(&bytes) => DiskCheck::Same,
             Ok(_) => DiskCheck::Changed,
@@ -400,16 +337,7 @@ impl DiskStamp {
         }
     }
 
-    /// Whether `bytes` are the content this stamp was made from.
-    pub fn matches(&self, bytes: &[u8]) -> bool {
-        bytes.len() as u64 == self.len && content_hash(bytes) == self.hash
-    }
-
-    /// [`DiskStamp::check`] for the check when the window gets focus: a file whose size
-    /// and modification time are both as stamped is taken as the same without reading
-    /// it, a different size is a change without reading it, and anything else (a new
-    /// time, no time to compare) is read and hashed. Never used to allow a write.
-    pub fn quick_check(&self, path: &Path) -> DiskCheck {
+    fn quick_check(&self, path: &Path) -> DiskCheck {
         let meta = match fs::metadata(path) {
             Ok(m) => m,
             Err(e) if e.kind() == io::ErrorKind::NotFound => return DiskCheck::Missing,
@@ -1081,19 +1009,6 @@ pub(crate) mod tests {
             .collect();
         v.sort();
         v
-    }
-
-    #[test]
-    fn autosave_waits_for_quiet_but_not_forever() {
-        let t0 = Instant::now();
-        let s = |n: u64| t0 + Duration::from_secs(n);
-        assert!(!autosave_due(s(2), t0, Some(t0)));
-        assert!(autosave_due(s(3), t0, Some(t0)));
-        // A change every few seconds: the 30 s cap still saves.
-        assert!(!autosave_due(s(29), s(28), Some(t0)));
-        assert!(autosave_due(s(30), s(29), Some(t0)));
-        // A clock that steps back never panics.
-        assert!(!autosave_due(t0, s(10), Some(s(10))));
     }
 
     #[test]

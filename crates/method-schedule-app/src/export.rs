@@ -344,6 +344,7 @@ mod tests {
     use super::*;
     use crate::board;
     use crate::safety::tests::temp_dir;
+    use crate::session::SessionFiles;
     use crate::session::{read_script, Session};
     use method_schedule_format::export::Cell;
 

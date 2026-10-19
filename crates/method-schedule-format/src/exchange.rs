@@ -270,11 +270,14 @@ pub fn fnv1a64(bytes: &[u8]) -> String {
 /// Today's date on the computer's own clock, in its time zone: the date an exchange file
 /// is stamped with. A schedule's dates are local dates, so a file made late in the
 /// evening carries that evening's date, not the next day's in UTC. Falls back to UTC
-/// when the time zone can't be read.
+/// when the time zone can't be read. Not on WebAssembly, where the standard clock
+/// panics: a browser host passes its own date, so a call there doesn't compile.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn local_today() -> Option<Date> {
     local::today().or_else(utc_today)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn utc_today() -> Option<Date> {
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

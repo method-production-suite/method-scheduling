@@ -150,6 +150,7 @@ pub async fn new_from_template<R: Runtime>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::session::SessionFiles;
     use method_schedule_core::model::Sheet;
 
     #[test]
