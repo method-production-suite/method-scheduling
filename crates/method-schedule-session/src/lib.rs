@@ -27,3 +27,35 @@ pub mod view;
 
 pub use session::Session;
 pub use view::View;
+
+#[cfg(test)]
+mod tests {
+    /// Nothing outside src/clock.rs reads the standard clock: on wasm32 it compiles and
+    /// then panics when called, so `cargo xtask wasm-check` can't catch it. Tests (after
+    /// each file's `mod tests`) may, since they run on the desktop.
+    #[test]
+    fn only_the_clock_reads_the_time() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut found = Vec::new();
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path
+                .file_name()
+                .is_some_and(|n| n == "clock.rs" || n == "lib.rs")
+            {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).unwrap();
+            let code = text.split("#[cfg(test)]\nmod tests").next().unwrap();
+            for needle in ["SystemTime::now", "Instant::now", "process::id"] {
+                if code.contains(needle) {
+                    found.push(format!("{}: {needle}", path.display()));
+                }
+            }
+        }
+        assert!(
+            found.is_empty(),
+            "read the time through clock.rs: {found:?}"
+        );
+    }
+}

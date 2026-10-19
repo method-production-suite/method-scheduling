@@ -1881,14 +1881,10 @@ const MONTHS: [&str; 12] = [
     "December",
 ];
 
-/// Today, as the computer's clock has it in UTC: the Calendar tab's month when the
-/// sub-board has no start date.
+/// Today in UTC, on the clock the host installed (src/clock.rs): the Calendar tab's
+/// month when the sub-board has no start date.
 fn today() -> Date {
-    let secs = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    Date((secs / 86_400) as i32)
+    Date((crate::clock::wall_ms() / 86_400_000) as i32)
 }
 
 /// The Calendar tab of sub-board `sub` for `year` and `month` (1 to 12); without them, the
