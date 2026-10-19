@@ -61,5 +61,5 @@ commands for each step; how the build, signing and updates work is in
 
 ## After publishing
 
-- **Website**: ask MOrg to sync and deploy (the website copies `site/` from origin/main),
+- **Website**: ask MOrg to sync and deploy once the release is published (the website copies `site/` from the newest published release tag),
   and to change Method Schedule's `status` or `platforms` in `apps.toml` if they moved.

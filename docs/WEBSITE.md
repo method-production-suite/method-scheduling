@@ -13,7 +13,7 @@ docs/features.toml ───┐                       ┌─> README.md         
 docs/parity/          ├─> scripts/site.py ────┼─> site/index.html          (feature list, What's new, repo links)
   features.csv ───────┤   (--check in CI)     └─> site/releases/index.html (every release note, repo links)
 docs/releases/*.md ───┘                                │
-                     the suite website repo copies site/ from origin/main (below)
+                     the suite website repo copies site/ from the latest published release tag (below)
                                                        │
                                                 methodschedule.com
 ```
@@ -169,13 +169,18 @@ the site gets a build step), and its page may need a script-allowing CSP of its 
 methodschedule.com is served by the Method Production Suite's one website, not from this
 repository (since 2026-10-16, decision 209). The website repository,
 `method-production-suite/website` (local checkout `../website`), copies this repository's
-`site/` folder from what is pushed to `origin/main` (`python3 tools/sync.py schedule`
-there), adds the suite bar above every page and the suite band below, and deploys to
-Cloudflare Pages. A local commit never goes live: only a push, then a sync.
+`site/` folder (`python3 tools/sync.py schedule` there), adds the suite bar above every
+page and the suite band below, and deploys to Cloudflare Pages.
 
-So: change `site/` here (through `scripts/site.py` where it is generated), commit, push,
-then ask the website session (MOrg) to sync and deploy, or run the sync there and open a
-pull request in that repository. This repository has no Pages workflow and no CNAME; the
+**The site follows the latest published release** (the owner's rule, 2026-10-18): from
+v0.1.0 on, the sync copies `site/` from the newest published release tag, not from `main`,
+so the site only describes what can be downloaded. A feature merged after a release
+reaches the site with the next release. Before v0.1.0 the sync copied `main`.
+
+So: change `site/` here (through `scripts/site.py` where it is generated) in the pull
+request that makes the change; it goes live when the next release is published and MOrg
+syncs. A fix the site needs sooner (a broken link) goes to MOrg, who owns the website
+repository and decides how it goes out. This repository has no Pages workflow and no CNAME; the
 domain's DNS lives with the website.
 
 ## For the owner: still to do
