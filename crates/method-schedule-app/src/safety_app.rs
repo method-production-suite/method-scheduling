@@ -61,6 +61,8 @@ pub struct Safety {
     writer: Mutex<()>,
     /// A file the system asked us to open, waiting for the page.
     pending_open: Mutex<Option<PathBuf>>,
+    /// Started with `--open-sample` and no file: the sample waits for the page.
+    pending_sample: Mutex<bool>,
 }
 
 impl Safety {
@@ -84,6 +86,7 @@ impl Safety {
             recent: Mutex::new(RecentFiles::load(dir.map(|d| d.join("recent.json")))),
             writer: Mutex::new(()),
             pending_open: Mutex::new(None),
+            pending_sample: Mutex::new(false),
         }
     }
 
@@ -372,6 +375,28 @@ pub fn leaving(state: &AppState, safety: &Safety) {
 
 /// The first command-line argument that names an existing file (Windows and Linux pass a
 /// double-clicked file this way; options are skipped).
+/// The switches the app takes besides a file (SUITE-STANDARDS.md section 2, for the
+/// launcher): `--check-for-updates` does Help > Check for Updates, and `--open-sample`
+/// opens the sample when no file is named.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Launch {
+    pub check_for_updates: bool,
+    pub open_sample: bool,
+}
+
+/// Reads [`Launch`] from the command line; anything else is ignored.
+pub fn launch_from_args(args: impl IntoIterator<Item = std::ffi::OsString>) -> Launch {
+    let mut out = Launch::default();
+    for a in args {
+        match a.to_str() {
+            Some("--check-for-updates") => out.check_for_updates = true,
+            Some("--open-sample") => out.open_sample = true,
+            _ => {}
+        }
+    }
+    out
+}
+
 pub fn path_from_args(args: impl IntoIterator<Item = std::ffi::OsString>) -> Option<PathBuf> {
     args.into_iter()
         .filter(|a| !a.to_string_lossy().starts_with('-'))
@@ -385,7 +410,7 @@ pub fn path_from_args(args: impl IntoIterator<Item = std::ffi::OsString>) -> Opt
 /// Sets everything up when the app starts: the data folder, the menu's recent list and
 /// Autosave check, a file named on the command line, and the autosave timer.
 pub fn init<R: Runtime>(app: &AppHandle<R>) {
-    let dir = app.path().app_local_data_dir().ok();
+    let dir = app.path().app_data_dir().ok();
     if let Some(d) = &dir {
         let _ = safety::create_private_dir(d);
     }
@@ -394,6 +419,8 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) {
     let early = lock(&EARLY_OPEN).take();
     if let Some(p) = early.or_else(|| path_from_args(std::env::args_os().skip(1))) {
         *lock(&app.state::<Safety>().pending_open) = Some(p);
+    } else if launch_from_args(std::env::args_os().skip(1)).open_sample {
+        *lock(&app.state::<Safety>().pending_sample) = true;
     }
     let handle = app.clone();
     std::thread::spawn(move || loop {
@@ -654,6 +681,12 @@ pub async fn open_pending<R: Runtime>(
     safety: State<'_, Safety>,
 ) -> CmdResult<Option<View>> {
     let Some(path) = lock(&safety.pending_open).take() else {
+        if std::mem::take(&mut *lock(&safety.pending_sample)) {
+            let next = crate::help::sample_session()?;
+            replace(&state, &safety, next);
+            refresh_menu(window.app_handle());
+            return app::finish(&window, &state.lock(), None).map(Some);
+        }
         return Ok(None);
     };
     crate::windows::refuse_if_open_elsewhere(window.app_handle(), &path, window.label())?;
@@ -734,6 +767,25 @@ pub fn discard_recovered(safety: State<'_, Safety>, key: String) -> Vec<Recovery
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_launchers_switches_are_read_and_the_rest_ignored() {
+        let args = |v: &[&str]| v.iter().map(std::ffi::OsString::from).collect::<Vec<_>>();
+        assert_eq!(launch_from_args(args(&[])), Launch::default());
+        assert_eq!(
+            launch_from_args(args(&["--open-sample", "film.mtsc", "--check-for-updates"])),
+            Launch {
+                check_for_updates: true,
+                open_sample: true
+            }
+        );
+        assert_eq!(
+            launch_from_args(args(&["--open-sample=yes", "-psn_0_1234"])),
+            Launch::default()
+        );
+        // A switch is never taken for a file.
+        assert_eq!(path_from_args(args(&["--open-sample"])), None);
+    }
     use crate::board;
     use crate::safety::tests::temp_dir;
     use crate::safety::AUTOSAVE_QUIET;

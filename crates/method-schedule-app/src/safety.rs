@@ -71,13 +71,11 @@ pub fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
-/// `2026-10-09 14.03.22.123` (UTC) for backup file names: sorts in time order and is
-/// legal in file names everywhere. Integers only.
-pub fn utc_stamp(ms: u64) -> String {
+/// The civil date and time of `ms` after the Unix epoch, in UTC: (year, month, day,
+/// seconds into the day). Howard Hinnant's algorithm, integers only.
+fn civil(ms: u64) -> (i64, i64, i64, u64) {
     let secs = ms / 1000;
     let days = (secs / 86_400) as i64;
-    let rem = secs % 86_400;
-    // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
     let z = days + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z.rem_euclid(146_097);
@@ -87,12 +85,31 @@ pub fn utc_stamp(ms: u64) -> String {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
+    (year, month, day, secs % 86_400)
+}
+
+/// `2026-10-09 14.03.22.123` (UTC) for backup file names: sorts in time order and is
+/// legal in file names everywhere.
+pub fn utc_stamp(ms: u64) -> String {
+    let (year, month, day, rem) = civil(ms);
     format!(
         "{year:04}-{month:02}-{day:02} {:02}.{:02}.{:02}.{:03}",
         rem / 3600,
         rem / 60 % 60,
         rem % 60,
         ms % 1000
+    )
+}
+
+/// `2026-10-09T14:03:22Z`: RFC 3339 in UTC, for `recent.json` (SUITE-STANDARDS.md
+/// section 2, read by the launcher).
+pub fn rfc3339(ms: u64) -> String {
+    let (year, month, day, rem) = civil(ms);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        rem / 60 % 60,
+        rem % 60
     )
 }
 
@@ -794,34 +811,67 @@ impl Settings {
 // ---------------------------------------------------------------------------
 // Recent files
 
-#[derive(Default, Serialize, Deserialize)]
-struct RecentJson {
-    files: Vec<String>,
+/// One line of `recent.json`: the suite's shape (SUITE-STANDARDS.md section 2), which the
+/// launcher reads: `[{"path": "/abs", "opened": "<RFC 3339>"}]`, newest first.
+#[derive(Serialize, Deserialize)]
+struct RecentEntry {
+    path: String,
+    #[serde(default)]
+    opened: String,
+}
+
+/// What `recent.json` may hold: the suite's list, or the app's first shape
+/// (`{"files": [...]}`, read once and written back as the list).
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RecentJson {
+    Entries(Vec<RecentEntry>),
+    Files { files: Vec<String> },
 }
 
 /// File > Open Recent: the last [`RECENT_LIMIT`] schedules opened or saved, newest first,
-/// kept in `recent.json` (when there is a file to keep it in).
+/// kept in `recent.json` (when there is a file to keep it in), each with when it was last
+/// opened.
 #[derive(Debug, Default)]
 pub struct RecentFiles {
     file: Option<PathBuf>,
     list: Vec<PathBuf>,
+    /// When each of `list` was opened (RFC 3339, UTC), in the same order (for a file read
+    /// from the first shape, its last change; empty if even that can't be read).
+    opened: Vec<String>,
 }
 
 impl RecentFiles {
     /// Reads the list from `file`; a missing or unreadable file is an empty list.
     pub fn load(file: Option<PathBuf>) -> RecentFiles {
-        let list = file
+        let entries: Vec<(String, String)> = match file
             .as_deref()
             .and_then(read_small)
             .and_then(|t| serde_json::from_str::<RecentJson>(&t).ok())
-            .unwrap_or_default()
-            .files
+        {
+            Some(RecentJson::Entries(v)) => v.into_iter().map(|e| (e.path, e.opened)).collect(),
+            // The first shape kept no dates: each file's last change stands in.
+            Some(RecentJson::Files { files }) => files
+                .into_iter()
+                .map(|p| {
+                    let opened = fs::metadata(&p)
+                        .and_then(|m| m.modified())
+                        .ok()
+                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                        .map(|d| rfc3339(d.as_millis() as u64))
+                        .unwrap_or_default();
+                    (p, opened)
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+        let (list, opened) = entries
             .into_iter()
-            .filter(|s| !s.is_empty())
-            .map(PathBuf::from)
+            .filter(|(p, _)| !p.is_empty())
             .take(RECENT_LIMIT)
-            .collect();
-        RecentFiles { file, list }
+            .map(|(p, o)| (PathBuf::from(p), o))
+            .unzip();
+        RecentFiles { file, list, opened }
     }
 
     pub fn paths(&self) -> &[PathBuf] {
@@ -831,16 +881,26 @@ impl RecentFiles {
     /// Puts `path` at the top (once), keeping at most [`RECENT_LIMIT`].
     pub fn add(&mut self, path: &Path) -> io::Result<()> {
         let path = fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-        self.list.retain(|p| *p != path);
+        if let Some(at) = self.list.iter().position(|p| *p == path) {
+            self.list.remove(at);
+            self.opened.remove(at);
+        }
         self.list.insert(0, path);
+        self.opened.insert(0, rfc3339(now_ms()));
         self.list.truncate(RECENT_LIMIT);
+        self.opened.truncate(RECENT_LIMIT);
         self.save()
     }
 
     /// Drops files that no longer exist. True if any were dropped.
     pub fn prune(&mut self) -> bool {
         let before = self.list.len();
-        self.list.retain(|p| p.is_file());
+        let kept: Vec<(PathBuf, String)> = std::mem::take(&mut self.list)
+            .into_iter()
+            .zip(std::mem::take(&mut self.opened))
+            .filter(|(p, _)| p.is_file())
+            .collect();
+        (self.list, self.opened) = kept.into_iter().unzip();
         let changed = self.list.len() != before;
         if changed {
             let _ = self.save();
@@ -850,6 +910,7 @@ impl RecentFiles {
 
     pub fn clear(&mut self) -> io::Result<()> {
         self.list.clear();
+        self.opened.clear();
         self.save()
     }
 
@@ -860,13 +921,17 @@ impl RecentFiles {
         if let Some(dir) = file.parent() {
             create_private_dir(dir)?;
         }
-        let json = RecentJson {
-            files: self
-                .list
-                .iter()
-                .filter_map(|p| p.to_str().map(str::to_string))
-                .collect(),
-        };
+        let json: Vec<RecentEntry> = self
+            .list
+            .iter()
+            .zip(&self.opened)
+            .filter_map(|(p, o)| {
+                p.to_str().map(|path| RecentEntry {
+                    path: path.to_string(),
+                    opened: o.clone(),
+                })
+            })
+            .collect();
         let bytes = serde_json::to_vec_pretty(&json).map_err(io::Error::other)?;
         write_atomically(file, &bytes, Access::Private)
     }
@@ -1351,9 +1416,41 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn recent_json_is_the_suites_list_and_reads_the_first_shape() {
+        let dir = temp_dir("recent-shape");
+        let store = dir.join("recent.json");
+        let a = dir.join("a.mtsc");
+        fs::write(&a, "{}").unwrap();
+        let a = fs::canonicalize(a).unwrap();
+        // The first shape is read, then written back as the suite's list.
+        fs::write(&store, format!(r#"{{"files": ["{}", ""]}}"#, a.display())).unwrap();
+        let mut r = RecentFiles::load(Some(store.clone()));
+        assert_eq!(r.paths(), std::slice::from_ref(&a));
+        assert!(
+            r.opened[0].ends_with('Z'),
+            "the file's last change stands in"
+        );
+        r.add(&a).unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&fs::read(&store).unwrap()).unwrap();
+        let list = v.as_array().expect("a list");
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0]["path"], a.to_str().unwrap());
+        let opened = list[0]["opened"].as_str().unwrap();
+        assert!(
+            opened.len() == 20 && opened.ends_with('Z') && opened.as_bytes()[10] == b'T',
+            "{opened}"
+        );
+        assert_eq!(RecentFiles::load(Some(store)).paths(), [a]);
+        assert_eq!(rfc3339(1_791_554_602_123), "2026-10-09T14:03:22Z");
+        assert_eq!(rfc3339(0), "1970-01-01T00:00:00Z");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn recent_labels_tell_same_named_files_apart() {
         let r = RecentFiles {
             file: None,
+            opened: vec![String::new(); 3],
             list: vec![
                 PathBuf::from("/films/One/board.mtsc"),
                 PathBuf::from("/films/Two/board.mtsc"),

@@ -2002,6 +2002,11 @@ pub fn run() {
             safety_app::init(app.handle());
             // Updates: the settings, What's New once after one, the timer (src/updater.rs).
             crate::updater::init(app.handle());
+            // `--check-for-updates` (the launcher's switch): Help > Check for Updates.
+            if safety_app::launch_from_args(std::env::args_os().skip(1)).check_for_updates {
+                let handle = app.handle().clone();
+                std::thread::spawn(move || crate::updater::check_now(&handle, true));
+            }
             if let Some(w) = app.get_webview_window(MAIN) {
                 let state = crate::docs::doc_of(&w);
                 let _ = w.set_title(&state.title());
