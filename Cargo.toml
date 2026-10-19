@@ -5,7 +5,9 @@ members = [
     "crates/method-schedule-core",
     "crates/method-schedule-format",
     "crates/method-schedule-cli",
+    "crates/method-schedule-session",
     "crates/method-schedule-app",
+    "crates/xtask",
 ]
 
 [workspace.package]

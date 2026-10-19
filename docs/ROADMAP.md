@@ -30,16 +30,11 @@ section. Everything else on this page goes ahead without waiting.
 - **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
-- **The browser build** (D222, [web-session.md](research/web-session.md)). Five questions,
-  each built on its recommendation unless the owner says otherwise:
-  1. The partner hosts the whole page, not just the engine. **Built on.**
-  2. Their storage, their server's sharing, a read-only switch, clean room both ways
-     (Method Budget's partner terms). **Built on.**
-  3. A read-only viewer keeps every view, Find, printing, the call sheet and the exports;
-     edits, undo and imports are refused. **Built on.**
-  4. Copy Method Budget's shim and xtask now and move both into `method-libs` later.
-     **Built on.**
-  5. A `/try/` demo with Field Station as the last phase. **Recommended**, yes.
+- **The browser build** (D222): **decided by the owner** (2026-10-18), all five as
+  recommended. The partner hosts the whole page; Method Budget's partner terms apply; a
+  read-only viewer keeps views, Find, printing, the call sheet and exports, with edits
+  refused; Method Budget's shim is copied now and moves to `method-libs` later; the `/try/`
+  demo with Field Station comes last.
 - Strip designer "scale to content" (D87, D185): **built on the recommendation, dropped**
   (D221). The reference app's "Scale height" changed nothing visible (screen block 6), and
   strips already size to their lines.
@@ -122,11 +117,14 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| The plan brought up to date: wasm check, seams (clock, files, pictures, sharing), every command mapped | S | D222, web-session.md |
-| `method-schedule-session`: the injected clock, the window-free modules moved with their tests, the desktop re-exporting them, `cargo xtask wasm-check` in CI | L | web-session.md phase 1 |
+| `method-schedule-session`: the window-free modules moved with their tests, routed through the clock, the desktop re-exporting them | L | web-session.md phase 1 |
 | `Host::dispatch`, `COMMANDS`, `COMMANDS_VERSION`; files in and out as base64; the picture store; `host_info`; the read-only switch | M | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
+
+Done: the plan brought up to date (wasm check, seams, every command mapped), and the
+crate itself with Method Budget's injected clock and `cargo xtask wasm-check` in CI, which
+also fails if `getrandom` appears under the session.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.

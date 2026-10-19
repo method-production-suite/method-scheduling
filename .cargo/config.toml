@@ -1,0 +1,4 @@
+# `cargo xtask <command>` runs the tooling in crates/xtask. Nothing else is
+# configured here.
+[alias]
+xtask = "run --quiet --locked --package xtask --"
