@@ -8,6 +8,13 @@ on:
   pull_request:
 permissions:
   contents: read
+# SUITE-STANDARDS.md section 6: no incremental build and line tables only for debug
+# information, so CI builds are smaller and quicker. There are no caches; if one is added,
+# only main saves it.
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}

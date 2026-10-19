@@ -1,0 +1,19 @@
+# SUITE-STANDARDS.md section 6: version updates grouped into one pull request a week per
+# ecosystem, never for releases younger than the 14-day crate cooldown. Security updates
+# are GitHub's own and stay separate, one pull request each, so a fix is never held up
+# by a batch. Actions are left out: they stay pinned to the suite's shared SHAs, which MOrg
+# moves for every repository at once.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 14
+    groups:
+      cargo-weekly:
+        applies-to: version-updates
+        patterns: ["*"]
+    open-pull-requests-limit: 2
