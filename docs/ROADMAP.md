@@ -150,7 +150,7 @@ exchange file. Alongside M2b.
 |---|---|---|
 | Pictures on elements: a few props and vehicles, drawn (not generated), kept beside the fixture | S | D223 |
 | Help > Open Sample opens Field Station (today: Saltmarsh Road) as an untitled copy marked Sample, never the bundled file | S | help.rs |
-| First launch with nothing to open: Field Station as that untitled copy, with a quiet line saying so; a setting to turn it off | S | safety_app.rs, reportsetup.rs |
+| First launch with nothing to open: Field Station as that untitled copy, with a quiet line saying so, once and never again (no setting: the owner dropped it, 2026-10-18; Help > Open Sample brings it back) | S | safety_app.rs |
 
 Done (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
 script, our first 11 scenes kept; Field Station rebuilt from it with the real importer
