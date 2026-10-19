@@ -56,7 +56,9 @@ commands for each step; how the build, signing and updates work is in
   account, through the repository's credential helper). `release.yml` drafts the release
   with `Method-Schedule-macOS.dmg`, `Method-Schedule-windows-x64-setup.exe`,
   `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` and, when the
-  updater secrets are set, the update archive and `latest.json`.
+  updater secrets are set, the update archive and `latest.json`, plus `SHA256SUMS`
+  listing every one of them by bare name (checked before upload; the launcher verifies
+  downloads against it).
 - **Check the draft**, then publish it, as the checklist says.
 
 ## After publishing
