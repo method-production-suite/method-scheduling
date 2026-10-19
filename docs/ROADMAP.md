@@ -117,6 +117,7 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
+| Hardening from #26's review: `with_schedule` runs `Schedule::check` (or says why not), the `mark_saved`/`restamp` contract written down and tested in the session crate, and `moved_tests.rs` split so the session crate tests its own code | S | #26 |
 | `method-schedule-session`, the rest of the window-free modules: `find`, `events`, `breakdown`, `flagcolors`, `split`, the data side of `reports`, `reportsetup`, `layouts`, `plan` and `diffmerge`, and `docs` | M | web-session.md phase 1 |
 | `Host::dispatch`, `COMMANDS`, `COMMANDS_VERSION`; files in and out as base64; the picture store; `host_info`; the read-only switch | M | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
@@ -147,11 +148,16 @@ exchange file. Alongside M2b.
 
 | Item | Size | Refs |
 |---|---|---|
-| The shared shape, agreed with Method Budget (2026-10-18): 18 shoot days, Mon 2027-05-03 to Wed 2027-05-26 (weeks of 5, 5, 5, 3), 5 prep and 2 wrap days; Cold Spring field station 12 days, Hollins Ridge fire road 3, Kettle Lake boathouse 3 (one company move); DELACROIX, MARA, TEO, IVERSEN and four day players; Background with counts; a 1-day Second Unit for the ridge drive (day 14) | S | D215 |
-| The script grown to about 80 pages and 90 scenes, invented, neutral title page kept: Storyteller's to extend or ours to send back (asked 2026-10-18) | M | fixtures/scripts/field-station.fountain |
-| Field Station rebuilt from it with the real importer: every element category, banners and day breaks, the calendar, red flags, a call sheet, pictures on elements; its exchange file sent to Method Budget with its `days_hash`; every picture retaken with Budget's | M | `method-schedule sample --field-station`, capture-screens.mjs |
+| Pictures on elements: a few props and vehicles, drawn (not generated), kept beside the fixture | S | D223 |
 | Help > Open Sample opens Field Station (today: Saltmarsh Road) as an untitled copy marked Sample, never the bundled file | S | help.rs |
 | First launch with nothing to open: Field Station as that untitled copy, with a quiet line saying so; a setting to turn it off | S | safety_app.rs, reportsetup.rs |
+
+Done (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
+script, our first 11 scenes kept; Field Station rebuilt from it with the real importer
+(18 days, three locations, a second unit, nine cast with one silent, an element in every
+category, background counts, banners, call times, red flags, prep 2027-04-05 to wrap
+2027-06-09); its exchange file in Method Budget's $1M sample (`days_hash` e9245ad76e787b1e);
+every picture retaken.
 
 ---
 
