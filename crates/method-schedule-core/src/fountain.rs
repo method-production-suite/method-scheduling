@@ -140,7 +140,14 @@ pub fn parse_with(text: &str, lines_per_page: u32) -> ImportedScript {
             }
             let mut height = 1;
             i += 1;
-            while i < lines.len() && !lines[i].trim().is_empty() {
+            // A line of exactly two spaces keeps the speech going: a second paragraph of
+            // the same dialogue (Fountain's rule), one blank line on the page.
+            while i < lines.len() && (!lines[i].trim().is_empty() || is_dialogue_gap(lines[i])) {
+                if is_dialogue_gap(lines[i]) {
+                    height += 1;
+                    i += 1;
+                    continue;
+                }
                 let d = lines[i].trim();
                 let width = if d.starts_with('(') {
                     PAREN_WIDTH
@@ -345,6 +352,11 @@ fn is_character(t: &str) -> bool {
     name.chars().any(|c| c.is_alphabetic()) && !name.chars().any(|c| c.is_lowercase())
 }
 
+/// Fountain's two-space line inside dialogue: the speech goes on after a blank line.
+fn is_dialogue_gap(line: &str) -> bool {
+    line.trim_end_matches('\r') == "  "
+}
+
 /// The name without `@`, extensions in parentheses or the dual-dialogue `^`.
 pub(crate) fn character_name(t: &str) -> String {
     let t = t.strip_prefix('@').unwrap_or(t);
@@ -486,6 +498,21 @@ Yippee.
         assert!(s.scenes[2].characters.is_empty());
         // Forced with @, mixed case kept.
         assert_eq!(s.scenes[3].characters, ["McCLANE"]);
+    }
+
+    #[test]
+    fn a_two_space_line_keeps_a_speech_going() {
+        let two =
+            "INT. HUT - NIGHT\n\nMARA\nFirst part.\n  \nSecond part.\n\nDELACROIX ^\nAt once.\n";
+        let s = parse(two);
+        assert_eq!(s.scenes[0].characters, ["MARA", "DELACROIX"]);
+        // The same speech with a truly blank line: the second part is action, a line
+        // shorter as dialogue, and the cast is unchanged.
+        let blank = parse(&two.replace("\n  \n", "\n\n"));
+        assert_eq!(blank.scenes[0].characters, s.scenes[0].characters);
+        // A line of spaces that isn't exactly two is blank, as before.
+        let three = parse(&two.replace("\n  \n", "\n   \n"));
+        assert_eq!(three.scenes[0].characters, s.scenes[0].characters);
     }
 
     #[test]
