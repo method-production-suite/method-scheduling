@@ -716,6 +716,10 @@ pub struct Settings {
     /// The week start, date format, calendar strip fields (decision 59) and Fountain lines
     /// per page (decision 195): the user's, never the schedule's.
     pub prefs: crate::reportsetup::Prefs,
+    /// The Field Station sample has been shown once (on the first launch with nothing to
+    /// open; SUITE-STANDARDS.md section 8), or a person opened their own file first. Help >
+    /// Open Sample brings it back any time.
+    pub sample_shown: bool,
 }
 
 impl Default for Settings {
@@ -723,6 +727,7 @@ impl Default for Settings {
         Settings {
             autosave: true,
             prefs: crate::reportsetup::Prefs::default(),
+            sample_shown: false,
         }
     }
 }
@@ -759,6 +764,9 @@ impl Settings {
         let mut out = Settings::default();
         if let Some(on) = v.get("autosave").and_then(serde_json::Value::as_bool) {
             out.autosave = on;
+        }
+        if let Some(shown) = v.get("sample_shown").and_then(serde_json::Value::as_bool) {
+            out.sample_shown = shown;
         }
         let Some(p) = v.get("prefs") else {
             return out;

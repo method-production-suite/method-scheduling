@@ -1007,10 +1007,13 @@ drift either (`ui/js/keysheet.js`; decisions.md, entry 79). Help > **User Guide*
 docs/GUIDE.md, built into the app, read-only in a dialog of the page's own with its
 sections down the side (`ui/js/guide.js`; the Markdown is read by `guideBlocks` and
 `guideRuns` in logic.js into text nodes, never HTML; no browser, no network; entry 199).
-Help > **Open Sample** opens the invented production *Saltmarsh Road* (built into the
-app, `resources/sample.mtsc`) as a new, untitled schedule in this window, after the
-unsaved-changes question when anything is unsaved, as New does; the copy in the app is
-never written, and the first Save asks where (entry 198). Help > **What's New** shows this
+Help > **Open Sample** opens *Field Station*, the suite's invented feature (built into the
+app from the engine, decision 223), as a new, untitled schedule titled "Field Station
+(sample)" in this window, after the unsaved-changes question when anything is unsaved, as
+New does; nothing built in is ever written, and the first Save asks where (entry 198). The
+first launch with nothing to open shows it too, once, with a line saying what it is; a
+person who opens their own file first never gets it (SUITE-STANDARDS.md section 8), and
+neither does anyone who ran an earlier version (a settings file means they have). Help > **What's New** shows this
 version's `docs/releases/<version>.md` the same way (build.rs embeds it; a version with no
 notes says so). Help > **Report a Bug…** opens the repository's bug form in the browser with
 the version and the computer filled in and nothing else (no file, path or schedule); Help
