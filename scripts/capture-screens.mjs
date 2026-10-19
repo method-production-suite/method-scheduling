@@ -31,9 +31,9 @@ const SIZE = { width: 1280, height: 800, scale: 2 };
 
 // The four pictures, in the suite's order: hero, the signature feature, import, the file you own.
 export const SHOTS = [
-  { name: 'board', page: 'harness/screens.html?shot=board', alt: 'The stripboard of Field Station: four shoot days of scenes, banners and day breaks' },
+  { name: 'board', page: 'harness/screens.html?shot=board', alt: 'The stripboard of Field Station: the first days of an 18-day shoot, with scenes, banners and day breaks' },
   { name: 'dood', page: 'harness/screens.html?shot=dood', alt: 'The day out of days for Field Station: each cast member\'s work days across the shoot' },
-  { name: 'import', page: 'harness/screens.html?shot=import', alt: 'The Field Station script just imported: eleven scenes in the Boneyard, ready to schedule' },
+  { name: 'import', page: 'harness/screens.html?shot=import', alt: 'The Field Station script just imported: 90 scenes in the Boneyard, ready to schedule' },
   { name: 'cli', page: 'harness/screens-cli.html', alt: 'The method-schedule command listing Field Station\'s shoot days, and the plain text schedule file' },
 ];
 

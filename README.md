@@ -22,7 +22,7 @@ Website: [methodschedule.com](https://methodschedule.com).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/board-dark.png">
-  <img src="assets/screens/board-light.png" alt="The stripboard of Field Station: four shoot days of scenes, banners and day breaks" width="1280">
+  <img src="assets/screens/board-light.png" alt="The stripboard of Field Station: the first days of an 18-day shoot, with scenes, banners and day breaks" width="1280">
 </picture>
 
 ## Yours to keep
@@ -92,7 +92,7 @@ shared sample, `fixtures/field-station.mtsc`), retaken by `node scripts/capture-
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screens/import-dark.png">
-  <img src="assets/screens/import-light.png" alt="The Field Station script just imported: eleven scenes in the Boneyard, ready to schedule" width="640">
+  <img src="assets/screens/import-light.png" alt="The Field Station script just imported: 90 scenes in the Boneyard, ready to schedule" width="640">
 </picture>
 
 <picture>

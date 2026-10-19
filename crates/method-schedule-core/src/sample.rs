@@ -532,58 +532,412 @@ pub const FIELD_STATION_SCRIPT: &str =
     include_str!("../../../fixtures/scripts/field-station.fountain");
 
 /// Field Station's breakdown beyond the cast: (category, element, the scene numbers it is
-/// in). Read off the script; invented, like everything in it.
+/// in), one or more in every category. Read off the script; invented, like everything in
+/// it.
 const FIELD_STATION_THINGS: &[(&str, &str, &[&str])] = &[
+    (
+        "Background",
+        "BASE STAFF",
+        &["13", "36", "52", "58", "66", "73"],
+    ),
+    ("Background", "RELIEF TEAM", &["80", "83"]),
+    ("Background", "SECOND BOAT CREW", &["79"]),
+    ("Background", "NEW TOP KEEPER", &["83", "90"]),
+    ("Stand-ins", "STAND-IN FOR MARA", &["4", "15", "67"]),
+    ("Stunts", "MAST CLIMB", &["4", "15", "67"]),
+    ("Stunts", "QUAD RIDE", &["8", "18", "24"]),
     (
         "Hand props",
         "PAPER MAP",
-        &["1", "3", "4", "6", "7", "8", "10", "11"],
+        &[
+            "1", "3", "4", "6", "7", "8", "10", "11", "13", "19", "25", "31", "36", "38", "61",
+            "71", "84", "87",
+        ],
     ),
-    ("Hand props", "FIELD PACKS", &["1", "2"]),
-    ("Hand props", "HAND RADIO", &["2", "4", "5", "9"]),
-    ("Hand props", "TORCH", &["6"]),
-    ("Hand props", "HEADLAMPS", &["8", "9"]),
-    ("Hand props", "TEA MUGS", &["3", "9", "10"]),
-    ("Hand props", "NOTEBOOK", &["9"]),
-    ("Hand props", "KEY RING", &["9"]),
+    (
+        "Hand props",
+        "FIELD PACKS",
+        &[
+            "1", "2", "18", "19", "28", "30", "32", "34", "38", "41", "48", "55", "60", "62", "80",
+            "83", "87",
+        ],
+    ),
+    (
+        "Hand props",
+        "HAND RADIO",
+        &[
+            "3", "7", "9", "11", "13", "16", "31", "35", "37", "48", "63", "71", "74", "78", "89",
+        ],
+    ),
+    (
+        "Hand props",
+        "TORCH",
+        &["6", "19", "26", "43", "49", "63", "67", "69", "70", "71"],
+    ),
+    (
+        "Hand props",
+        "HEADLAMPS",
+        &["8", "9", "24", "27", "28", "32", "49"],
+    ),
+    (
+        "Hand props",
+        "NOTEBOOK",
+        &["9", "17", "18", "43", "51", "54", "80", "81"],
+    ),
+    (
+        "Hand props",
+        "PENCIL",
+        &[
+            "7", "17", "25", "26", "37", "44", "51", "52", "54", "57", "66", "68", "81", "85",
+        ],
+    ),
+    (
+        "Hand props",
+        "KEY RING",
+        &[
+            "9", "16", "17", "19", "22", "24", "27", "29", "31", "34", "36", "43", "48", "63",
+            "64", "68", "78", "89",
+        ],
+    ),
+    (
+        "Hand props",
+        "CHALK",
+        &[
+            "13", "18", "24", "28", "32", "33", "34", "47", "48", "52", "60", "75", "88",
+        ],
+    ),
+    (
+        "Hand props",
+        "TEA MUGS",
+        &[
+            "9", "12", "13", "17", "34", "41", "43", "44", "53", "59", "65", "72",
+        ],
+    ),
+    ("Hand props", "FLARE GUN", &["48", "53", "61"]),
+    ("Hand props", "FLAT STONE", &["6", "32", "34", "41", "80"]),
     (
         "Set dressing",
         "STATION RADIO SET",
-        &["3", "5", "7", "10", "11"],
+        &[
+            "2", "3", "5", "7", "9", "10", "11", "13", "16", "19", "31", "36", "37", "41", "52",
+            "63", "71", "72", "81", "84", "86", "90",
+        ],
     ),
-    ("Set dressing", "CAMP STOVE", &["5"]),
-    ("Set dressing", "GENERATOR", &["2", "8", "10"]),
-    ("Set dressing", "MAST LADDER", &["4"]),
-    ("Wardrobe", "WEATHER COATS", &["2", "8"]),
-    ("Practical effects", "WIND", &["1", "2", "4", "6", "8", "9"]),
-    ("Practical effects", "RAIN", &["2"]),
+    (
+        "Set dressing",
+        "GENERATOR",
+        &[
+            "2", "8", "10", "24", "27", "40", "41", "43", "51", "63", "64", "70", "72", "82", "83",
+            "90",
+        ],
+    ),
+    (
+        "Set dressing",
+        "FUEL DRUM",
+        &["2", "8", "12", "18", "35", "42", "60", "64", "67", "70"],
+    ),
+    (
+        "Set dressing",
+        "TARP",
+        &[
+            "2", "3", "5", "8", "10", "11", "31", "41", "63", "65", "72", "82", "83", "90",
+        ],
+    ),
+    (
+        "Set dressing",
+        "VALLEY MAP WITH PINS",
+        &[
+            "3", "5", "10", "14", "16", "17", "23", "26", "31", "36", "84",
+        ],
+    ),
+    ("Set dressing", "CAMP STOVE", &["5", "32", "34", "50", "65"]),
+    (
+        "Set dressing",
+        "MARKER CAIRN",
+        &["6", "50", "55", "62", "82", "90"],
+    ),
+    (
+        "Set dressing",
+        "WALL CLOCK",
+        &[
+            "9", "17", "27", "29", "40", "43", "44", "50", "57", "68", "76", "78", "80", "81", "89",
+        ],
+    ),
+    (
+        "Set dressing",
+        "WEATHER BOARD",
+        &["13", "22", "36", "52", "73"],
+    ),
+    (
+        "Set dressing",
+        "NETS",
+        &["33", "34", "45", "46", "52", "53", "56", "76"],
+    ),
+    (
+        "Wardrobe",
+        "WEATHER COATS",
+        &[
+            "2", "8", "17", "29", "34", "37", "52", "54", "58", "65", "73", "83",
+        ],
+    ),
+    ("Wardrobe", "TEO'S JUMPERS", &["2", "45", "86"]),
+    (
+        "Hair and makeup",
+        "ANSEL'S BEARD AND SPLINT",
+        &["34", "45", "50", "55", "59", "77"],
+    ),
+    (
+        "Picture vehicles",
+        "QUAD BIKE",
+        &[
+            "8", "18", "21", "22", "24", "35", "37", "39", "40", "42", "75",
+        ],
+    ),
+    (
+        "Picture vehicles",
+        "PARK TRUCK",
+        &[
+            "24", "35", "38", "39", "47", "48", "53", "54", "61", "68", "72", "74", "75",
+        ],
+    ),
+    (
+        "Picture vehicles",
+        "SEARCH PLANE",
+        &["36", "44", "48", "50", "51", "53", "54", "57", "78", "79"],
+    ),
+    (
+        "Picture vehicles",
+        "ROWBOAT",
+        &["33", "46", "49", "53", "76", "79"],
+    ),
+    ("Animals", "RAVEN", &["20"]),
+    (
+        "Practical effects",
+        "WIND",
+        &[
+            "1", "2", "4", "6", "8", "9", "15", "19", "21", "27", "32", "60", "62", "64", "67",
+            "83", "87", "90",
+        ],
+    ),
+    (
+        "Practical effects",
+        "RAIN",
+        &["2", "14", "18", "61", "64", "66"],
+    ),
+    ("Practical effects", "MIST", &["53", "54"]),
+    ("Practical effects", "FLARE", &["53", "61"]),
+    ("Visual effects", "THE FAR LIGHT", &["4", "49", "88"]),
+    (
+        "Camera",
+        "CAR MOUNT",
+        &["21", "24", "35", "38", "39", "47", "48", "61", "74", "75"],
+    ),
+    (
+        "Grip and electric",
+        "NIGHT EXTERIOR LIGHTING",
+        &["6", "8", "9", "27", "28", "30", "64", "67", "70", "90"],
+    ),
+    (
+        "Sound and music",
+        "RADIO PLAYBACK",
+        &[
+            "3", "7", "16", "36", "37", "44", "51", "52", "57", "58", "59", "68",
+        ],
+    ),
+    (
+        "Special equipment",
+        "CAMERA BOAT",
+        &["32", "46", "49", "53", "76", "79"],
+    ),
+    ("Extra crew", "MARINE COORDINATOR", &["46", "49", "79"]),
+    ("Safety", "RIGGER", &["4", "15", "67"]),
+    ("Safety", "SAFETY DIVER", &["46", "49", "79"]),
+    (
+        "Other",
+        "PARK ROAD PERMIT",
+        &[
+            "1", "20", "21", "24", "28", "30", "35", "38", "39", "47", "48", "61", "74", "75",
+            "87", "88",
+        ],
+    ),
 ];
 
-/// Where each set is shot: the two invented locations, placed on the map so the board and
-/// the call sheet show sunrise and sunset.
+/// Background counts on their scenes: (element, scene, how many).
+const FIELD_STATION_COUNTS: &[(&str, &str, u32)] = &[
+    ("BASE STAFF", "13", 3),
+    ("BASE STAFF", "36", 4),
+    ("BASE STAFF", "52", 3),
+    ("BASE STAFF", "58", 2),
+    ("BASE STAFF", "66", 2),
+    ("BASE STAFF", "73", 4),
+    ("RELIEF TEAM", "80", 4),
+    ("RELIEF TEAM", "83", 2),
+    ("SECOND BOAT CREW", "79", 2),
+];
+
+/// The one cast member who never speaks, and the scenes he is seen in.
+const FIELD_STATION_SILENT: (&str, &[&str]) = ("ANSEL", &["34", "45", "50", "55", "59", "77"]);
+
+/// The second unit's scenes: the drive on the fire road, shot on day 14 beside the main
+/// unit (decision 223).
+const FIELD_STATION_SECOND_UNIT: &[&str] = &["21", "39", "74"];
+
+/// Where each set is shot: the three invented locations, placed on the map so the board
+/// and the call sheet show sunrise and sunset.
 const FIELD_STATION_RIDGE: &str = "Hollins Ridge fire road";
 const FIELD_STATION_STATION: &str = "Cold Spring field station";
+const FIELD_STATION_LAKE: &str = "Kettle Lake boathouse";
 
-/// The shooting order: each shoot day's scenes, then a banner (text, minutes) if any
-/// before the day's later scenes. Day exteriors, then the station's interiors, then nights.
+/// The shooting order, agreed with Method Budget's sample (decision 223): 18 shoot days
+/// from Monday 3 May 2027, 12 at the station, a company move to the lake for 3, the ridge
+/// for 3 with the second unit's drive on day 14, then 2 nights back at the station. Each
+/// day's scenes, with banners (text, minutes) where they fall.
 const FIELD_STATION_DAYS: &[&[FieldRow]] = &[
     &[
-        FieldRow::Scene("1"),
-        FieldRow::Banner("Company move to the station", 30),
+        FieldRow::Scene("13"),
+        FieldRow::Scene("22"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("36"),
+        FieldRow::Scene("44"),
+    ],
+    &[
+        FieldRow::Scene("58"),
+        FieldRow::Scene("73"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("86"),
+        FieldRow::Scene("52"),
+    ],
+    &[
         FieldRow::Scene("2"),
+        FieldRow::Scene("3"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("12"),
+        FieldRow::Scene("14"),
+    ],
+    &[
+        FieldRow::Scene("16"),
+        FieldRow::Scene("19"),
+        FieldRow::Scene("37"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("40"),
+        FieldRow::Scene("41"),
+    ],
+    &[
+        FieldRow::Scene("83"),
+        FieldRow::Scene("84"),
+        FieldRow::Scene("85"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("11"),
+        FieldRow::Scene("72"),
+        FieldRow::Scene("23"),
+    ],
+    &[
+        FieldRow::Scene("63"),
+        FieldRow::Scene("17"),
+        FieldRow::Scene("18"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("42"),
+        FieldRow::Scene("43"),
+    ],
+    &[
+        FieldRow::Scene("59"),
+        FieldRow::Scene("60"),
+        FieldRow::Scene("80"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("81"),
+        FieldRow::Scene("15"),
         FieldRow::Scene("4"),
     ],
     &[
-        FieldRow::Scene("3"),
+        FieldRow::Scene("82"),
+        FieldRow::Scene("25"),
+        FieldRow::Scene("62"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("29"),
+        FieldRow::Scene("66"),
+    ],
+    &[
+        FieldRow::Scene("89"),
         FieldRow::Scene("5"),
         FieldRow::Banner("Lunch", 60),
         FieldRow::Scene("7"),
-        FieldRow::Scene("11"),
+        FieldRow::Scene("8"),
     ],
-    &[FieldRow::Scene("10"), FieldRow::Scene("8")],
     &[
+        FieldRow::Scene("10"),
+        FieldRow::Scene("26"),
+        FieldRow::Scene("27"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("31"),
+        FieldRow::Scene("64"),
+    ],
+    &[
+        FieldRow::Banner("Company move to Kettle Lake", 45),
+        FieldRow::Scene("34"),
+        FieldRow::Scene("45"),
+        FieldRow::Scene("55"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("56"),
+        FieldRow::Scene("77"),
+    ],
+    &[
+        FieldRow::Scene("78"),
+        FieldRow::Scene("33"),
+        FieldRow::Scene("46"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("54"),
+        FieldRow::Scene("57"),
+        FieldRow::Scene("76"),
+    ],
+    &[
+        FieldRow::Scene("32"),
+        FieldRow::Scene("53"),
+        FieldRow::Scene("49"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("79"),
+        FieldRow::Scene("50"),
+    ],
+    &[
+        FieldRow::Banner("Company move to Hollins Ridge", 45),
+        FieldRow::Scene("35"),
+        FieldRow::Scene("47"),
+        FieldRow::Scene("75"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("24"),
+        FieldRow::Scene("48"),
+        FieldRow::Scene("88"),
+        FieldRow::Banner("Second unit: the drive on the fire road", 0),
+        FieldRow::Scene("21"),
+        FieldRow::Scene("39"),
+        FieldRow::Scene("74"),
+    ],
+    &[
+        FieldRow::Scene("1"),
+        FieldRow::Scene("20"),
+        FieldRow::Scene("38"),
+    ],
+    &[
+        FieldRow::Scene("61"),
+        FieldRow::Scene("87"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("28"),
+        FieldRow::Scene("30"),
+    ],
+    &[
+        FieldRow::Banner("Company move to the station", 45),
+        FieldRow::Scene("65"),
+        FieldRow::Scene("68"),
+        FieldRow::Scene("69"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("70"),
+        FieldRow::Scene("71"),
+    ],
+    &[
+        FieldRow::Scene("90"),
         FieldRow::Scene("9"),
-        FieldRow::Banner("Company move to the ridge", 45),
+        FieldRow::Scene("51"),
+        FieldRow::Banner("Lunch", 60),
+        FieldRow::Scene("67"),
         FieldRow::Scene("6"),
     ],
 ];
@@ -593,10 +947,11 @@ enum FieldRow {
     Banner(&'static str, u32),
 }
 
-/// Field Station, broken down and scheduled: the script imported (scenes, page lengths,
-/// cast), the props, set dressing, wardrobe and effects on their scenes, two locations on
-/// the map, four shoot days from Monday 3 May 2027 with day breaks and banners. The same
-/// schedule every time; `fixtures/field-station.mtsc` is it, written by
+/// Field Station, broken down and scheduled, to show every part of the app (decision
+/// 223): the script imported (90 scenes, page lengths, cast), an element in every
+/// category with background counts, a silent cast member, three locations on the map, a
+/// second unit, 18 shoot days from Monday 3 May 2027 with day breaks, banners and call
+/// times, prep and wrap on the calendar, and red flags. The same schedule every time; `fixtures/field-station.mtsc` is it, written by
 /// `method-schedule sample --field-station`, and a test holds the two together.
 pub fn field_station() -> Schedule {
     let mut s = Schedule::with_default_categories("Field Station");
@@ -610,10 +965,18 @@ pub fn field_station() -> Schedule {
     let sheets = s.import_script(&script, cast).expect("the script imports");
     for &id in &sheets {
         let sheet = s.sheet_mut(id).expect("just imported");
-        sheet.location = if sheet.set.contains("RIDGE") {
+        sheet.location = if sheet.set.contains("RIDGE ROAD") || sheet.set.contains("FIRE ROAD") {
             FIELD_STATION_RIDGE
+        } else if sheet.set.contains("BOATHOUSE") || sheet.set.contains("KETTLE LAKE") {
+            FIELD_STATION_LAKE
         } else {
             FIELD_STATION_STATION
+        }
+        .to_string();
+        sheet.unit = if FIELD_STATION_SECOND_UNIT.contains(&sheet.scenes.as_str()) {
+            "Second Unit"
+        } else {
+            "Main Unit"
         }
         .to_string();
         sheet.shoot_time = Some(Minutes(30 * sheet.pages.0.div_ceil(4).max(1)));
@@ -641,6 +1004,12 @@ pub fn field_station() -> Schedule {
             .find(|&id| s.sheet(id).is_some_and(|x| x.scenes == scene))
             .expect("a scene of the script")
     };
+    let (silent, seen) = FIELD_STATION_SILENT;
+    let ansel = s.add_element(cast, silent).expect("unique");
+    for scene in seen {
+        let sheet = sheet_of(&s, scene);
+        s.sheet_mut(sheet).expect("a sheet").elements.push(ansel);
+    }
     for (category, name, scenes) in FIELD_STATION_THINGS {
         let c = s.category_named(category).expect("a default category");
         let id = s.add_element(c, name).expect("unique");
@@ -648,6 +1017,17 @@ pub fn field_station() -> Schedule {
             let sheet = sheet_of(&s, scene);
             s.sheet_mut(sheet).expect("a sheet").elements.push(id);
         }
+    }
+    for (name, scene, count) in FIELD_STATION_COUNTS {
+        let element = s
+            .elements
+            .iter()
+            .find(|e| e.name == *name)
+            .expect("a background element")
+            .id;
+        let sheet = sheet_of(&s, scene);
+        s.set_quantity(sheet, element, *count, true)
+            .expect("on the sheet");
     }
     let b = s.boards[0].id;
     let main = s.boards[0].sub_boards[0].id;
@@ -689,9 +1069,88 @@ pub fn field_station() -> Schedule {
         let to = end(&s);
         s.insert_strip(b, StripKind::DayBreak, to).expect("inserts");
     }
+    // Calls: 7:00 on day work, 16:00 on the night days (every scene a night).
+    let ends: Vec<_> = s.boards[0].sub_boards[0]
+        .strips
+        .iter()
+        .filter(|x| x.kind == StripKind::DayBreak)
+        .map(|x| x.id)
+        .collect();
+    for (day, end) in FIELD_STATION_DAYS.iter().zip(ends) {
+        let nights = day.iter().all(|row| match row {
+            FieldRow::Scene(n) => {
+                let sheet = sheet_of(&s, n);
+                let tod = &s.sheet(sheet).expect("a sheet").time_of_day;
+                tod == "NIGHT" || tod == "LATER" || tod == "EVENING"
+            }
+            FieldRow::Banner(..) => true,
+        });
+        let call = if nights { 16 * 60 } else { 7 * 60 };
+        crate::plan::set_call_time(&mut s, end, Some(call)).expect("a day break");
+    }
+    // Prep and wrap for the budget's exchange, as Method Budget's sample pays them: four
+    // weeks of prep from Monday 5 April, two weeks of wrap to Wednesday 9 June.
+    let calendar = s.calendar_mut(b, main).expect("main");
+    calendar.prep_start = Some(Date::from_ymd(2027, 4, 5).expect("valid"));
+    calendar.wrap_end = Some(Date::from_ymd(2027, 6, 9).expect("valid"));
+    // Red flags: a fitting and travel in prep, and the ranger would rather not work the
+    // ridge's last day (soft, so the board marks it without refusing anything).
+    s.standard_red_flag_types();
+    let kind = |s: &Schedule, k: EventKind| {
+        s.red_flag_types
+            .iter()
+            .find(|t| t.builtin.as_ref() == Some(&k))
+            .expect("a standard type")
+            .id
+    };
+    let person = |s: &Schedule, name: &str| {
+        s.elements
+            .iter()
+            .find(|e| e.category == cast && e.name == name)
+            .expect("in the cast")
+            .id
+    };
+    let day = |y, m, d| Date::from_ymd(y, m, d).expect("valid");
+    for (who, k, date, note, hard) in [
+        (
+            "MARA",
+            EventKind::Fitting,
+            day(2027, 4, 28),
+            "Weather gear fitting",
+            true,
+        ),
+        (
+            "DELACROIX",
+            EventKind::Travel,
+            day(2027, 5, 2),
+            "Flies in",
+            true,
+        ),
+        (
+            "RANGER",
+            EventKind::Unavailable,
+            day(2027, 5, 24),
+            "Would rather not",
+            false,
+        ),
+    ] {
+        let (element, kind) = (person(&s, who), kind(&s, k));
+        s.add_red_flags(
+            &[element],
+            kind,
+            &[RedFlagDates::Range {
+                from: date,
+                to: date,
+            }],
+            note,
+            hard,
+        )
+        .expect("a red flag");
+    }
     for (name, latitude, longitude) in [
         (FIELD_STATION_RIDGE, 46_812_000, -121_532_000),
         (FIELD_STATION_STATION, 46_790_000, -121_498_000),
+        (FIELD_STATION_LAKE, 46_771_000, -121_545_000),
     ] {
         s.plan
             .set_location(GeoLocation {
@@ -718,7 +1177,7 @@ mod tests {
         a.check().unwrap();
         assert_eq!(a, field_station());
         assert_eq!(a.title, "Field Station");
-        assert_eq!(a.sheets.len(), 11);
+        assert_eq!(a.sheets.len(), 90);
         let board = &a.boards[0];
         assert!(board.boneyard.is_empty(), "every scene is scheduled");
         let main = &board.sub_boards[0];
@@ -727,7 +1186,7 @@ mod tests {
             .iter()
             .filter(|x| x.kind == StripKind::DayBreak)
             .count();
-        assert_eq!(breaks, 4);
+        assert_eq!(breaks, 18);
         let cast = a.cast().unwrap();
         let mut names: Vec<_> = a
             .elements
@@ -736,8 +1195,35 @@ mod tests {
             .map(|e| e.name.as_str())
             .collect();
         names.sort_unstable();
-        assert_eq!(names, ["DELACROIX", "IVERSEN", "MARA", "TEO"]);
-        assert_eq!(a.plan.locations.len(), 2);
+        assert_eq!(
+            names,
+            [
+                "ANSEL",
+                "BOATHOUSE KEEPER",
+                "DELACROIX",
+                "DISPATCHER",
+                "IVERSEN",
+                "MARA",
+                "PILOT",
+                "RANGER",
+                "TEO"
+            ]
+        );
+        assert_eq!(a.plan.locations.len(), 3);
+        // Every category has something in it, to show each one off.
+        for c in &a.categories {
+            assert!(
+                a.elements.iter().any(|e| e.category == c.id),
+                "{} is empty",
+                c.name
+            );
+        }
+        let units: std::collections::BTreeSet<_> =
+            a.sheets.iter().map(|x| x.unit.as_str()).collect();
+        assert_eq!(
+            units.into_iter().collect::<Vec<_>>(),
+            ["Main Unit", "Second Unit"]
+        );
         // The neutral title page: this copy never carries another project's credit line.
         assert!(!FIELD_STATION_SCRIPT.to_lowercase().contains("screepub"));
         assert!(FIELD_STATION_SCRIPT.starts_with("Title: FIELD STATION\n"));

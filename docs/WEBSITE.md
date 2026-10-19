@@ -140,7 +140,7 @@ section 7, decision 215). `node scripts/capture-screens.mjs` retakes every pictu
 Field Station, the suite's invented production (`fixtures/field-station.mtsc`, made by
 `method-schedule sample --field-station` from `fixtures/scripts/field-station.fountain`):
 
-1. **board**: the stripboard, four shoot days (the site's first picture, the README's hero);
+1. **board**: the stripboard, the first days of the 18-day shoot (the site's first picture, the README's hero);
 2. **dood**: the day out of days;
 3. **import**: the script just imported, its scenes in the Boneyard;
 4. **cli**: the command line on the schedule file.
