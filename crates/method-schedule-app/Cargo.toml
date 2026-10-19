@@ -17,7 +17,7 @@ path = "src/main.rs"
 # Tauri crates pinned exactly, at the versions and features Method Budget uses
 # (docs/APP.md, "Dependencies"). No updater plugin until the repository is public.
 [build-dependencies]
-tauri-build = { version = "=2.6.3", features = [] }
+tauri-build = { version = "=2.7.1", features = [] }
 
 [dependencies]
 method-schedule-core = { path = "../method-schedule-core" }
