@@ -1,5 +1,7 @@
-//! Tests of the board and the view that read reports and exports, which stay on the
-//! desktop: kept here when the board and the view moved to `method-schedule-session`.
+//! Reports and exports following the board: the strip layout's columns in the one-line
+//! report, the copy of a board's report and workbook. Reports and exports are still the
+//! desktop's, so these stay here; the board and view halves of the same tests run in
+//! `method-schedule-session` (board.rs and view.rs), which tests its own code.
 
 mod board {
     use crate::board::*;

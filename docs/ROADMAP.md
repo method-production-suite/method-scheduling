@@ -15,13 +15,14 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **Check and publish the v0.1.0 draft.** The secrets are set and v0.1.0 is tagged on the
-  release PR's merge (2026-10-18). Install the `.dmg` on an Apple silicon Mac, open Field
-  Station, confirm the update archive and `latest.json` are attached, then publish. The
-  site syncs from the release once it's published.
+- None pending. v0.1.0 was published on 2026-10-19 after the owner checked it on his Mac,
+  and methodschedule.com follows it. The next release (0.2.0) will be proposed here when M2b
+  or M2c has something people can use; before tagging, the weekly full build runs by hand
+  on the release commit (RELEASING.md).
 
 **Needs the owner's hands or hardware**
-- **Screen block 7**, one unattended block: a file opened from the Finder opens in its
+- **Screen block 7**, one block on the owner's screen, asked for through MOrg (the suite
+  rule since 2026-10-18; everything else here is tested offscreen): a file opened from the Finder opens in its
   own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past
   wrap; Layouts and Red Flag Types rename then click; K185 and K187 on paper; crash
   recovery in the window (`scripts/crash-check.sh`, M2); and in the reference app E-L5,
@@ -117,7 +118,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| Hardening from #26's review: `with_schedule` runs `Schedule::check` (or says why not), the `mark_saved`/`restamp` contract written down and tested in the session crate, and `moved_tests.rs` split so the session crate tests its own code | S | #26 |
 | `method-schedule-session`, the rest of the window-free modules: `find`, `events`, `breakdown`, `flagcolors`, `split`, the data side of `reports`, `reportsetup`, `layouts`, `plan` and `diffmerge`, and `docs` | M | web-session.md phase 1 |
 | `Host::dispatch`, `COMMANDS`, `COMMANDS_VERSION`; files in and out as base64; the picture store; `host_info`; the read-only switch | M | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
@@ -131,6 +131,12 @@ also fails if `getrandom` appears under the session. Then the core of the sessio
 stamp's data, recovery keys, the autosave rule on the clock). The desktop keeps reading and
 writing files (`SessionFiles`, `StampAt`, the image reader and picker) and installs the
 system clock at startup.
+
+Also done: #26's review points. `Session::with_schedule` asserts `Schedule::check` in
+debug builds (every caller hands in a checked schedule); `mark_saved` and `restamp` have
+their contract written down, asserted and tested in the session crate; and the board and
+view tests that had stayed on the desktop now run in the session crate, the desktop keeping
+only their report and export halves.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.

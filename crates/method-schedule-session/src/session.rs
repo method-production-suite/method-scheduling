@@ -135,7 +135,19 @@ impl Session {
         Session::with_schedule(Schedule::with_default_categories(UNTITLED), None)
     }
 
+    /// A session on `schedule`, unsaved, pointing at `path` if any.
+    ///
+    /// `schedule` must already pass `Schedule::check`: every caller hands in one the
+    /// format's reader checked (`method_schedule_format::from_str` runs it) or one the
+    /// engine built (a new schedule, the sample, a template). Checking again here would
+    /// cost a whole pass over a large schedule on every open, so it is asserted in debug
+    /// builds, where the tests run, and trusted in release builds.
     pub fn with_schedule(schedule: Schedule, path: Option<PathBuf>) -> Session {
+        debug_assert!(
+            schedule.check().is_ok(),
+            "a session's schedule passes Schedule::check: {:?}",
+            schedule.check()
+        );
         let safety = SafetyState::new(path.as_deref());
         Session {
             schedule,
@@ -298,10 +310,18 @@ impl Session {
         true
     }
 
-    /// The schedule was just written to `path` as [`Session::file_text`], stamped
-    /// `stamp`: remembers the path and marks it saved. The desktop writes the file
-    /// (`SessionFiles::save_to`), after its outside-change guard.
+    /// The schedule was just written to `path`: remembers the path and marks it saved.
+    ///
+    /// The contract (the desktop's `SessionFiles::save_to` keeps it; a browser host saving
+    /// into its own storage would too): the bytes written are exactly
+    /// [`Session::file_text`] at this moment, `stamp` is made from those bytes
+    /// (`DiskStamp::of`, plus the file's time when there is one), and the write happened
+    /// after the host's outside-change guard. Asserted in debug builds.
     pub fn mark_saved(&mut self, path: PathBuf, stamp: DiskStamp) {
+        debug_assert!(
+            stamp.matches(self.file_text().as_bytes()),
+            "mark_saved's stamp is of the text that was written"
+        );
         self.path = Some(path);
         self.disk = Some(stamp);
         self.last_read = Some(Arc::new(self.schedule.clone()));
@@ -325,7 +345,19 @@ impl Session {
 
     /// The file was found unchanged but with a new time: keeps `stamp` (the same content,
     /// the time read now), so the next quick check needs no read.
+    ///
+    /// The contract: only the time may differ from [`Session::disk_stamp`]. A different
+    /// length or hash is an outside change, which goes through [`Session::took_disk`] or
+    /// [`Session::load_disk`] instead. Asserted in debug builds; without a stamp it does
+    /// nothing.
     pub fn restamp(&mut self, stamp: DiskStamp) {
+        let Some(old) = self.disk else {
+            return;
+        };
+        debug_assert!(
+            old.len == stamp.len && old.hash == stamp.hash,
+            "restamp changes only the time"
+        );
         self.disk = Some(stamp);
     }
 
@@ -534,6 +566,57 @@ pub(crate) fn read_script(path: &Path) -> Result<fountain::ImportedScript, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn saving_and_restamping_keep_their_contract() {
+        use std::time::{Duration, UNIX_EPOCH};
+        let mut s = Session::new();
+        s.edit(|x| {
+            x.title = "Kept".into();
+            Ok(())
+        })
+        .unwrap();
+        assert!(s.is_dirty());
+        // Saved as written: the stamp of file_text, the path remembered, nothing unsaved.
+        let stamp = DiskStamp::of(s.file_text().as_bytes());
+        s.mark_saved(PathBuf::from("/films/kept.mtsc"), stamp);
+        assert!(!s.is_dirty());
+        assert_eq!(s.path(), Some(Path::new("/films/kept.mtsc")));
+        assert_eq!(s.disk_stamp(), Some(stamp));
+        assert_eq!(s.last_read().as_deref(), Some(s.schedule()));
+        // A new time on the same content is kept.
+        let touched = DiskStamp {
+            modified: Some(UNIX_EPOCH + Duration::from_secs(1)),
+            ..stamp
+        };
+        s.restamp(touched);
+        assert_eq!(s.disk_stamp(), Some(touched));
+        // Without a stamp, restamp does nothing.
+        let mut fresh = Session::new();
+        fresh.restamp(touched);
+        assert_eq!(fresh.disk_stamp(), None);
+    }
+
+    #[test]
+    #[should_panic(expected = "of the text that was written")]
+    #[cfg(debug_assertions)]
+    fn a_stamp_of_other_bytes_is_refused() {
+        let mut s = Session::new();
+        s.mark_saved(
+            PathBuf::from("/films/x.mtsc"),
+            DiskStamp::of(b"something else"),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "restamp changes only the time")]
+    #[cfg(debug_assertions)]
+    fn a_restamp_with_other_content_is_refused() {
+        let mut s = Session::new();
+        let stamp = DiskStamp::of(s.file_text().as_bytes());
+        s.mark_saved(PathBuf::from("/films/x.mtsc"), stamp);
+        s.restamp(DiskStamp::of(b"changed outside"));
+    }
 
     #[test]
     fn the_board_shown_survives_edits_and_falls_back_when_gone() {
