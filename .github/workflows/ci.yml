@@ -2,10 +2,14 @@
 name: ci
 # One run per change (SUITE-STANDARDS.md section 6): pushes to main, and pull requests.
 # A newer push to a pull request cancels its older run; runs on main always finish.
+# A draft pull request builds nothing: CI starts when it is marked ready (gh pr ready).
+# A change to documentation only skips the Rust jobs; they still report, as skipped, so
+# the required checks are answered.
 on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
 # SUITE-STANDARDS.md section 6: no incremental build and line tables only for debug
@@ -19,7 +23,53 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
+  changes:
+    # Decides what the change needs. Nothing for a draft; `rust` is false when every
+    # changed file is documentation (docs/, or a .md file anywhere) that no build or test
+    # reads.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      rust: ${{ steps.files.outputs.rust }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Which files changed
+        id: files
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = pull_request ]; then
+            from="$BASE"
+          else
+            from="$BEFORE"
+          fi
+          # Unknown history (a new branch, a force push): build everything.
+          if [ -z "$from" ] || ! git cat-file -e "${from}^{commit}" 2>/dev/null; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files="$(git diff --name-only "$from" HEAD)"
+          echo "$files"
+          other="$(printf '%s\n' "$files" | grep -vE '^docs/|\.md$' || true)"
+          # Documents the build or the tests read count as code: the guide and the
+          # notices (compiled into the app), the release notes (What's New, build.rs),
+          # and the specs whose examples tests check.
+          built="$(printf '%s\n' "$files" | grep -E '^(docs/(GUIDE|MCP|CALLSHEET|EXCHANGE|FORMAT)\.md|docs/releases/|THIRD-PARTY-NOTICES\.md)' || true)"
+          if [ -n "$files" ] && [ -z "$other" ] && [ -z "$built" ]; then
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          fi
   build:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -48,6 +98,8 @@ jobs:
     # Performance budgets at 1,500 strips (decisions.md, entries 176 to 178 and 191):
     # release builds only, each timing the median of 15 runs, scaled for the runner's speed.
     # The Rust budget writes the board view the page's budget then draws under Node.
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -71,6 +123,8 @@ jobs:
   page:
     # The page's own rules (crates/method-schedule-app/ui/js/logic.js) under Node's
     # built-in test runner, which the runner image has; no npm (decisions.md, entry 137).
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -83,6 +137,8 @@ jobs:
           node --test crates/method-schedule-app/page-tests/logic.test.mjs
   cooldown:
     # Fails a pull request or a push that adds crates published less than 14 days ago.
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -116,6 +172,8 @@ jobs:
   deny:
     # deny.toml: known advisories, licenses compatible with MIT OR Apache-2.0, crates.io
     # as the only source; and THIRD-PARTY-NOTICES.md current with Cargo.lock (decision 209).
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -132,6 +190,7 @@ jobs:
   site:
     # README.md and site/ must match docs/features.toml and the newest release notes, and
     # the brand files must match scripts/make-brand.py (docs/WEBSITE.md, docs/BRAND.md).
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
