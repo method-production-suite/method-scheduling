@@ -9,7 +9,7 @@
       "producer": "Tom Achebe",
       "script_date": "2027-03-01"
     },
-    "next_id": 86,
+    "next_id": 319,
     "categories": [
       {
         "id": 1,
@@ -199,7 +199,17 @@
         "rules": {
           "holds": true,
           "min_drop_gap": 0
-        }
+        },
+        "red_flags": [
+          {
+            "id": 317,
+            "type": 22,
+            "from": "2027-05-02",
+            "to": "2027-05-02",
+            "note": "Flies in",
+            "hard": true
+          }
+        ]
       },
       {
         "id": 41,
@@ -209,7 +219,17 @@
         "rules": {
           "holds": true,
           "min_drop_gap": 0
-        }
+        },
+        "red_flags": [
+          {
+            "id": 316,
+            "type": 23,
+            "from": "2027-04-28",
+            "to": "2027-04-28",
+            "note": "Weather gear fitting",
+            "hard": true
+          }
+        ]
       },
       {
         "id": 44,
@@ -232,79 +252,311 @@
         }
       },
       {
-        "id": 64,
+        "id": 68,
+        "category": 1,
+        "name": "DISPATCHER",
+        "board_id": "5",
+        "rules": {
+          "holds": true,
+          "min_drop_gap": 0
+        }
+      },
+      {
+        "id": 109,
+        "category": 1,
+        "name": "BOATHOUSE KEEPER",
+        "board_id": "6",
+        "rules": {
+          "holds": true,
+          "min_drop_gap": 0
+        }
+      },
+      {
+        "id": 114,
+        "category": 1,
+        "name": "RANGER",
+        "board_id": "7",
+        "rules": {
+          "holds": true,
+          "min_drop_gap": 0
+        },
+        "red_flags": [
+          {
+            "id": 318,
+            "type": 25,
+            "from": "2027-05-24",
+            "to": "2027-05-24",
+            "note": "Would rather not"
+          }
+        ]
+      },
+      {
+        "id": 149,
+        "category": 1,
+        "name": "PILOT",
+        "board_id": "8",
+        "rules": {
+          "holds": true,
+          "min_drop_gap": 0
+        }
+      },
+      {
+        "id": 226,
+        "category": 1,
+        "name": "ANSEL",
+        "board_id": "9"
+      },
+      {
+        "id": 227,
+        "category": 4,
+        "name": "BASE STAFF"
+      },
+      {
+        "id": 228,
+        "category": 4,
+        "name": "RELIEF TEAM"
+      },
+      {
+        "id": 229,
+        "category": 4,
+        "name": "SECOND BOAT CREW"
+      },
+      {
+        "id": 230,
+        "category": 4,
+        "name": "NEW TOP KEEPER"
+      },
+      {
+        "id": 231,
+        "category": 5,
+        "name": "STAND-IN FOR MARA"
+      },
+      {
+        "id": 232,
+        "category": 6,
+        "name": "MAST CLIMB",
+        "board_id": "1"
+      },
+      {
+        "id": 233,
+        "category": 6,
+        "name": "QUAD RIDE",
+        "board_id": "2"
+      },
+      {
+        "id": 234,
         "category": 7,
         "name": "PAPER MAP"
       },
       {
-        "id": 65,
+        "id": 235,
         "category": 7,
         "name": "FIELD PACKS"
       },
       {
-        "id": 66,
+        "id": 236,
         "category": 7,
         "name": "HAND RADIO"
       },
       {
-        "id": 67,
+        "id": 237,
         "category": 7,
         "name": "TORCH"
       },
       {
-        "id": 68,
+        "id": 238,
         "category": 7,
         "name": "HEADLAMPS"
       },
       {
-        "id": 69,
-        "category": 7,
-        "name": "TEA MUGS"
-      },
-      {
-        "id": 70,
+        "id": 239,
         "category": 7,
         "name": "NOTEBOOK"
       },
       {
-        "id": 71,
+        "id": 240,
+        "category": 7,
+        "name": "PENCIL"
+      },
+      {
+        "id": 241,
         "category": 7,
         "name": "KEY RING"
       },
       {
-        "id": 72,
+        "id": 242,
+        "category": 7,
+        "name": "CHALK"
+      },
+      {
+        "id": 243,
+        "category": 7,
+        "name": "TEA MUGS"
+      },
+      {
+        "id": 244,
+        "category": 7,
+        "name": "FLARE GUN"
+      },
+      {
+        "id": 245,
+        "category": 7,
+        "name": "FLAT STONE"
+      },
+      {
+        "id": 246,
         "category": 8,
         "name": "STATION RADIO SET"
       },
       {
-        "id": 73,
-        "category": 8,
-        "name": "CAMP STOVE"
-      },
-      {
-        "id": 74,
+        "id": 247,
         "category": 8,
         "name": "GENERATOR"
       },
       {
-        "id": 75,
+        "id": 248,
         "category": 8,
-        "name": "MAST LADDER"
+        "name": "FUEL DRUM"
       },
       {
-        "id": 76,
+        "id": 249,
+        "category": 8,
+        "name": "TARP"
+      },
+      {
+        "id": 250,
+        "category": 8,
+        "name": "VALLEY MAP WITH PINS"
+      },
+      {
+        "id": 251,
+        "category": 8,
+        "name": "CAMP STOVE"
+      },
+      {
+        "id": 252,
+        "category": 8,
+        "name": "MARKER CAIRN"
+      },
+      {
+        "id": 253,
+        "category": 8,
+        "name": "WALL CLOCK"
+      },
+      {
+        "id": 254,
+        "category": 8,
+        "name": "WEATHER BOARD"
+      },
+      {
+        "id": 255,
+        "category": 8,
+        "name": "NETS"
+      },
+      {
+        "id": 256,
         "category": 9,
         "name": "WEATHER COATS"
       },
       {
-        "id": 77,
+        "id": 257,
+        "category": 9,
+        "name": "TEO'S JUMPERS"
+      },
+      {
+        "id": 258,
+        "category": 10,
+        "name": "ANSEL'S BEARD AND SPLINT"
+      },
+      {
+        "id": 259,
+        "category": 11,
+        "name": "QUAD BIKE"
+      },
+      {
+        "id": 260,
+        "category": 11,
+        "name": "PARK TRUCK"
+      },
+      {
+        "id": 261,
+        "category": 11,
+        "name": "SEARCH PLANE"
+      },
+      {
+        "id": 262,
+        "category": 11,
+        "name": "ROWBOAT"
+      },
+      {
+        "id": 263,
+        "category": 12,
+        "name": "RAVEN"
+      },
+      {
+        "id": 264,
         "category": 13,
         "name": "WIND"
       },
       {
-        "id": 78,
+        "id": 265,
         "category": 13,
         "name": "RAIN"
+      },
+      {
+        "id": 266,
+        "category": 13,
+        "name": "MIST"
+      },
+      {
+        "id": 267,
+        "category": 13,
+        "name": "FLARE"
+      },
+      {
+        "id": 268,
+        "category": 14,
+        "name": "THE FAR LIGHT"
+      },
+      {
+        "id": 269,
+        "category": 15,
+        "name": "CAR MOUNT"
+      },
+      {
+        "id": 270,
+        "category": 16,
+        "name": "NIGHT EXTERIOR LIGHTING"
+      },
+      {
+        "id": 271,
+        "category": 17,
+        "name": "RADIO PLAYBACK"
+      },
+      {
+        "id": 272,
+        "category": 18,
+        "name": "CAMERA BOAT"
+      },
+      {
+        "id": 273,
+        "category": 19,
+        "name": "MARINE COORDINATOR"
+      },
+      {
+        "id": 274,
+        "category": 20,
+        "name": "RIGGER"
+      },
+      {
+        "id": 275,
+        "category": 20,
+        "name": "SAFETY DIVER"
+      },
+      {
+        "id": 276,
+        "category": 21,
+        "name": "PARK ROAD PERMIT"
       }
     ],
     "sheets": [
@@ -317,12 +569,14 @@
         "eighths": 7,
         "shoot_minutes": 60,
         "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
         "elements": [
           40,
           41,
-          64,
-          65,
-          77
+          234,
+          235,
+          264,
+          276
         ]
       },
       {
@@ -334,16 +588,20 @@
         "eighths": 15,
         "shoot_minutes": 120,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           44,
           40,
           41,
-          65,
-          66,
-          74,
-          76,
-          77,
-          78
+          235,
+          246,
+          247,
+          248,
+          249,
+          256,
+          257,
+          264,
+          265
         ]
       },
       {
@@ -355,14 +613,18 @@
         "eighths": 7,
         "shoot_minutes": 60,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           40,
           47,
           41,
           44,
-          64,
-          69,
-          72
+          234,
+          236,
+          246,
+          249,
+          250,
+          271
         ]
       },
       {
@@ -374,13 +636,16 @@
         "eighths": 11,
         "shoot_minutes": 90,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           40,
           41,
-          64,
-          66,
-          75,
-          77
+          231,
+          232,
+          234,
+          264,
+          268,
+          274
         ]
       },
       {
@@ -392,13 +657,15 @@
         "eighths": 7,
         "shoot_minutes": 60,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           40,
           44,
           41,
-          66,
-          72,
-          73
+          246,
+          249,
+          250,
+          251
         ]
       },
       {
@@ -409,12 +676,16 @@
         "time_of_day": "NIGHT",
         "eighths": 8,
         "shoot_minutes": 60,
-        "location": "Hollins Ridge fire road",
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           40,
-          64,
-          67,
-          77
+          234,
+          237,
+          245,
+          252,
+          264,
+          270
         ]
       },
       {
@@ -426,12 +697,16 @@
         "eighths": 7,
         "shoot_minutes": 60,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           47,
           40,
           44,
-          64,
-          72
+          234,
+          236,
+          240,
+          246,
+          271
         ]
       },
       {
@@ -443,15 +718,21 @@
         "eighths": 11,
         "shoot_minutes": 90,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           41,
           44,
           40,
-          64,
-          68,
-          74,
-          76,
-          77
+          233,
+          234,
+          238,
+          247,
+          248,
+          249,
+          256,
+          259,
+          264,
+          270
         ]
       },
       {
@@ -463,14 +744,18 @@
         "eighths": 6,
         "shoot_minutes": 60,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           44,
-          66,
-          68,
-          69,
-          70,
-          71,
-          77
+          236,
+          238,
+          239,
+          241,
+          243,
+          246,
+          253,
+          264,
+          270
         ]
       },
       {
@@ -482,13 +767,15 @@
         "eighths": 13,
         "shoot_minutes": 120,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           41,
           40,
-          64,
-          69,
-          72,
-          74
+          234,
+          246,
+          247,
+          249,
+          250
         ]
       },
       {
@@ -500,11 +787,1600 @@
         "eighths": 7,
         "shoot_minutes": 60,
         "location": "Cold Spring field station",
+        "unit": "Main Unit",
         "elements": [
           40,
           41,
-          64,
-          72
+          234,
+          236,
+          246,
+          249
+        ]
+      },
+      {
+        "id": 64,
+        "scenes": "12",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          243,
+          248
+        ]
+      },
+      {
+        "id": 66,
+        "scenes": "13",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 9,
+        "shoot_minutes": 90,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          47,
+          68,
+          227,
+          234,
+          236,
+          242,
+          243,
+          246,
+          254
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": 69,
+        "scenes": "14",
+        "int_ext": "INT",
+        "set": "FIELD STATION - LAB",
+        "time_of_day": "DAY",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          250,
+          265
+        ]
+      },
+      {
+        "id": 71,
+        "scenes": "15",
+        "int_ext": "EXT",
+        "set": "RADIO MAST",
+        "time_of_day": "DAY",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          231,
+          232,
+          264,
+          274
+        ]
+      },
+      {
+        "id": 73,
+        "scenes": "16",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 10,
+        "shoot_minutes": 90,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          44,
+          41,
+          236,
+          241,
+          246,
+          250,
+          271
+        ]
+      },
+      {
+        "id": 75,
+        "scenes": "17",
+        "int_ext": "INT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          239,
+          240,
+          241,
+          243,
+          250,
+          253,
+          256
+        ]
+      },
+      {
+        "id": 77,
+        "scenes": "18",
+        "int_ext": "EXT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          233,
+          235,
+          239,
+          242,
+          248,
+          259,
+          265
+        ]
+      },
+      {
+        "id": 79,
+        "scenes": "19",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 9,
+        "shoot_minutes": 90,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          234,
+          235,
+          237,
+          241,
+          246,
+          264
+        ]
+      },
+      {
+        "id": 81,
+        "scenes": "20",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          263,
+          276
+        ]
+      },
+      {
+        "id": 83,
+        "scenes": "21",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 2,
+        "shoot_minutes": 30,
+        "location": "Hollins Ridge fire road",
+        "unit": "Second Unit",
+        "elements": [
+          259,
+          264,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 85,
+        "scenes": "22",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          68,
+          47,
+          241,
+          254,
+          259
+        ]
+      },
+      {
+        "id": 87,
+        "scenes": "23",
+        "int_ext": "INT",
+        "set": "FIELD STATION - LAB",
+        "time_of_day": "DUSK",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          250
+        ]
+      },
+      {
+        "id": 89,
+        "scenes": "24",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DUSK",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          233,
+          238,
+          241,
+          242,
+          247,
+          259,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 91,
+        "scenes": "25",
+        "int_ext": "EXT",
+        "set": "RIDGE",
+        "time_of_day": "DUSK",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          234,
+          240
+        ]
+      },
+      {
+        "id": 93,
+        "scenes": "26",
+        "int_ext": "INT",
+        "set": "FIELD STATION - BUNKHOUSE",
+        "time_of_day": "NIGHT",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          237,
+          240,
+          250
+        ]
+      },
+      {
+        "id": 95,
+        "scenes": "27",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          238,
+          241,
+          247,
+          253,
+          264,
+          270
+        ]
+      },
+      {
+        "id": 97,
+        "scenes": "28",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "NIGHT",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          235,
+          238,
+          242,
+          270,
+          276
+        ]
+      },
+      {
+        "id": 99,
+        "scenes": "29",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "NIGHT",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          68,
+          47,
+          241,
+          253,
+          256
+        ]
+      },
+      {
+        "id": 101,
+        "scenes": "30",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "NIGHT",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          235,
+          270,
+          276
+        ]
+      },
+      {
+        "id": 103,
+        "scenes": "31",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          234,
+          236,
+          241,
+          246,
+          249,
+          250
+        ]
+      },
+      {
+        "id": 105,
+        "scenes": "32",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAWN",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          235,
+          238,
+          242,
+          245,
+          251,
+          264,
+          272
+        ]
+      },
+      {
+        "id": 107,
+        "scenes": "33",
+        "int_ext": "EXT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAWN",
+        "eighths": 10,
+        "shoot_minutes": 90,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          109,
+          44,
+          242,
+          255,
+          262
+        ]
+      },
+      {
+        "id": 110,
+        "scenes": "34",
+        "int_ext": "INT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 15,
+        "shoot_minutes": 120,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          109,
+          44,
+          226,
+          235,
+          241,
+          242,
+          243,
+          245,
+          251,
+          255,
+          256,
+          258
+        ]
+      },
+      {
+        "id": 112,
+        "scenes": "35",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          236,
+          248,
+          259,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 115,
+        "scenes": "36",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 9,
+        "shoot_minutes": 90,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          68,
+          47,
+          227,
+          234,
+          241,
+          246,
+          250,
+          254,
+          261,
+          271
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 117,
+        "scenes": "37",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          47,
+          41,
+          236,
+          240,
+          246,
+          256,
+          259,
+          271
+        ]
+      },
+      {
+        "id": 119,
+        "scenes": "38",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 12,
+        "shoot_minutes": 90,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          40,
+          234,
+          235,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 121,
+        "scenes": "39",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 1,
+        "shoot_minutes": 30,
+        "location": "Hollins Ridge fire road",
+        "unit": "Second Unit",
+        "elements": [
+          259,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 123,
+        "scenes": "40",
+        "int_ext": "INT",
+        "set": "FIELD STATION - LAB",
+        "time_of_day": "DAY",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          247,
+          253,
+          259
+        ]
+      },
+      {
+        "id": 125,
+        "scenes": "41",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          235,
+          243,
+          245,
+          246,
+          247,
+          249
+        ]
+      },
+      {
+        "id": 127,
+        "scenes": "42",
+        "int_ext": "EXT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          248,
+          259
+        ]
+      },
+      {
+        "id": 129,
+        "scenes": "43",
+        "int_ext": "INT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          237,
+          239,
+          241,
+          243,
+          247,
+          253
+        ]
+      },
+      {
+        "id": 131,
+        "scenes": "44",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          47,
+          68,
+          240,
+          243,
+          253,
+          261,
+          271
+        ]
+      },
+      {
+        "id": 133,
+        "scenes": "45",
+        "int_ext": "INT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          109,
+          226,
+          255,
+          257,
+          258
+        ]
+      },
+      {
+        "id": 135,
+        "scenes": "46",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          109,
+          44,
+          255,
+          262,
+          272,
+          273,
+          275
+        ]
+      },
+      {
+        "id": 137,
+        "scenes": "47",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          40,
+          242,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 139,
+        "scenes": "48",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DUSK",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          40,
+          235,
+          236,
+          241,
+          242,
+          244,
+          260,
+          261,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 141,
+        "scenes": "49",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DUSK",
+        "eighths": 10,
+        "shoot_minutes": 90,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          114,
+          44,
+          109,
+          237,
+          238,
+          262,
+          268,
+          272,
+          273,
+          275
+        ]
+      },
+      {
+        "id": 143,
+        "scenes": "50",
+        "int_ext": "INT",
+        "set": "BOATHOUSE",
+        "time_of_day": "NIGHT",
+        "eighths": 13,
+        "shoot_minutes": 120,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          109,
+          40,
+          44,
+          226,
+          251,
+          252,
+          253,
+          258,
+          261
+        ]
+      },
+      {
+        "id": 145,
+        "scenes": "51",
+        "int_ext": "INT",
+        "set": "LOWER STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          47,
+          239,
+          240,
+          247,
+          261,
+          271
+        ]
+      },
+      {
+        "id": 147,
+        "scenes": "52",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAWN",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          68,
+          149,
+          47,
+          227,
+          240,
+          242,
+          246,
+          254,
+          255,
+          256,
+          271
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": 150,
+        "scenes": "53",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAWN",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          109,
+          114,
+          243,
+          244,
+          255,
+          260,
+          261,
+          262,
+          266,
+          267,
+          272
+        ]
+      },
+      {
+        "id": 152,
+        "scenes": "54",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAY",
+        "eighths": 10,
+        "shoot_minutes": 90,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          114,
+          40,
+          44,
+          239,
+          240,
+          256,
+          260,
+          261,
+          266
+        ]
+      },
+      {
+        "id": 154,
+        "scenes": "55",
+        "int_ext": "INT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          44,
+          109,
+          226,
+          235,
+          252,
+          258
+        ]
+      },
+      {
+        "id": 156,
+        "scenes": "56",
+        "int_ext": "EXT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          114,
+          109,
+          44,
+          255
+        ]
+      },
+      {
+        "id": 158,
+        "scenes": "57",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          44,
+          240,
+          253,
+          261,
+          271
+        ]
+      },
+      {
+        "id": 160,
+        "scenes": "58",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          68,
+          47,
+          227,
+          256,
+          271
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": 162,
+        "scenes": "59",
+        "int_ext": "INT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          47,
+          41,
+          226,
+          243,
+          258,
+          271
+        ]
+      },
+      {
+        "id": 164,
+        "scenes": "60",
+        "int_ext": "EXT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          235,
+          242,
+          248,
+          264
+        ]
+      },
+      {
+        "id": 166,
+        "scenes": "61",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 9,
+        "shoot_minutes": 90,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          40,
+          234,
+          244,
+          260,
+          265,
+          267,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 168,
+        "scenes": "62",
+        "int_ext": "EXT",
+        "set": "RIDGE",
+        "time_of_day": "DUSK",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          235,
+          252,
+          264
+        ]
+      },
+      {
+        "id": 170,
+        "scenes": "63",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "DUSK",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          236,
+          237,
+          241,
+          246,
+          247,
+          249
+        ]
+      },
+      {
+        "id": 172,
+        "scenes": "64",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          114,
+          241,
+          247,
+          248,
+          264,
+          265,
+          270
+        ]
+      },
+      {
+        "id": 174,
+        "scenes": "65",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 10,
+        "shoot_minutes": 90,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          114,
+          243,
+          249,
+          251,
+          256
+        ]
+      },
+      {
+        "id": 176,
+        "scenes": "66",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "NIGHT",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          47,
+          68,
+          227,
+          240,
+          265
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": 178,
+        "scenes": "67",
+        "int_ext": "EXT",
+        "set": "RADIO MAST",
+        "time_of_day": "NIGHT",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          231,
+          232,
+          237,
+          248,
+          264,
+          270,
+          274
+        ]
+      },
+      {
+        "id": 180,
+        "scenes": "68",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "LATER",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          47,
+          40,
+          114,
+          240,
+          241,
+          253,
+          260,
+          271
+        ]
+      },
+      {
+        "id": 182,
+        "scenes": "69",
+        "int_ext": "INT",
+        "set": "FIELD STATION - BUNKHOUSE",
+        "time_of_day": "NIGHT",
+        "eighths": 2,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          237
+        ]
+      },
+      {
+        "id": 184,
+        "scenes": "70",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          237,
+          247,
+          248,
+          270
+        ]
+      },
+      {
+        "id": 186,
+        "scenes": "71",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          234,
+          236,
+          237,
+          246
+        ]
+      },
+      {
+        "id": 188,
+        "scenes": "72",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAWN",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          40,
+          41,
+          243,
+          246,
+          247,
+          249,
+          260
+        ]
+      },
+      {
+        "id": 190,
+        "scenes": "73",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          68,
+          47,
+          227,
+          254,
+          256
+        ],
+        "quantities": [
+          {
+            "element": 227,
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 192,
+        "scenes": "74",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Hollins Ridge fire road",
+        "unit": "Second Unit",
+        "elements": [
+          114,
+          236,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 194,
+        "scenes": "75",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 3,
+        "shoot_minutes": 30,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          114,
+          242,
+          259,
+          260,
+          269,
+          276
+        ]
+      },
+      {
+        "id": 196,
+        "scenes": "76",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          109,
+          253,
+          255,
+          262,
+          272
+        ]
+      },
+      {
+        "id": 198,
+        "scenes": "77",
+        "int_ext": "INT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          109,
+          226,
+          258
+        ]
+      },
+      {
+        "id": 200,
+        "scenes": "78",
+        "int_ext": "EXT",
+        "set": "BOATHOUSE",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          109,
+          149,
+          236,
+          241,
+          253,
+          261
+        ]
+      },
+      {
+        "id": 202,
+        "scenes": "79",
+        "int_ext": "EXT",
+        "set": "KETTLE LAKE",
+        "time_of_day": "DUSK",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Kettle Lake boathouse",
+        "unit": "Main Unit",
+        "elements": [
+          149,
+          229,
+          261,
+          262,
+          272,
+          273,
+          275
+        ],
+        "quantities": [
+          {
+            "element": 229,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": 204,
+        "scenes": "80",
+        "int_ext": "EXT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          228,
+          235,
+          239,
+          245,
+          253
+        ],
+        "quantities": [
+          {
+            "element": 228,
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 206,
+        "scenes": "81",
+        "int_ext": "INT",
+        "set": "LOWER STATION",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          239,
+          240,
+          246,
+          253
+        ]
+      },
+      {
+        "id": 208,
+        "scenes": "82",
+        "int_ext": "EXT",
+        "set": "RIDGE",
+        "time_of_day": "DAY",
+        "eighths": 6,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          247,
+          249,
+          252
+        ]
+      },
+      {
+        "id": 210,
+        "scenes": "83",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 8,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          228,
+          230,
+          235,
+          247,
+          249,
+          256,
+          264
+        ],
+        "quantities": [
+          {
+            "element": 228,
+            "count": 2
+          }
+        ]
+      },
+      {
+        "id": 212,
+        "scenes": "84",
+        "int_ext": "INT",
+        "set": "FIELD STATION",
+        "time_of_day": "DAY",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          234,
+          246,
+          250
+        ]
+      },
+      {
+        "id": 214,
+        "scenes": "85",
+        "int_ext": "INT",
+        "set": "FIELD STATION - LAB",
+        "time_of_day": "DAY",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          240
+        ]
+      },
+      {
+        "id": 216,
+        "scenes": "86",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "DAY",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          68,
+          44,
+          47,
+          246,
+          257
+        ]
+      },
+      {
+        "id": 218,
+        "scenes": "87",
+        "int_ext": "EXT",
+        "set": "RIDGE ROAD",
+        "time_of_day": "DAY",
+        "eighths": 9,
+        "shoot_minutes": 90,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          40,
+          41,
+          234,
+          235,
+          264,
+          276
+        ]
+      },
+      {
+        "id": 220,
+        "scenes": "88",
+        "int_ext": "EXT",
+        "set": "FIRE ROAD",
+        "time_of_day": "DUSK",
+        "eighths": 5,
+        "shoot_minutes": 60,
+        "location": "Hollins Ridge fire road",
+        "unit": "Main Unit",
+        "elements": [
+          41,
+          40,
+          242,
+          268,
+          276
+        ]
+      },
+      {
+        "id": 222,
+        "scenes": "89",
+        "int_ext": "INT",
+        "set": "BASE - RADIO ROOM",
+        "time_of_day": "NIGHT",
+        "eighths": 7,
+        "shoot_minutes": 60,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          44,
+          47,
+          68,
+          236,
+          241,
+          253
+        ]
+      },
+      {
+        "id": 224,
+        "scenes": "90",
+        "int_ext": "EXT",
+        "set": "FIELD STATION",
+        "time_of_day": "NIGHT",
+        "eighths": 4,
+        "shoot_minutes": 30,
+        "location": "Cold Spring field station",
+        "unit": "Main Unit",
+        "elements": [
+          230,
+          246,
+          247,
+          249,
+          252,
+          264,
+          270
         ]
       }
     ],
@@ -517,18 +2393,72 @@
             "id": 3,
             "name": "Main",
             "start": "2027-05-03",
+            "calendar": {
+              "prep_start": "2027-04-26",
+              "wrap_end": "2027-05-28"
+            },
             "strips": [
               {
                 "kind": "sheet",
-                "id": 39,
-                "sheet": 38
+                "id": 67,
+                "sheet": 66
+              },
+              {
+                "kind": "sheet",
+                "id": 86,
+                "sheet": 85
               },
               {
                 "kind": "banner",
-                "id": 79,
-                "text": "Company move to the station",
-                "minutes": 30,
+                "id": 277,
+                "text": "Lunch",
+                "minutes": 60,
                 "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 116,
+                "sheet": 115
+              },
+              {
+                "kind": "sheet",
+                "id": 132,
+                "sheet": 131
+              },
+              {
+                "kind": "day_break",
+                "id": 278
+              },
+              {
+                "kind": "sheet",
+                "id": 161,
+                "sheet": 160
+              },
+              {
+                "kind": "sheet",
+                "id": 191,
+                "sheet": 190
+              },
+              {
+                "kind": "banner",
+                "id": 279,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 217,
+                "sheet": 216
+              },
+              {
+                "kind": "sheet",
+                "id": 148,
+                "sheet": 147
+              },
+              {
+                "kind": "day_break",
+                "id": 280
               },
               {
                 "kind": "sheet",
@@ -537,17 +2467,224 @@
               },
               {
                 "kind": "sheet",
+                "id": 46,
+                "sheet": 45
+              },
+              {
+                "kind": "banner",
+                "id": 281,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 65,
+                "sheet": 64
+              },
+              {
+                "kind": "sheet",
+                "id": 70,
+                "sheet": 69
+              },
+              {
+                "kind": "day_break",
+                "id": 282
+              },
+              {
+                "kind": "sheet",
+                "id": 74,
+                "sheet": 73
+              },
+              {
+                "kind": "sheet",
+                "id": 80,
+                "sheet": 79
+              },
+              {
+                "kind": "sheet",
+                "id": 118,
+                "sheet": 117
+              },
+              {
+                "kind": "banner",
+                "id": 283,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 124,
+                "sheet": 123
+              },
+              {
+                "kind": "sheet",
+                "id": 126,
+                "sheet": 125
+              },
+              {
+                "kind": "day_break",
+                "id": 284
+              },
+              {
+                "kind": "sheet",
+                "id": 211,
+                "sheet": 210
+              },
+              {
+                "kind": "sheet",
+                "id": 213,
+                "sheet": 212
+              },
+              {
+                "kind": "sheet",
+                "id": 215,
+                "sheet": 214
+              },
+              {
+                "kind": "banner",
+                "id": 285,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 63,
+                "sheet": 62
+              },
+              {
+                "kind": "sheet",
+                "id": 189,
+                "sheet": 188
+              },
+              {
+                "kind": "sheet",
+                "id": 88,
+                "sheet": 87
+              },
+              {
+                "kind": "day_break",
+                "id": 286
+              },
+              {
+                "kind": "sheet",
+                "id": 171,
+                "sheet": 170
+              },
+              {
+                "kind": "sheet",
+                "id": 76,
+                "sheet": 75
+              },
+              {
+                "kind": "sheet",
+                "id": 78,
+                "sheet": 77
+              },
+              {
+                "kind": "banner",
+                "id": 287,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 128,
+                "sheet": 127
+              },
+              {
+                "kind": "sheet",
+                "id": 130,
+                "sheet": 129
+              },
+              {
+                "kind": "day_break",
+                "id": 288
+              },
+              {
+                "kind": "sheet",
+                "id": 163,
+                "sheet": 162
+              },
+              {
+                "kind": "sheet",
+                "id": 165,
+                "sheet": 164
+              },
+              {
+                "kind": "sheet",
+                "id": 205,
+                "sheet": 204
+              },
+              {
+                "kind": "banner",
+                "id": 289,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 207,
+                "sheet": 206
+              },
+              {
+                "kind": "sheet",
+                "id": 72,
+                "sheet": 71
+              },
+              {
+                "kind": "sheet",
                 "id": 49,
                 "sheet": 48
               },
               {
                 "kind": "day_break",
-                "id": 80
+                "id": 290
               },
               {
                 "kind": "sheet",
-                "id": 46,
-                "sheet": 45
+                "id": 209,
+                "sheet": 208
+              },
+              {
+                "kind": "sheet",
+                "id": 92,
+                "sheet": 91
+              },
+              {
+                "kind": "sheet",
+                "id": 169,
+                "sheet": 168
+              },
+              {
+                "kind": "banner",
+                "id": 291,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 100,
+                "sheet": 99
+              },
+              {
+                "kind": "sheet",
+                "id": 177,
+                "sheet": 176
+              },
+              {
+                "kind": "day_break",
+                "id": 292
+              },
+              {
+                "kind": "sheet",
+                "id": 223,
+                "sheet": 222
               },
               {
                 "kind": "sheet",
@@ -556,7 +2693,7 @@
               },
               {
                 "kind": "banner",
-                "id": 81,
+                "id": 293,
                 "text": "Lunch",
                 "minutes": 60,
                 "bold": true
@@ -568,12 +2705,12 @@
               },
               {
                 "kind": "sheet",
-                "id": 63,
-                "sheet": 62
+                "id": 57,
+                "sheet": 56
               },
               {
                 "kind": "day_break",
-                "id": 82
+                "id": 294
               },
               {
                 "kind": "sheet",
@@ -582,12 +2719,321 @@
               },
               {
                 "kind": "sheet",
-                "id": 57,
-                "sheet": 56
+                "id": 94,
+                "sheet": 93
+              },
+              {
+                "kind": "sheet",
+                "id": 96,
+                "sheet": 95
+              },
+              {
+                "kind": "banner",
+                "id": 295,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 104,
+                "sheet": 103
+              },
+              {
+                "kind": "sheet",
+                "id": 173,
+                "sheet": 172
               },
               {
                 "kind": "day_break",
-                "id": 83
+                "id": 296
+              },
+              {
+                "kind": "banner",
+                "id": 297,
+                "text": "Company move to Kettle Lake",
+                "minutes": 45,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 111,
+                "sheet": 110
+              },
+              {
+                "kind": "sheet",
+                "id": 134,
+                "sheet": 133
+              },
+              {
+                "kind": "sheet",
+                "id": 155,
+                "sheet": 154
+              },
+              {
+                "kind": "banner",
+                "id": 298,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 157,
+                "sheet": 156
+              },
+              {
+                "kind": "sheet",
+                "id": 199,
+                "sheet": 198
+              },
+              {
+                "kind": "day_break",
+                "id": 299
+              },
+              {
+                "kind": "sheet",
+                "id": 201,
+                "sheet": 200
+              },
+              {
+                "kind": "sheet",
+                "id": 108,
+                "sheet": 107
+              },
+              {
+                "kind": "sheet",
+                "id": 136,
+                "sheet": 135
+              },
+              {
+                "kind": "banner",
+                "id": 300,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 153,
+                "sheet": 152
+              },
+              {
+                "kind": "sheet",
+                "id": 159,
+                "sheet": 158
+              },
+              {
+                "kind": "sheet",
+                "id": 197,
+                "sheet": 196
+              },
+              {
+                "kind": "day_break",
+                "id": 301
+              },
+              {
+                "kind": "sheet",
+                "id": 106,
+                "sheet": 105
+              },
+              {
+                "kind": "sheet",
+                "id": 151,
+                "sheet": 150
+              },
+              {
+                "kind": "sheet",
+                "id": 142,
+                "sheet": 141
+              },
+              {
+                "kind": "banner",
+                "id": 302,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 203,
+                "sheet": 202
+              },
+              {
+                "kind": "sheet",
+                "id": 144,
+                "sheet": 143
+              },
+              {
+                "kind": "day_break",
+                "id": 303
+              },
+              {
+                "kind": "banner",
+                "id": 304,
+                "text": "Company move to Hollins Ridge",
+                "minutes": 45,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 113,
+                "sheet": 112
+              },
+              {
+                "kind": "sheet",
+                "id": 138,
+                "sheet": 137
+              },
+              {
+                "kind": "sheet",
+                "id": 195,
+                "sheet": 194
+              },
+              {
+                "kind": "banner",
+                "id": 305,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 90,
+                "sheet": 89
+              },
+              {
+                "kind": "sheet",
+                "id": 140,
+                "sheet": 139
+              },
+              {
+                "kind": "sheet",
+                "id": 221,
+                "sheet": 220
+              },
+              {
+                "kind": "banner",
+                "id": 306,
+                "text": "Second unit: the drive on the fire road",
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 84,
+                "sheet": 83
+              },
+              {
+                "kind": "sheet",
+                "id": 122,
+                "sheet": 121
+              },
+              {
+                "kind": "sheet",
+                "id": 193,
+                "sheet": 192
+              },
+              {
+                "kind": "day_break",
+                "id": 307
+              },
+              {
+                "kind": "sheet",
+                "id": 39,
+                "sheet": 38
+              },
+              {
+                "kind": "sheet",
+                "id": 82,
+                "sheet": 81
+              },
+              {
+                "kind": "sheet",
+                "id": 120,
+                "sheet": 119
+              },
+              {
+                "kind": "day_break",
+                "id": 308
+              },
+              {
+                "kind": "sheet",
+                "id": 167,
+                "sheet": 166
+              },
+              {
+                "kind": "sheet",
+                "id": 219,
+                "sheet": 218
+              },
+              {
+                "kind": "banner",
+                "id": 309,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 98,
+                "sheet": 97
+              },
+              {
+                "kind": "sheet",
+                "id": 102,
+                "sheet": 101
+              },
+              {
+                "kind": "day_break",
+                "id": 310
+              },
+              {
+                "kind": "banner",
+                "id": 311,
+                "text": "Company move to the station",
+                "minutes": 45,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 175,
+                "sheet": 174
+              },
+              {
+                "kind": "sheet",
+                "id": 181,
+                "sheet": 180
+              },
+              {
+                "kind": "sheet",
+                "id": 183,
+                "sheet": 182
+              },
+              {
+                "kind": "banner",
+                "id": 312,
+                "text": "Lunch",
+                "minutes": 60,
+                "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 185,
+                "sheet": 184
+              },
+              {
+                "kind": "sheet",
+                "id": 187,
+                "sheet": 186
+              },
+              {
+                "kind": "day_break",
+                "id": 313
+              },
+              {
+                "kind": "sheet",
+                "id": 225,
+                "sheet": 224
               },
               {
                 "kind": "sheet",
@@ -595,11 +3041,21 @@
                 "sheet": 58
               },
               {
+                "kind": "sheet",
+                "id": 146,
+                "sheet": 145
+              },
+              {
                 "kind": "banner",
-                "id": 84,
-                "text": "Company move to the ridge",
-                "minutes": 45,
+                "id": 314,
+                "text": "Lunch",
+                "minutes": 60,
                 "bold": true
+              },
+              {
+                "kind": "sheet",
+                "id": 179,
+                "sheet": 178
               },
               {
                 "kind": "sheet",
@@ -608,7 +3064,7 @@
               },
               {
                 "kind": "day_break",
-                "id": 85
+                "id": 315
               }
             ]
           }
@@ -630,6 +3086,87 @@
           "longitude_microdeg": -121498000,
           "utc_offset_minutes": -480,
           "daylight_saving": "us_canada"
+        },
+        {
+          "name": "Kettle Lake boathouse",
+          "latitude_microdeg": 46771000,
+          "longitude_microdeg": -121545000,
+          "utc_offset_minutes": -480,
+          "daylight_saving": "us_canada"
+        }
+      ],
+      "call_times": [
+        {
+          "day": 278,
+          "minutes": 420
+        },
+        {
+          "day": 280,
+          "minutes": 420
+        },
+        {
+          "day": 282,
+          "minutes": 420
+        },
+        {
+          "day": 284,
+          "minutes": 420
+        },
+        {
+          "day": 286,
+          "minutes": 420
+        },
+        {
+          "day": 288,
+          "minutes": 420
+        },
+        {
+          "day": 290,
+          "minutes": 420
+        },
+        {
+          "day": 292,
+          "minutes": 420
+        },
+        {
+          "day": 294,
+          "minutes": 960
+        },
+        {
+          "day": 296,
+          "minutes": 960
+        },
+        {
+          "day": 299,
+          "minutes": 420
+        },
+        {
+          "day": 301,
+          "minutes": 420
+        },
+        {
+          "day": 303,
+          "minutes": 420
+        },
+        {
+          "day": 307,
+          "minutes": 420
+        },
+        {
+          "day": 308,
+          "minutes": 420
+        },
+        {
+          "day": 310,
+          "minutes": 420
+        },
+        {
+          "day": 313,
+          "minutes": 960
+        },
+        {
+          "day": 315,
+          "minutes": 960
         }
       ]
     }

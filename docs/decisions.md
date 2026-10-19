@@ -5437,3 +5437,23 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   recommendation.
 - **Order**: M2b, after v0.1.0 is tagged and ahead of M3. Plan, map and phases:
   docs/research/web-session.md.
+
+## 223. Field Station grows to the suite's full invented feature (2026-10-18)
+
+- **The owner's standard** (SUITE-STANDARDS.md section 8): each app opens a rich invented
+  sample that shows its features, and the suite's samples match. Storyteller wrote the
+  ~80-page Field Station (its PR #41, commit 768d8c9), keeping this repository's first
+  11 scenes and title page byte for byte; this copy is its Fountain export.
+- **The shape agreed with Method Budget**: 18 shoot days, Monday 2027-05-03 to Wednesday
+  2027-05-26; Cold Spring field station 12, Kettle Lake boathouse 3 (one company move),
+  Hollins Ridge fire road 3; a Second Unit for the drive on the fire road (scenes 21, 39,
+  74) on day 14 beside the main unit; prep from 2027-04-26, wrap to 2027-05-28.
+- **What the sample shows**: 90 scenes; nine cast, one of them silent (ANSEL); an element
+  in every category, read off the script by what each scene says, with background counts;
+  three locations on the map; banners for lunch, the moves and the second unit; call
+  times (7:00, or 16:00 on all-night days); three red flags, one a soft clash on the
+  ridge's last day so the board shows a mark.
+- **Budget reads it through the real exchange file**: `fixtures/field-station.budget.json`
+  is what `method-schedule budget` writes from the fixture.
+- **Still to come** (M2c): pictures on elements, Help > Open Sample switching to Field
+  Station, and Field Station on first launch.
