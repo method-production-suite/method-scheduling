@@ -42,8 +42,6 @@ permissions:
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
-env:
-  TAURI_CLI_VERSION: "2.11.4"
 jobs:
   check:
     name: tag and version
@@ -129,7 +127,10 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: rustup target add "$TARGET"
       - name: Tauri CLI
-        run: cargo install tauri-cli --locked --version "$TAURI_CLI_VERSION"
+        # The prebuilt CLI, its version and SHA-256s pinned in the script, instead of
+        # compiling it here (Method Budget's; it took half a macOS build's time).
+        shell: bash
+        run: bash scripts/install-tauri-cli.sh
 
       - name: Decide what gets signed
         run: |

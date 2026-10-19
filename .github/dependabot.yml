@@ -15,7 +15,7 @@ updates:
     groups:
       # The Tauri family moves together or not at all: tauri, tauri-build and the
       # plugins are released as matched sets (tauri 2.12 wants tauri-build 2.7), and
-      # TAURI_CLI_VERSION in release.yml goes with them by hand. Listed first, so these
+      # the CLI version in scripts/install-tauri-cli.sh goes with them by hand. Listed first, so these
       # never land in the weekly group.
       tauri:
         applies-to: version-updates
