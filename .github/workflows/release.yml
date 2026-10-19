@@ -403,6 +403,19 @@ jobs:
           fi
           prerelease=()
           case "$version" in *-*) prerelease=(--prerelease) ;; esac
+          # SHA256SUMS lists every file the release offers, by bare name, as Method
+          # Reader's does (SUITE-STANDARDS.md section 3): the launcher and people check
+          # downloads against it. Checked here before anything is uploaded.
+          (
+            cd dist
+            sha256sum -- * > "$RUNNER_TEMP/SHA256SUMS"
+            mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
+            sha256sum -c SHA256SUMS
+            if [ "$(wc -l < SHA256SUMS)" -ne "$(( $(ls | wc -l) - 1 ))" ]; then
+              echo "::error::SHA256SUMS doesn't list every file in the release."
+              exit 1
+            fi
+          )
           ls -l dist
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
