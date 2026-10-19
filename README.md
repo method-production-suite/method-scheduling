@@ -17,7 +17,7 @@ production runs on. No subscription, and your schedule is a file you own.
 - **Bring your scripts with you.** A Fountain or `.fdx` script comes in as one breakdown
   sheet per scene, and later drafts merge into the schedule you already have.
 
-Status: early alpha. Version 0.1.0 is out for Macs with Apple silicon; elsewhere it builds from source.
+Status: early alpha. The latest version is out for Macs with Apple silicon; elsewhere it builds from source.
 Website: [methodschedule.com](https://methodschedule.com).
 
 <picture>
@@ -44,10 +44,10 @@ Website: [methodschedule.com](https://methodschedule.com).
 | Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple | By a person throughout development, and by the automated tests weekly |
 | Mac, Intel | No: the Mac app is for Apple silicon only | | |
 | Windows, 64-bit | Yes, an installer (`.exe`) | Not yet: Windows will warn that the publisher is unknown | Automated tests weekly; never installed by a person yet |
-| Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests on every change; never installed by a person yet |
+| Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests weekly; never installed by a person yet |
 
-Not there yet: updates inside the app on Windows and Linux, a hands-on check of printing,
-keys and file types on Windows and Linux, and linking a schedule from inside Method Budget. The full list is under
+Not there yet: updates inside the app on Windows and Linux, and a hands-on check of
+printing, keys and file types on Windows and Linux. The full list is under
 [On the roadmap](#on-the-roadmap). Windows and Linux: help us get there.
 
 ## Help build it
@@ -211,7 +211,6 @@ docs/features.toml.
 ### On the roadmap
 
 - **Windows and Linux, tested.** Both build from the same code today; printing, keys and file types still need a hands-on check.
-- **Day counts into Method Budget.** Linking a schedule from inside Method Budget, so shoot days and cast days arrive as the budget's globals; its reader for the exchange file is already built.
 - **Try it in your browser.** The app with an invented schedule, running in the browser with nothing to install.
 - **Daylight saving per location.** Sunrise, sunset and call times that follow each location's clock changes.
 
