@@ -1721,4 +1721,155 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn a_category_elements_field_lists_one_category() {
+        let (mut s, b, sb) = sample();
+        s.edit(|x| insert_day_break(x, sb, 4)).unwrap();
+        let props = s
+            .edit(|x| {
+                let props = x.add_category("Props");
+                let rope = x.add_element(props, "ROPE").map_err(|e| e.to_string())?;
+                let lamp = x.add_element(props, "LAMP").map_err(|e| e.to_string())?;
+                x.set_board_id(lamp, Some("P1"))
+                    .map_err(|e| e.to_string())?;
+                let first = x.sheets[0].id;
+                x.sheet_mut(first).unwrap().elements = vec![rope, lamp];
+                Ok(props)
+            })
+            .unwrap();
+        let list = |c: Option<u32>, ids: bool| LayoutColumnInput {
+            category: c,
+            board_ids: ids,
+            ..col("category_elements", "wide")
+        };
+        let cols = [col("scene", "narrow"), list(Some(props.0), false)];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        let v = crate::view::view(&s, None).unwrap();
+        assert_eq!(v.board.layout[1].label, "Props");
+        let cells =
+            |v: &crate::view::View, i: usize| v.board.sub_boards[0].days[0].strips[i].cells.clone();
+        assert_eq!(cells(&v, 0), ["1", "LAMP, ROPE"]);
+        assert_eq!(cells(&v, 1), ["2", ""]);
+        let cols = [col("scene", "narrow"), list(Some(props.0), true)];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        let v = crate::view::view(&s, None).unwrap();
+        assert!(v.board.layout[1].board_ids);
+        assert_eq!(cells(&v, 0), ["1", "P1, ROPE"]);
+        // No category: an empty cell. The switch on another field is refused.
+        let cols = [col("scene", "narrow"), list(None, true)];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        assert_eq!(cells(&crate::view::view(&s, None).unwrap(), 0), ["1", ""]);
+        let bad = [LayoutColumnInput {
+            board_ids: true,
+            ..col("scene", "narrow")
+        }];
+        let e = s.edit(|x| set_strip_layout(x, b, &bad, "")).unwrap_err();
+        assert!(e.ends_with('.'), "{e}");
+    }
+
+    #[test]
+    fn the_strip_layout_is_one_step_and_the_board_and_one_line_follow_it() {
+        let (mut s, b, sb) = sample();
+        s.edit(|x| insert_day_break(x, sb, 4)).unwrap();
+        s.edit(|x| {
+            let id = x.sheets[0].id;
+            x.sheet_mut(id).unwrap().synopsis = "Tove mends the net.".into();
+            Ok(())
+        })
+        .unwrap();
+        let before = s.schedule().clone();
+        let v = crate::view::view(&s, None).unwrap();
+        let fields: Vec<&str> = v.board.layout.iter().map(|c| c.field).collect();
+        assert_eq!(
+            fields,
+            ["scene", "int_ext", "set", "time_of_day", "pages", "cast"]
+        );
+        let cols = [
+            col("synopsis", "widest"),
+            col("scene", "narrow"),
+            col("pages", "medium"),
+        ];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        let v = crate::view::view(&s, None).unwrap();
+        let labels: Vec<&str> = v.board.layout.iter().map(|c| c.label.as_str()).collect();
+        assert_eq!(labels, ["Synopsis", "Scene", "Pages"]);
+        assert_eq!(v.board.layout[2].width, "medium");
+        let first = &v.board.sub_boards[0].days[0].strips[0];
+        assert_eq!(first.cells, ["Tove mends the net.", "1", "1"]);
+        assert!(
+            v.board.sub_boards[0].days[0].end.cells.is_empty(),
+            "day breaks have none"
+        );
+        assert!(s.undo());
+        assert_eq!(s.schedule(), &before, "one undo step");
+        // Refused, nothing changed.
+        for bad in [
+            vec![],
+            vec![col("scene", "narrow"), col("scene", "wide")],
+            vec![col("colour", "narrow")],
+            vec![col("scene", "huge")],
+        ] {
+            let e = s.edit(|x| set_strip_layout(x, b, &bad, "")).unwrap_err();
+            assert!(e.ends_with('.') && !e.contains('!'), "{e}");
+        }
+        assert!(s.edit(|x| set_strip_layout(x, 999_999, &cols, "")).is_err());
+        assert_eq!(s.schedule(), &before);
+    }
+
+    /// BRD-18 (behavior note 27, decision 147): the element count takes one category from
+    /// the page and the strips show `Name (n)`; the one-line report counts every element.
+    #[test]
+    fn an_element_count_takes_a_category_from_the_page() {
+        let (mut s, b, sb) = sample();
+        s.edit(|x| insert_day_break(x, sb, 4)).unwrap();
+        let (cast, props) = s
+            .edit(|x| {
+                let cast = x.cast_or_add();
+                let props = x.add_category("Props");
+                let net = x.add_element(props, "Net").map_err(|e| e.to_string())?;
+                let tove = x.add_element(cast, "Tove").map_err(|e| e.to_string())?;
+                let first = x.sheets[0].id;
+                x.sheet_mut(first).unwrap().elements = vec![net, tove];
+                Ok((cast, props))
+            })
+            .unwrap();
+        let count = |c: Option<u32>| LayoutColumnInput {
+            category: c,
+            ..col("element_count", "narrow")
+        };
+        let cols = [col("scene", "narrow"), count(Some(props.0))];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        let v = crate::view::view(&s, None).unwrap();
+        assert_eq!(v.board.layout[1].category, Some(props.0));
+        let cells =
+            |v: &crate::view::View, i: usize| v.board.sub_boards[0].days[0].strips[i].cells.clone();
+        assert_eq!(cells(&v, 0), ["1", "Props (1)"]);
+        assert_eq!(cells(&v, 1), ["2", "Props (0)"]);
+        // Another pick replaces it; none counts every element, quiet at none.
+        let cols = [col("scene", "narrow"), count(Some(cast.0))];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        assert_eq!(
+            cells(&crate::view::view(&s, None).unwrap(), 0),
+            ["1", "Cast (1)"]
+        );
+        let cols = [col("scene", "narrow"), count(None)];
+        s.edit(|x| set_strip_layout(x, b, &cols, "")).unwrap();
+        let v = crate::view::view(&s, None).unwrap();
+        assert_eq!(cells(&v, 0), ["1", "2"]);
+        assert_eq!(cells(&v, 1), ["2", ""]);
+        // Refused: a category the schedule lacks, or one on another field.
+        let before = s.schedule().clone();
+        for bad in [
+            vec![col("scene", "narrow"), count(Some(999_999))],
+            vec![LayoutColumnInput {
+                category: Some(props.0),
+                ..col("scene", "narrow")
+            }],
+        ] {
+            let e = s.edit(|x| set_strip_layout(x, b, &bad, "")).unwrap_err();
+            assert!(e.ends_with('.') && !e.contains('!'), "{e}");
+        }
+        assert_eq!(s.schedule(), &before);
+    }
 }
