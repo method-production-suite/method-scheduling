@@ -2,7 +2,8 @@
 # the Tauri bundler for macOS, one universal app for Intel and Apple silicon (.dmg), Windows (NSIS setup .exe) and Linux
 # (.deb and AppImage), under version-free names so the website can link
 # releases/latest/download/<file>, attached to a draft GitHub release for a person to read
-# over and publish. Nothing is published by this workflow.
+# over and publish. Nothing is published by this workflow. Run by hand on main with no tag,
+# it rehearses a release: the same builds, signing and checks, and no draft.
 #
 #   Method-Schedule-macOS.dmg               Method-Schedule-linux-amd64.deb
 #   Method-Schedule-windows-x64-setup.exe   Method-Schedule-linux-x86_64.AppImage
@@ -35,8 +36,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "An existing tag to build, such as v0.1.0"
-        required: true
+        description: "An existing tag to build, such as v0.3.0. Leave empty on main to rehearse: everything is built, signed and checked, and no release is drafted."
+        required: false
+        default: ""
 permissions:
   contents: read
 concurrency:
@@ -49,20 +51,37 @@ jobs:
     timeout-minutes: 30
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      ref: ${{ steps.tag.outputs.ref }}
+      version: ${{ steps.tag.outputs.version }}
+      rehearsal: ${{ steps.tag.outputs.rehearsal }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: The tag matches the version in Cargo.toml, on main
+      - name: The tag matches the version in Cargo.toml, on main (or a rehearsal)
         id: tag
         env:
+          EVENT: ${{ github.event_name }}
           INPUT_TAG: ${{ github.event.inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          tag="${INPUT_TAG:-$REF_NAME}"
           version="$(awk '/^\[workspace.package\]/{p=1; next} /^\[/{p=0} p && /^version *=/{gsub(/[" ]/, "", $0); sub(/version=/, "", $0); print; exit}' Cargo.toml)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # A rehearsal (SUITE-STANDARDS.md section 6): run by hand on main with no tag. It
+          # builds, signs and checks main's HEAD exactly as a release would, and drafts
+          # nothing. It replaces a separate weekly build before a release.
+          if [ "$EVENT" = workflow_dispatch ] && [ -z "$INPUT_TAG" ]; then
+            if [ "$REF_NAME" != main ]; then
+              echo "::error::A rehearsal runs on main."
+              exit 1
+            fi
+            echo "Rehearsing v$version on main ($GITHUB_SHA)."
+            { echo "tag="; echo "ref=$GITHUB_SHA"; echo "rehearsal=true"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tag="${INPUT_TAG:-$REF_NAME}"
           if [ "$tag" != "v$version" ]; then
             echo "::error::The tag $tag is not v$version, the version in Cargo.toml."
             exit 1
@@ -72,7 +91,7 @@ jobs:
             echo "::error::$tag points at a commit that is not on main."
             exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          { echo "tag=$tag"; echo "ref=$tag"; echo "rehearsal=false"; } >> "$GITHUB_OUTPUT"
       - name: Every crate in the lock is at least 14 days old
         # SUITE-STANDARDS.md section 6: before anything is built or signed, the whole
         # Cargo.lock, not only what changed. The script has no exception list, so
@@ -115,7 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check.outputs.tag }}
+          ref: ${{ needs.check.outputs.ref }}
           persist-credentials: false
       - name: Install Tauri system dependencies
         if: runner.os == 'Linux'
@@ -315,6 +334,7 @@ jobs:
       - name: Collect bundles under version-free names
         env:
           TARGET: ${{ matrix.target }}
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
           set -euo pipefail
           if [ -n "$TARGET" ]; then root="target/$TARGET/release/bundle"; else root="target/release/bundle"; fi
@@ -334,7 +354,7 @@ jobs:
               # The updater archive and its signature, named as latest.json expects (no
               # spaces: the name is the download address).
               if [ "${UPDATER:-no}" = yes ]; then
-                name="Method-Schedule_${GITHUB_REF_NAME#v}_universal.app.tar.gz"
+                name="Method-Schedule_${VERSION}_universal.app.tar.gz"
                 one "$root/macos/*.app.tar.gz" "$name"
                 one "$root/macos/*.app.tar.gz.sig" "$name.sig"
                 mv "dist/$name" "dist/$name.sig" updater/
@@ -366,8 +386,9 @@ jobs:
   draft:
     name: draft release
     # The only job with write access: it drafts the release with the notes and the bundles.
-    # Publishing the draft is left to a person.
+    # Publishing the draft is left to a person. A rehearsal drafts nothing.
     needs: [check, build]
+    if: needs.check.outputs.rehearsal != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
