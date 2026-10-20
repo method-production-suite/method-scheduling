@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<FinalDraft DocumentType="Script" Template="No" Version="5">
+<!-- An invented three-scene script from Field Station with production tags, written by
+     hand in the shape Method Schedule reads (E-I5, IMP-04): a prop, a cast member and a
+     vehicle tagged, plus a set dressing item. Not from any real production. -->
+<Content>
+<Paragraph Type="Scene Heading" Number="1"><SceneProperties Length="4/8" Page="1"/><Text>INT. FIELD STATION - RADIO ROOM - NIGHT</Text></Paragraph>
+<Paragraph Type="Action"><Text TagNumber="1">Mara</Text><Text> keys the </Text><Text TagNumber="2">hand radio</Text><Text>. Static. Rain on the </Text><Text TagNumber="5">fuel drums</Text><Text> outside.</Text></Paragraph>
+<Paragraph Type="Character"><Text>MARA</Text></Paragraph>
+<Paragraph Type="Dialogue"><Text>Ridge base, this is the station. Do you read?</Text></Paragraph>
+<Paragraph Type="Scene Heading" Number="2"><SceneProperties Length="6/8" Page="1"/><Text>EXT. RIDGE ROAD - NIGHT</Text></Paragraph>
+<Paragraph Type="Action"><Text>The </Text><Text TagNumber="3">park truck</Text><Text> grinds uphill, wipers losing. </Text><Text TagNumber="4">Teo</Text><Text> holds the wheel with both hands.</Text></Paragraph>
+<Paragraph Type="Character"><Text>TEO</Text></Paragraph>
+<Paragraph Type="Dialogue"><Text>Ten more minutes. Tell her ten.</Text></Paragraph>
+<Paragraph Type="Scene Heading" Number="3"><SceneProperties Length="2/8" Page="2"/><Text>INT. FIELD STATION - RADIO ROOM - NIGHT</Text></Paragraph>
+<Paragraph Type="Action"><Text TagNumber="1">Mara</Text><Text> sets the </Text><Text TagNumber="2">radio</Text><Text> down and waits.</Text></Paragraph>
+</Content>
+<TagData>
+<TagCategories>
+<TagCategory Id="c1" Name="Cast Members" Number="1"/>
+<TagCategory Id="c2" Name="Props" Number="7"/>
+<TagCategory Id="c3" Name="Vehicles" Number="9"/>
+<TagCategory Id="c4" Name="Set Dressing" Number="8"/>
+</TagCategories>
+<TagDefinitions>
+<TagDefinition CatId="c1" Id="d1" Label="MARA"/>
+<TagDefinition CatId="c2" Id="d2" Label="HAND RADIO"/>
+<TagDefinition CatId="c3" Id="d3" Label="PARK TRUCK"/>
+<TagDefinition CatId="c1" Id="d4" Label="TEO"/>
+<TagDefinition CatId="c4" Id="d5" Label="FUEL DRUM"/>
+</TagDefinitions>
+<Tags>
+<Tag Number="1"><DefId>d1</DefId></Tag>
+<Tag Number="2"><DefId>d2</DefId></Tag>
+<Tag Number="3"><DefId>d3</DefId></Tag>
+<Tag Number="4"><DefId>d4</DefId></Tag>
+<Tag Number="5"><DefId>d5</DefId></Tag>
+</Tags>
+</TagData>
+</FinalDraft>

@@ -5519,3 +5519,17 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Not on** strips, events, red flags, layouts, reports or plan entries yet: added when an
   app asks.
 
+## 228. A tagged script's usual category names land in our categories (2026-10-20)
+
+- **IMP-04, checked with an invented tagged script** (MOrg's instruction for the day, the
+  owner's roadmap push): `fixtures/scripts/field-station-tagged.fdx`, written by hand in
+  the shape E-I5 reads, imports through the engine and through the page
+  in the browser build. A file saved by a screenwriting app is still the way to confirm
+  the shape itself (engine-checks.md, E-I5).
+- **Category names**: a tag's category goes to ours with its name; failing that, a usual
+  breakdown name goes to the default category it stands for when the schedule has it
+  ("Props" to Hand props, "Vehicles" to Picture vehicles, "Extras" to Background,
+  "Costumes" to Wardrobe, "Makeup" to Hair and makeup, "Special Effects" to Practical
+  effects, "Livestock" to Animals, "Sound" and "Music" to Sound and music); any other name
+  makes its own category, as before.
+
