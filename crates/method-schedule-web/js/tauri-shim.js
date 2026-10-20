@@ -115,7 +115,8 @@
   const SCRIPT = '.fountain,.fdx,.txt';
   const PICTURE = '.png,.jpg,.jpeg,.gif,.webp';
   const PICKS = {
-    open_schedule: { accept: `${SCHEDULE},.mtst` },
+    // The schedule, and its pictures picked with it (Save downloads them beside it).
+    open_schedule: { accept: `${SCHEDULE},.mtst,${PICTURE}`, multiple: true },
     new_from_template: { accept: '.mtst,.mtsc' },
     import_script: { accept: SCRIPT },
     import_script_tags: { accept: '.fdx' },
@@ -153,7 +154,15 @@
     if (pick && args.file === undefined) {
       const files = await pickFiles(pick);
       if (!files.length) return null;
-      args = { ...args, file: await fileIn(files[0]) };
+      if (pick.multiple) {
+        const isPicture = (f) => /\.(png|jpe?g|gif|webp)$/i.test(f.name);
+        const main = files.find((f) => !isPicture(f));
+        if (!main) throw 'Pick the schedule file too, with its pictures if it has any.';
+        const pictures = await Promise.all(files.filter((f) => f !== main && isPicture(f)).map(fileIn));
+        args = { ...args, file: await fileIn(main), pictures };
+      } else {
+        args = { ...args, file: await fileIn(files[0]) };
+      }
     }
     let reply = dispatch(cmd, args);
     if (reply && typeof reply === 'object' && Array.isArray(reply.downloads)) {
@@ -226,11 +235,12 @@
   // -------------------------------------------------------------------------
   // Files in and out
 
-  function pickFiles({ accept }) {
+  function pickFiles({ accept, multiple }) {
     return new Promise((resolve) => {
       const input = doc.createElement('input');
       input.type = 'file';
       if (accept) input.accept = accept;
+      input.multiple = Boolean(multiple);
       input.style.display = 'none';
       doc.body.append(input);
       let done = false;

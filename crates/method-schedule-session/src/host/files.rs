@@ -122,6 +122,29 @@ struct FileArg {
     file: FileIn,
     #[serde(default)]
     lines_per_page: Option<u32>,
+    /// `open_schedule`: the schedule's pictures, picked with it ([`stored_pictures`]).
+    #[serde(default)]
+    pictures: Vec<FileIn>,
+}
+
+/// Every picture path a schedule stores, on its elements and sheets.
+fn stored_pictures(s: &method_schedule_core::Schedule) -> Vec<String> {
+    let mut out: Vec<String> = s
+        .elements
+        .iter()
+        .flat_map(|e| e.images.iter())
+        .chain(s.sheets.iter().flat_map(|h| h.images.iter()))
+        .cloned()
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The last part of a stored picture path, which a download is named and a picked file is
+/// matched by.
+fn picture_file_name(stored: &str) -> &str {
+    stored.rsplit(['/', '\\']).next().unwrap_or(stored)
 }
 
 #[derive(Deserialize)]
@@ -308,6 +331,18 @@ impl Host {
                 "open_schedule" => {
                     let f = file_arg(command, a)?;
                     let schedule = session::parse_schedule(&f.file.bytes, Path::new(&f.file.name))?;
+                    // Its pictures, picked with it, go in the store under the paths it
+                    // stores, matched by file name; a picked file it doesn't use is left out.
+                    for stored in stored_pictures(&schedule) {
+                        let name = picture_file_name(&stored);
+                        if let Some(p) = f.pictures.iter().find(|p| {
+                            Path::new(&p.name).file_name().and_then(|n| n.to_str()) == Some(name)
+                        }) {
+                            if elements::image_data_url(&p.bytes).is_some() {
+                                self.images.insert(stored.clone(), p.bytes.clone());
+                            }
+                        }
+                    }
                     let s = Session::with_schedule(schedule, Some(f.file.name.clone().into()));
                     reply(Ok(self.add_saved_doc(s)?))
                 }
@@ -326,12 +361,23 @@ impl Host {
                     if let Some(id) = doc {
                         self.saved.insert(id, s.schedule().clone());
                     }
+                    // Its pictures from the store beside it, each under its own file name, so
+                    // opening them together brings them back.
+                    let mut downloads = vec![FileOut {
+                        name,
+                        bytes: s.file_text().into_bytes(),
+                    }];
+                    for stored in stored_pictures(s.schedule()) {
+                        if let Some(bytes) = self.images.get(&stored) {
+                            downloads.push(FileOut {
+                                name: picture_file_name(&stored).to_string(),
+                                bytes: bytes.clone(),
+                            });
+                        }
+                    }
                     reply(Ok(Downloads {
                         reply: view,
-                        downloads: vec![FileOut {
-                            name,
-                            bytes: s.file_text().into_bytes(),
-                        }],
+                        downloads,
                     }))
                 }
                 "save_template" => {
@@ -859,5 +905,47 @@ mod tests {
         assert!(h
             .dispatch("what_changed", &json!({ "against": "saved" }))
             .is_err());
+    }
+
+    #[test]
+    fn pictures_save_beside_the_schedule_and_open_with_it() {
+        let (mut h, _) = sample();
+        let saved = h.dispatch("save_schedule", &json!({})).unwrap();
+        let downloads = saved["downloads"].as_array().unwrap();
+        let names: Vec<&str> = downloads
+            .iter()
+            .map(|d| d["name"].as_str().unwrap())
+            .collect();
+        assert!(names[0].ends_with(".mtsc"));
+        for p in [
+            "park-truck.png",
+            "quad-bike.png",
+            "hand-radio.png",
+            "paper-map.png",
+        ] {
+            assert!(names.contains(&p), "{p} in {names:?}");
+        }
+        // Opened again in another host with its pictures (and a stray file it doesn't use).
+        let mut other = Host::new();
+        let mut pictures: Vec<Value> = downloads[1..].to_vec();
+        pictures.push(file("notes.png", b"not used"));
+        other
+            .dispatch(
+                "open_schedule",
+                &json!({ "file": downloads[0].clone(), "pictures": pictures }),
+            )
+            .unwrap();
+        assert_eq!(other.image_names().len(), 4);
+        let truck = method_schedule_core::sample::field_station()
+            .elements
+            .iter()
+            .find(|e| e.name == "PARK TRUCK")
+            .unwrap()
+            .id
+            .0;
+        let shown = other
+            .dispatch("element_image", &json!({ "element": truck, "at": 0 }))
+            .unwrap();
+        assert!(shown.as_str().unwrap().starts_with("data:image/png"));
     }
 }
