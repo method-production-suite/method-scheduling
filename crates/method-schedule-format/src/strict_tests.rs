@@ -338,6 +338,24 @@ pub(crate) fn everything() -> Schedule {
             eighths: method_schedule_core::Eighths(4),
             complete: true,
         });
+    // Additions from another app on every object that keeps them (decision 224).
+    let x = &mut s.extensions;
+    x.file = Some(r#"{"org.example.sync":{"rev":7}}"#.to_string());
+    x.schedule = Some(r#"{"org.example.sync":{"shared":true}}"#.to_string());
+    let ids = [
+        s.categories[0].id.0,
+        s.red_flag_types[0].id.0,
+        s.elements[0].id.0,
+        s.sheets[0].id.0,
+        s.boards[0].id.0,
+        s.boards[0].sub_boards[0].id.0,
+    ];
+    for (i, id) in ids.into_iter().enumerate() {
+        s.extensions.objects.insert(
+            id,
+            format!(r#"{{"org.example.sync":{{"n":{i},"tags":["a","b"]}}}}"#),
+        );
+    }
     s.check().unwrap();
     s
 }
@@ -363,7 +381,11 @@ fn paths(v: &Value, at: &mut Vec<Step>, out: &mut Vec<Vec<Step>>) {
             for (k, x) in m {
                 at.push(Step::Key(k.clone()));
                 out.push(at.clone());
-                paths(x, at, out);
+                // What's inside `extensions` is another app's, kept untouched
+                // (decision 224): only the key itself is ours to check.
+                if k != "extensions" {
+                    paths(x, at, out);
+                }
                 at.pop();
             }
         }
@@ -660,4 +682,28 @@ fn a_category_elements_column_round_trips() {
     };
     let last = x.columns.last().unwrap();
     assert_eq!((last.category, last.board_ids), (Some(theirs), true));
+}
+
+/// Additions from other apps (decision 224): kept on every object that has them and
+/// written back byte for byte; an empty one, one that isn't an object, and an unknown key
+/// beside them are refused.
+#[test]
+fn extensions_are_kept_and_written_back_untouched() {
+    let s = everything();
+    let text = to_string(&s);
+    let back = from_str(&text).unwrap();
+    assert_eq!(back.extensions, s.extensions);
+    assert_eq!(to_string(&back), text, "byte for byte");
+    assert_eq!(back.extensions.objects.len(), 6);
+    // A file without any reads and writes as before: nothing is added.
+    let plain = crate::tests::sample();
+    assert!(!to_string(&plain).contains("extensions"));
+    let mut v: Value = serde_json::from_str(&text).unwrap();
+    v["schedule"]["elements"][0]["extensions"] = serde_json::json!({});
+    assert!(from_str(&v.to_string()).is_err(), "empty");
+    v["schedule"]["elements"][0]["extensions"] = serde_json::json!([1]);
+    assert!(from_str(&v.to_string()).is_err(), "not an object");
+    v["schedule"]["elements"][0]["extensions"] = serde_json::json!({"x": 1});
+    v["schedule"]["elements"][0]["extension"] = serde_json::json!({"x": 1});
+    assert!(from_str(&v.to_string()).is_err(), "any other unknown key");
 }

@@ -2172,6 +2172,8 @@ pub struct Schedule {
     pub calendar_hidden: Vec<CalendarShow>,
     /// The next id to hand out. Ids are never reused, across all kinds.
     pub next_id: u32,
+    /// What the file held under `extensions` keys, written back untouched (decision 224).
+    pub extensions: crate::extensions::Extensions,
 }
 
 /// Names compare without regard to case. Engine check: confirm in the real app.
@@ -2209,6 +2211,7 @@ impl Schedule {
             calendar_fields: Vec::new(),
             calendar_hidden: Vec::new(),
             next_id: 1,
+            extensions: Default::default(),
         };
         s.cast_or_add();
         s.add_board("Board 1", None);

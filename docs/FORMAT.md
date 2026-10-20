@@ -30,7 +30,8 @@ product name (decisions.md, entry 4); it will look nothing like other tools' ext
   twice in one object is an error, and so is a schedule that doesn't hang together (see
   [Consistency](#consistency)). Layout files are read the same way. Fuzz tests hold the
   reader to this: a mutated file is refused, or it reads into a schedule that passes
-  `check` and writes back as the file was (decisions.md, entry 173).
+  `check` and writes back as the file was (decisions.md, entry 173). The one place for
+  keys this version doesn't know is an [`extensions`](#extensions) object.
 - Everything carries a stable integer `id` that survives edits and moves, so two versions
   of a schedule can be compared and merged by identity, not by position.
 
@@ -50,6 +51,26 @@ product name (decisions.md, entry 4); it will look nothing like other tools' ext
 | `version` | integer | Format version. A reader refuses a version newer than it knows. |
 | `template` | boolean | `true` marks a template (File > Save as Template; decisions.md, entry 77). Left out on a schedule; `false` is refused. A template is a schedule with no sheets, no strips, no events, no red flags and no plan locks, call times, pinned strips or omitted scenes, and a file marked as one that holds any is refused; opening one starts a new, untitled schedule from it. A command line write to a template keeps it marked. Its working extension is `.mtst`. |
 | `schedule` | object | The [schedule](#schedule). |
+| `extensions` | object | Additions from other apps, kept and written back untouched ([Extensions](#extensions)). Left out when there are none. |
+
+### Extensions
+
+Another app, or a newer Method Schedule, can add what it needs to a file without the strict
+reader refusing it: an `extensions` object, the last key of the top level, the
+[schedule](#schedule), and each [category](#category), [red flag type](#red-flag-type),
+[element](#element), [sheet](#sheet), [board](#board) and [sub-board](#sub-board)
+(decisions.md, entry 224). What's inside is the other app's: any JSON, kept as read
+(its keys in sorted order) and written back on the same object, never looked at. The
+convention is one key per app, named for it in reverse-domain form
+(`"org.example.sync": {...}`), so two apps don't collide.
+
+- An empty `{}` or a `null` is refused (the writer leaves the key out), and so is anything
+  but an object. Every other unknown key is still refused.
+- Kept by the object's id. Deleting the object drops them; duplicating it doesn't copy
+  them. A merge keeps both sides', ours first, but not those on objects only the other
+  side added (they get new ids in the merge).
+- A file without any reads and writes back byte for byte as before; an older Method
+  Schedule refuses a file that has one, as it refuses any key it doesn't know.
 
 ## Schedule
 

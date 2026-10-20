@@ -276,6 +276,14 @@ pub fn merge_with(
             |v| crate::diff::calendar_hidden_text(v),
         ),
         next_id: next,
+        // Additions from other apps (decision 224): both sides', ours first. Their new
+        // objects are numbered again here, so only additions to objects the base had
+        // (ids below its next id; ids are never reused) are theirs to keep.
+        extensions: {
+            let mut kept = theirs.extensions.clone();
+            kept.objects.retain(|id, _| *id < base.next_id);
+            crate::extensions::Extensions::union(&ours.extensions, &kept)
+        },
     };
     s.plan = m.plan(&mut cx);
     s.categories = m.categories(&mut cx);
@@ -2943,6 +2951,29 @@ pub(crate) mod tests {
             );
             assert_eq!(m.schedule, o);
         }
+    }
+
+    #[test]
+    fn extensions_keep_both_sides_on_objects_the_base_had() {
+        // Decision 227: ours first; an addition on an object only theirs made is dropped,
+        // since the merge numbers that object again.
+        let b = base();
+        let (e0, e1) = (b.elements[0].id.0, b.elements[1].id.0);
+        let mut o = b.clone();
+        o.extensions.objects.insert(e0, r#"{"a":1}"#.into());
+        o.extensions.schedule = Some(r#"{"a":"ours"}"#.into());
+        let mut t = b.clone();
+        t.extensions.objects.insert(e0, r#"{"a":2}"#.into());
+        t.extensions.objects.insert(e1, r#"{"b":1}"#.into());
+        t.extensions.schedule = Some(r#"{"a":"theirs"}"#.into());
+        t.extensions
+            .objects
+            .insert(t.next_id + 5, r#"{"new":1}"#.into());
+        let m = merge(&b, &o, &t).schedule;
+        assert_eq!(m.extensions.of(e0), Some(r#"{"a":1}"#));
+        assert_eq!(m.extensions.of(e1), Some(r#"{"b":1}"#));
+        assert_eq!(m.extensions.schedule.as_deref(), Some(r#"{"a":"ours"}"#));
+        assert_eq!(m.extensions.objects.len(), 2);
     }
 
     #[test]
