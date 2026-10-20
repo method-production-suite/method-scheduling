@@ -15,11 +15,14 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **Tag v0.3.0**, the first universal Mac release, once its rehearsal on main is green
-  (MOrg brings it to the owner; one yes covers tag and publish). The owner's four tests are
-  in [research/release-0.3.0.md](research/release-0.3.0.md).
+- None pending. v0.3.0, the first universal Mac release, was published on 2026-10-20 after
+  its rehearsal; methodschedule.com follows it. The next release is proposed here when
+  there is something people can use.
 
 **Needs the owner's hands or hardware**
+- **v0.3.0's four tests**, about five minutes on the Mac: the in-app update from 0.2.0, both
+  chips in the app, the Intel half opening under Rosetta (the one that needs the screen),
+  and a checksum. Commands in [research/release-0.3.0.md](research/release-0.3.0.md).
 - **Screen block 7**, one block on the owner's screen, asked for through MOrg (the suite
   rule since 2026-10-18; everything else here is tested offscreen): a file opened from the Finder opens in its
   own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past

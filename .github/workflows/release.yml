@@ -65,6 +65,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           INPUT_TAG: ${{ github.event.inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
+          REF: ${{ github.ref }}
         run: |
           set -euo pipefail
           version="$(awk '/^\[workspace.package\]/{p=1; next} /^\[/{p=0} p && /^version *=/{gsub(/[" ]/, "", $0); sub(/version=/, "", $0); print; exit}' Cargo.toml)"
@@ -73,7 +74,8 @@ jobs:
           # builds, signs and checks main's HEAD exactly as a release would, and drafts
           # nothing. It replaces a separate weekly build before a release.
           if [ "$EVENT" = workflow_dispatch ] && [ -z "$INPUT_TAG" ]; then
-            if [ "$REF_NAME" != main ]; then
+            # The branch exactly: a tag named "main" must not pass.
+            if [ "$REF" != refs/heads/main ]; then
               echo "::error::A rehearsal runs on main."
               exit 1
             fi
@@ -267,7 +269,10 @@ jobs:
             args+=(--config '{"bundle":{"createUpdaterArtifacts":true}}')
           fi
           unset NOTARY_KEY_ID NOTARY_ISSUER UPDATER_PRIVATE_KEY UPDATER_PRIVATE_KEY_PASSWORD
-          cargo tauri "${args[@]}"
+          # The prebuilt CLI itself, not `cargo tauri`: once a signing key is in the job,
+          # only prebuilt binaries run (SUITE-STANDARDS.md section 3, made strict
+          # 2026-10-19); xtask's release_workflow test holds every step to it.
+          cargo-tauri "${args[@]}"
 
       - name: Sign, notarize and staple the disk image (macOS)
         if: runner.os == 'macOS' && env.MACOS_NOTARIZE == 'yes'
