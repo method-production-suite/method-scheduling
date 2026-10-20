@@ -155,14 +155,17 @@ Pictures go to `assets/screens/` for the README and `site/img/` for the site (th
 copies `site/` only), and a file is written only when its bytes change. Retaking them is a
 release step ([RELEASING.md](RELEASING.md)).
 
-### Try it in your browser, later
+### Try it in your browser
 
-The address `/try/` is kept for a demo of the app with an invented schedule, running in
-the browser (Method Budget builds its engine to WebAssembly in its Pages workflow for
-the same). Nothing is built yet; the feature list carries it as "Try it in your
-browser" under On the roadmap. When it comes, it is a folder `site/try/` with its own
-page, a line in the sitemap, and a build step in the suite website's sync (the one place
-the site gets a build step), and its page may need a script-allowing CSP of its own.
+`/try/` is the app with the Field Station sample, running in the browser with nothing to
+install (docs/research/web-session.md, phase 3). `cargo xtask web --demo --out site/try`
+builds it: the page, the WebAssembly module, the shim, a note above the app saying it runs
+in the browser (`crates/method-schedule-web/demo/`), and a Content-Security-Policy that
+allows only the page's own files and compiling the module. Nothing is committed under
+`site/try/`: the suite website's sync runs the build on the release it publishes (its
+catalog's `build` line, as for Method Budget's demo), so the demo is always the released
+engine. Until the catalog has the line and a release carries the demo, the feature list
+keeps "Try it in your browser" under On the roadmap.
 
 ## Publishing: the suite website
 
@@ -195,4 +198,3 @@ domain's DNS lives with the website.
   hello@methodproduction.com. Method Schedule has no email address of its own.
 - **A security policy** (`SECURITY.md`, or private vulnerability reporting turned on),
   then a "Security problems" contact link in `.github/ISSUE_TEMPLATE/config.yml`.
-- **Try it in your browser** (above).

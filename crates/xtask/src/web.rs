@@ -1,4 +1,4 @@
-//! `cargo xtask web [--out <dir>] [--smoke]`: the page in a browser
+//! `cargo xtask web [--out <dir>] [--demo] [--smoke]`: the page in a browser
 //! (docs/research/web-session.md, phase 2). Builds `method-schedule-web` for
 //! wasm32-unknown-unknown, runs the `wasm-bindgen` command line on it and puts a folder
 //! ready to serve in `target/web/`:
@@ -11,6 +11,12 @@
 //!   method-schedule-web/method_schedule_web.js  wasm-bindgen's JS (an ES module)
 //!   method-schedule-web/method_schedule_web_bg.wasm
 //! ```
+//!
+//! With `--demo`, the website's demo (methodschedule.com/try/, docs/WEBSITE.md):
+//! `index.html` also carries a Content-Security-Policy that allows only its own files, the
+//! note about running in the browser, and `demo/` (its script and styles); the demo starts
+//! with the Field Station sample. The website's sync runs
+//! `cargo xtask web --demo --out site/try` on the release it publishes.
 //!
 //! With `--smoke`, then runs `scripts/web-smoke.mjs` under Node on the built module: the
 //! sample opens, a command edits it, a report exports, the schedule saves and opens again.
@@ -33,6 +39,19 @@ const SHIM: &str = "crates/method-schedule-web/js/tauri-shim.js";
 const UI: &str = "crates/method-schedule-app/ui";
 const SMOKE: &str = "scripts/web-smoke.mjs";
 const SUBDIR: &str = "method-schedule-web";
+const DEMO: &str = "crates/method-schedule-web/demo";
+
+/// The demo page's Content-Security-Policy: its own files only, plus compiling the
+/// WebAssembly module. Nothing from anyone else, no inline script or style.
+pub const DEMO_CSP: &str = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; \
+style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; \
+object-src 'none'; base-uri 'none'; form-action 'none'";
+
+const CHARSET: &str = r#"<meta charset="utf-8">"#;
+const BODY: &str = "<body>";
+const DEMO_HEAD: &str = r#"<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo/demo.css">
+    <script src="demo/demo.js"></script>"#;
 
 /// The page's entry script, before which the shim is loaded.
 const MAIN: &str = r#"<script type="module" src="js/main.js"></script>"#;
@@ -61,6 +80,42 @@ pub fn patch_index(html: &str) -> Result<String, String> {
     Ok(html.replace(MAIN, &format!("{SHIM_TAG}\n    {MAIN}")))
 }
 
+/// The demo's index.html (after [`patch_index`]): its Content-Security-Policy, its styles
+/// and script (before the shim, which reads the address demo.js may set), and `banner` at
+/// the top of the body.
+pub fn patch_demo(html: &str, banner: &str) -> Result<String, String> {
+    for (what, tag) in [
+        ("the charset", CHARSET),
+        ("the shim", SHIM_TAG),
+        ("<body>", BODY),
+    ] {
+        if html.matches(tag).count() != 1 {
+            return Err(format!("index.html doesn't have {what} once as expected"));
+        }
+    }
+    let csp = format!(r#"<meta http-equiv="Content-Security-Policy" content="{DEMO_CSP}">"#);
+    Ok(html
+        .replace(CHARSET, &format!("{CHARSET}\n    {csp}"))
+        .replace(SHIM_TAG, &format!("{DEMO_HEAD}\n    {SHIM_TAG}"))
+        .replace(BODY, &format!("{BODY}\n    {}", banner.trim_end())))
+}
+
+/// The demo's own files: its script and styles, and the patched index.html.
+fn add_demo(root: &Path, out: &Path) -> Result<(), String> {
+    let demo = root.join(DEMO);
+    let read =
+        |p: &Path| fs::read_to_string(p).map_err(|e| format!("couldn't read {}: {e}", p.display()));
+    let index = out.join("index.html");
+    let html = patch_demo(&read(&index)?, &read(&demo.join("banner.html"))?)?;
+    fs::write(&index, html).map_err(|e| format!("couldn't write index.html: {e}"))?;
+    let dir = out.join("demo");
+    fs::create_dir_all(&dir).map_err(|e| format!("couldn't make {}: {e}", dir.display()))?;
+    for f in ["demo.js", "demo.css"] {
+        fs::copy(demo.join(f), dir.join(f)).map_err(|e| format!("couldn't copy {f}: {e}"))?;
+    }
+    Ok(())
+}
+
 /// The `cargo build` arguments for the browser build.
 pub fn build_args() -> Vec<String> {
     [
@@ -80,11 +135,13 @@ pub fn build_args() -> Vec<String> {
 pub fn command(root: &Path, args: &[String]) -> Result<String, String> {
     let mut out = None;
     let mut smoke = false;
+    let mut demo = false;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--out" => out = Some(PathBuf::from(it.next().ok_or("--out needs a folder")?)),
             "--smoke" => smoke = true,
+            "--demo" => demo = true,
             other => return Err(format!("xtask web doesn't take {other}")),
         }
     }
@@ -150,13 +207,17 @@ pub fn command(root: &Path, args: &[String]) -> Result<String, String> {
     }
     fs::copy(root.join(SHIM), dir.join("tauri-shim.js"))
         .map_err(|e| format!("couldn't copy the shim: {e}"))?;
+    if demo {
+        add_demo(root, &out)?;
+    }
 
     let size = fs::metadata(dir.join("method_schedule_web_bg.wasm"))
         .map(|m| m.len())
         .unwrap_or(0);
     let mut said = format!(
-        "the page and {CRATE} are in {} (method_schedule_web_bg.wasm: {:.1} MB)\n\
+        "the page and {CRATE}{} are in {} (method_schedule_web_bg.wasm: {:.1} MB)\n\
          serve it with: python3 -m http.server -d {} 8000\n",
+        if demo { ", as the website's demo," } else { "" },
         out.display(),
         size as f64 / 1_000_000.0,
         out.display()
@@ -273,6 +334,31 @@ mod tests {
         assert!(args.windows(2).any(|w| w == ["--profile", PROFILE]));
         let root = include_str!("../../../Cargo.toml");
         assert!(root.contains(&format!("[profile.{PROFILE}]")));
+    }
+
+    #[test]
+    fn the_demo_page_allows_only_its_own_files() {
+        let html = patch_index(include_str!("../../method-schedule-app/ui/index.html")).unwrap();
+        let banner = include_str!("../../method-schedule-web/demo/banner.html");
+        let out = patch_demo(&html, banner).unwrap();
+        // The policy comes first, so it covers everything the page loads.
+        let csp = out.find("Content-Security-Policy").unwrap();
+        assert!(csp < out.find("<link").unwrap());
+        assert!(!DEMO_CSP.contains("unsafe-inline") && !DEMO_CSP.contains("http"));
+        // demo.js runs before the shim reads the address.
+        assert!(out.find("demo/demo.js").unwrap() < out.find(SHIM_TAG).unwrap());
+        assert!(out.find("id=\"ms-demo\"").unwrap() > out.find(BODY).unwrap());
+        assert!(patch_demo("<html></html>", banner).is_err());
+        // Plain words: no em dashes, no exclamation marks, nothing but this site.
+        assert!(!banner.contains('\u{2014}') && !banner.contains('!') && !banner.contains("http"));
+        let demo = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(DEMO);
+        for f in ["demo.js", "demo.css"] {
+            assert!(demo.join(f).is_file(), "{f}");
+        }
+        let script = fs::read_to_string(demo.join("demo.js")).unwrap();
+        assert!(script.contains("sample=1"));
     }
 
     /// Every command the shim hands a picked file to is one the Host takes a file for,
