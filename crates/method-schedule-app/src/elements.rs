@@ -16,6 +16,12 @@ pub use method_schedule_session::elements::*;
 /// the disk, so never under a schedule's lock or on the main thread.
 pub fn read_image(doc: Option<&Path>, stored: &str) -> Option<String> {
     use std::io::Read;
+    // The untitled sample's pictures are carried in the app (M2c).
+    if doc.is_none() {
+        if let Some(bytes) = crate::session::sample_image(stored) {
+            return image_data_url(bytes);
+        }
+    }
     let path = resolve_image_path(doc, stored)?;
     image_type(&path)?;
     let meta = std::fs::symlink_metadata(&path).ok()?;

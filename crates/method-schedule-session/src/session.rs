@@ -550,6 +550,36 @@ pub fn parse_script(
 /// `--open-sample`).
 pub const SAMPLE_NOTICE: &str = "The Field Station sample: an invented production, untitled until you save it. Help > Open Sample brings it back any time.";
 
+/// The sample's pictures (M2c), carried in the app: an untitled schedule has no folder to
+/// find `images/...` in, so the sample's are looked up here by the name it stores
+/// ([`sample_image`]). The same files are beside fixtures/field-station.mtsc.
+pub const SAMPLE_IMAGES: &[(&str, &[u8])] = &[
+    (
+        "images/park-truck.png",
+        include_bytes!("../../../fixtures/images/park-truck.png"),
+    ),
+    (
+        "images/quad-bike.png",
+        include_bytes!("../../../fixtures/images/quad-bike.png"),
+    ),
+    (
+        "images/hand-radio.png",
+        include_bytes!("../../../fixtures/images/hand-radio.png"),
+    ),
+    (
+        "images/paper-map.png",
+        include_bytes!("../../../fixtures/images/paper-map.png"),
+    ),
+];
+
+/// One of the sample's pictures, by the name the sample stores.
+pub fn sample_image(stored: &str) -> Option<&'static [u8]> {
+    SAMPLE_IMAGES
+        .iter()
+        .find(|(n, _)| *n == stored)
+        .map(|(_, b)| *b)
+}
+
 /// The sample, Field Station (the suite's shared invented feature, decision 223), as a new
 /// session: untitled, marked "(sample)" in its title, with nothing unsaved, so the first
 /// Save asks where and nothing built into the app is ever written.
@@ -579,6 +609,21 @@ pub(crate) fn read_script(path: &Path) -> Result<fountain::ImportedScript, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_samples_pictures_are_carried_and_shown() {
+        let s = method_schedule_core::sample::field_station();
+        let mut stored = Vec::new();
+        for e in &s.elements {
+            stored.extend(e.images.iter().cloned());
+        }
+        assert_eq!(stored.len(), SAMPLE_IMAGES.len());
+        for name in &stored {
+            let bytes = sample_image(name).expect("carried");
+            assert!(crate::elements::image_data_url(bytes).is_some(), "{name}");
+        }
+        assert!(sample_image("images/other.png").is_none());
+    }
 
     #[test]
     fn saving_and_restamping_keep_their_contract() {

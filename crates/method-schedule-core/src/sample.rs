@@ -534,6 +534,16 @@ pub const FIELD_STATION_SCRIPT: &str =
 /// Field Station's breakdown beyond the cast: (category, element, the scene numbers it is
 /// in), one or more in every category. Read off the script; invented, like everything in
 /// it.
+/// The Field Station elements with a picture (M2c), and each picture's file: drawn by
+/// scripts/make-sample-pictures.py, kept in fixtures/images/ beside the fixture, and
+/// stored as `images/<file>`.
+pub const FIELD_STATION_PICTURES: &[(&str, &str)] = &[
+    ("PARK TRUCK", "park-truck.png"),
+    ("QUAD BIKE", "quad-bike.png"),
+    ("HAND RADIO", "hand-radio.png"),
+    ("PAPER MAP", "paper-map.png"),
+];
+
 const FIELD_STATION_THINGS: &[(&str, &str, &[&str])] = &[
     (
         "Background",
@@ -1028,6 +1038,16 @@ pub fn field_station() -> Schedule {
         let sheet = sheet_of(&s, scene);
         s.set_quantity(sheet, element, *count, true)
             .expect("on the sheet");
+    }
+    for (name, file) in FIELD_STATION_PICTURES {
+        let id = s
+            .elements
+            .iter()
+            .find(|e| e.name == *name)
+            .expect("a sample element")
+            .id;
+        let e = s.element_mut(id).expect("just found");
+        e.images.push(format!("images/{file}"));
     }
     let b = s.boards[0].id;
     let main = s.boards[0].sub_boards[0].id;

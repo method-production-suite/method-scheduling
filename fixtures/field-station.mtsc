@@ -346,7 +346,10 @@
       {
         "id": 234,
         "category": 7,
-        "name": "PAPER MAP"
+        "name": "PAPER MAP",
+        "images": [
+          "images/paper-map.png"
+        ]
       },
       {
         "id": 235,
@@ -356,7 +359,10 @@
       {
         "id": 236,
         "category": 7,
-        "name": "HAND RADIO"
+        "name": "HAND RADIO",
+        "images": [
+          "images/hand-radio.png"
+        ]
       },
       {
         "id": 237,
@@ -471,12 +477,18 @@
       {
         "id": 259,
         "category": 11,
-        "name": "QUAD BIKE"
+        "name": "QUAD BIKE",
+        "images": [
+          "images/quad-bike.png"
+        ]
       },
       {
         "id": 260,
         "category": 11,
-        "name": "PARK TRUCK"
+        "name": "PARK TRUCK",
+        "images": [
+          "images/park-truck.png"
+        ]
       },
       {
         "id": 261,
