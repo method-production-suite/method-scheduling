@@ -154,6 +154,9 @@ pub enum BaseChoice {
     /// The version this window last read from or wrote to its file: the base when theirs
     /// is that file, changed outside the app (decisions.md, entry 180).
     LastRead,
+    /// Any schedule file, picked with Merge Changes From's picker (`merge_pick_file`),
+    /// by its token: the version both copies started from when it is kept elsewhere.
+    File { token: u64 },
 }
 
 /// A backup, as listed in the backups folder.
@@ -246,6 +249,8 @@ pub struct MergeInputs {
     pub theirs: Theirs,
     /// The version last read from or written to the file here.
     pub last_read: Option<Arc<Schedule>>,
+    /// A schedule file picked as the base ([`BaseChoice::File`]), with its token.
+    pub picked_base: Option<(u64, Theirs)>,
 }
 
 impl MergeInputs {
@@ -277,7 +282,17 @@ impl MergeInputs {
             backups,
             theirs,
             last_read,
+            picked_base: None,
         })
+    }
+
+    /// Takes the file `base` names as its base, when it names one (from the window's
+    /// picked files).
+    pub fn with_base(mut self, base: &BaseChoice, files: &MergeFiles) -> Result<Self, String> {
+        if let BaseChoice::File { token } = base {
+            self.picked_base = Some((*token, files.get(*token)?));
+        }
+        Ok(self)
     }
 
     /// Theirs is this schedule's own file, changed outside the app.
@@ -290,6 +305,18 @@ impl MergeInputs {
     }
 
     fn options(&self) -> Vec<BaseOptionDto> {
+        let mut out = self.listed_options();
+        // A file picked as the base, so the picker can show it.
+        if let Some((token, f)) = &self.picked_base {
+            out.push(BaseOptionDto {
+                id: format!("file:{token}"),
+                label: f.name.clone(),
+            });
+        }
+        out
+    }
+
+    fn listed_options(&self) -> Vec<BaseOptionDto> {
         let mut out: Vec<BaseOptionDto> = self
             .backups
             .iter()
@@ -334,6 +361,17 @@ impl MergeInputs {
             )),
             _ => None,
         };
+        if let BaseChoice::File { token } = choice {
+            let base = match &self.picked_base {
+                Some((t, f)) if t == token => Ok(Base {
+                    id: format!("file:{token}"),
+                    label: f.name.clone(),
+                    schedule: (*f.schedule).clone(),
+                }),
+                _ => Err("That file is no longer picked; pick it again.".to_string()),
+            };
+            return (base, "You picked this file.".into(), true);
+        }
         if let Some(why) = last_read {
             let base = self
                 .last_read
@@ -358,7 +396,7 @@ impl MergeInputs {
                 AutoBase::Backup(i, why) => (Some(i), why, true),
                 AutoBase::Disk(why) => (None, why, false),
             },
-            BaseChoice::Disk | BaseChoice::LastRead => {
+            BaseChoice::Disk | BaseChoice::LastRead | BaseChoice::File { .. } => {
                 (None, "You picked the file on disk.".into(), true)
             }
             BaseChoice::Backup { name } => {
@@ -694,7 +732,8 @@ pub fn merge_preview<R: Runtime>(
         &state,
         &window.state::<Safety>(),
         state.merge_files.get(token)?,
-    )?;
+    )?
+    .with_base(&base, &state.merge_files)?;
     Ok(inputs.preview(&base, &picks))
 }
 
@@ -713,7 +752,8 @@ pub fn merge_apply<R: Runtime>(
         &state,
         &window.state::<Safety>(),
         state.merge_files.get(token)?,
-    )?;
+    )?
+    .with_base(&base, &state.merge_files)?;
     if inputs.outside() {
         // Theirs will be saved over: it goes into the backups first.
         window.state::<Safety>().back_up_file(&inputs.path);
@@ -882,6 +922,34 @@ mod tests {
         let again = MergeInputs::gather(&state, &safety, theirs).unwrap();
         let n = apply(&state, &again, &BaseChoice::Auto, &picks).unwrap();
         assert!(n.starts_with("Nothing to merge"), "{n}");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn any_schedule_file_can_be_the_base() {
+        // M4: a file picked with Merge Changes From's picker, by its token.
+        let (dir, state, safety, theirs, _) = setup("merge-file-base");
+        let files = MergeFiles::default();
+        let token = files.add(theirs.clone());
+        let choice = BaseChoice::File { token };
+        let inputs = MergeInputs::gather(&state, &safety, theirs.clone())
+            .unwrap()
+            .with_base(&choice, &files)
+            .unwrap();
+        // Theirs as its own base: nothing of theirs is a change, so nothing conflicts.
+        let p = inputs.preview(&choice, &BTreeMap::new());
+        assert_eq!(p.base, format!("file:{token}"));
+        assert_eq!(p.base_reason, "You picked this file.");
+        assert!(p.conflicts.is_empty(), "{:?}", p.conflicts);
+        assert!(
+            p.bases.iter().any(|b| b.id == format!("file:{token}")),
+            "listed to show it"
+        );
+        // A token never picked is refused, before anything is read.
+        assert!(MergeInputs::gather(&state, &safety, theirs)
+            .unwrap()
+            .with_base(&BaseChoice::File { token: token + 99 }, &files)
+            .is_err());
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

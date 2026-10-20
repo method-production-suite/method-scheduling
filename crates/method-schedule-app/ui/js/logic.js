@@ -839,10 +839,14 @@ export function outsideMessage(dto) {
 /** The merge dialog's base list value as the base Rust is asked for, and back. */
 export function baseChoiceOf(value) {
   if (value === 'auto' || value === 'disk' || value === 'last_read') return { kind: value };
+  // A schedule file picked as the base (M4), by its token.
+  const file = /^file:(\d+)$/.exec(value);
+  if (file) return { kind: 'file', token: Number(file[1]) };
   return { kind: 'backup', name: value };
 }
 
 export function baseValueOf(base) {
+  if (base.kind === 'file') return `file:${base.token}`;
   return base.kind === 'backup' ? base.name : base.kind;
 }
 
