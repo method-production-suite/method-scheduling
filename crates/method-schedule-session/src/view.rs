@@ -118,10 +118,18 @@ pub struct SubBoardDto {
     pub len: usize,
     /// How many red flag clashes the sub-board has (the Red flags tab's badge).
     pub red_flags: usize,
+    /// The pages its scheduled scenes still have to shoot (M5), left out while nothing in
+    /// the schedule is reported shot.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub left: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct DayDto {
+    /// The pages its scenes still have to shoot (M5), left out while nothing in the
+    /// schedule is reported shot.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub left: String,
     pub number: u32,
     pub date: Option<String>,
     /// `Mon` to `Sun`, with the date.
@@ -401,6 +409,12 @@ pub struct StripDto {
     /// when false.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub omitted: bool,
+    /// What has been shot of the scene (M5, from `plan.scenes_shot`): `part` or `done`,
+    /// left out while nothing is; and in words (`Shot 3/8 of 6/8`).
+    #[serde(skip_serializing_if = "str::is_empty")]
+    pub shot: &'static str,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub shot_text: String,
     /// A banner's look (decisions.md, entry 65): bold, its palette color's name (empty:
     /// the board's banner color), two lines high.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
@@ -673,6 +687,8 @@ fn strip(s: &Schedule, look: &Lookup, layout: &StripLayout, st: &Strip, index: u
         part: 0,
         parts: 0,
         omitted: false,
+        shot: "",
+        shot_text: String::new(),
         bold: false,
         banner_color: String::new(),
         tall: false,
@@ -694,6 +710,14 @@ fn strip(s: &Schedule, look: &Lookup, layout: &StripLayout, st: &Strip, index: u
                 out.set = h.set.clone();
                 out.time_of_day = h.time_of_day.clone();
                 out.pages = h.pages.to_string();
+                if let Some(x) = s.plan.shot_so_far(*id) {
+                    out.shot = if x.complete { "done" } else { "part" };
+                    out.shot_text = if x.complete {
+                        format!("Shot, finished ({} of {})", x.eighths, h.pages)
+                    } else {
+                        format!("Shot {} of {}", x.eighths, h.pages)
+                    };
+                }
                 out.tone = tone(h);
                 if let Some(r) = s.strip_colors.rule_for(h) {
                     // The pair's own text color wins, then the scene text color (decision 108).
@@ -751,7 +775,11 @@ fn sub_board_dto(
         unscheduled: Vec::new(),
         len: sb.strips.len(),
         red_flags: marks.counts.get(&sb.id.0).copied().unwrap_or(0),
+        left: String::new(),
     };
+    let reported = !s.plan.scenes_shot.is_empty();
+    let mut sub_left = 0u32;
+    let mut sub_seen = std::collections::HashSet::new();
     // Each day's strips, room made for them up front.
     let room = |n: usize| {
         totals
@@ -800,7 +828,27 @@ fn sub_board_dto(
         let clock = |v: Option<u32>| v.map(crate::sheet::show_clock).unwrap_or_default();
         // Typed times, else the sun at a located sheet's place (decision 167).
         let sun = method_schedule_core::timeline::day_break_sun(s, &sheets, date);
+        let left = if reported {
+            // A scene in parts over several days counts on each of its days, and once in
+            // the sub-board's total.
+            let mut seen = std::collections::HashSet::new();
+            let mut n = 0u32;
+            for h in sheets.iter().filter(|h| !s.plan.is_omitted(h.id)) {
+                let rest =
+                    method_schedule_core::plan::eighths_left(h.pages, s.plan.shot_so_far(h.id)).0;
+                if seen.insert(h.id) {
+                    n += rest;
+                }
+                if sub_seen.insert(h.id) {
+                    sub_left += rest;
+                }
+            }
+            format!("{} left", method_schedule_core::Eighths(n))
+        } else {
+            String::new()
+        };
         out.days.push(DayDto {
+            left,
             number: day.number,
             date: date.map(|d| d.to_string()),
             weekday: date.map(|d| weekday(d).to_string()),
@@ -821,6 +869,9 @@ fn sub_board_dto(
         });
     }
     out.unscheduled = current;
+    if reported {
+        out.left = format!("{} left", method_schedule_core::Eighths(sub_left));
+    }
     Ok(out)
 }
 

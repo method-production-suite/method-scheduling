@@ -103,6 +103,7 @@ pub const COMMANDS: &[&str] = &[
     "timeline_data",
     "push_past_wrap",
     "set_call_time",
+    "set_shot",
     "set_long_day",
     "locations_data",
     "set_location",
@@ -2250,6 +2251,31 @@ mod plan_cmds {
                 let r: CmdResult = (|| {
                     let mut s = state.lock();
                     s.edit(|x| set_call(x, day, &call))?;
+                    finish(&window, &s, None)
+                })();
+                to_reply(r)
+            }
+            "set_shot" => {
+                #[derive(Deserialize)]
+                #[serde(rename_all = "camelCase")]
+                struct A {
+                    sheet: u32,
+                    day: u32,
+                    eighths: String,
+                    complete: bool,
+                }
+                let A {
+                    sheet,
+                    day,
+                    eighths,
+                    complete,
+                } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                let r: CmdResult = (|| {
+                    let mut s = state.lock();
+                    s.edit(|x| set_scene_shot(x, sheet, day, &eighths, complete))?;
                     finish(&window, &s, None)
                 })();
                 to_reply(r)

@@ -1205,6 +1205,11 @@ table.cal-month { width: 100%; border-collapse: collapse; table-layout: fixed; b
 .board.ts-large .row.scene { font-size: 15px; }
 .board.ts-large .row.scene .fc-cast { font-size: 13px; }
 .row.scene.omitted > span { text-decoration: line-through; opacity: 0.55; }
+/* What was shot (M5): a mark at the strip's left edge, half for part shot; a finished
+   scene is dimmed as well. */
+.row.scene.shot-part { box-shadow: inset 3px 0 0 var(--ok); }
+.row.scene.shot-done { box-shadow: inset 6px 0 0 var(--ok); }
+.row.scene.shot-done > span { opacity: 0.5; }
 /* Line styles (decision 185): drawn inside the cell, so no width or line height changes. */
 .row .rl-after, .columns .rl-after { box-shadow: inset -1px 0 0 currentColor; }
 .row .rl-under, .columns .rl-under { box-shadow: inset 0 -1px 0 currentColor; }

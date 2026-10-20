@@ -152,4 +152,49 @@ mod tests {
         )
         .unwrap();
     }
+
+    #[test]
+    fn a_scene_shot_is_marked_and_the_days_pages_left_follow() {
+        // M5: through the desktop's own command, as the page sends it.
+        let mut h = Host::new();
+        let v = h.dispatch("open_sample", &Value::Null).unwrap()["view"].clone();
+        let day = &v["board"]["sub_boards"][0]["days"][0];
+        assert!(day.get("left").is_none(), "nothing reported, nothing said");
+        let strip = &day["strips"][0];
+        let (sheet, brk) = (
+            strip["sheet"].as_u64().unwrap(),
+            day["end"]["id"].as_u64().unwrap(),
+        );
+        let v = h
+            .dispatch(
+                "set_shot",
+                &json!({ "sheet": sheet, "day": brk, "eighths": "1/8", "complete": false }),
+            )
+            .unwrap();
+        let day = &v["board"]["sub_boards"][0]["days"][0];
+        assert_eq!(day["strips"][0]["shot"], "part");
+        assert!(day["strips"][0]["shot_text"]
+            .as_str()
+            .unwrap()
+            .starts_with("Shot 1/8 of "));
+        assert!(day["left"].as_str().unwrap().ends_with(" left"));
+        assert!(v["board"]["sub_boards"][0]["left"].is_string());
+        let v = h
+            .dispatch(
+                "set_shot",
+                &json!({ "sheet": sheet, "day": brk, "eighths": "", "complete": true }),
+            )
+            .unwrap();
+        assert_eq!(
+            v["board"]["sub_boards"][0]["days"][0]["strips"][0]["shot"],
+            "done"
+        );
+        assert!(h
+            .dispatch(
+                "set_shot",
+                &json!({ "sheet": sheet, "day": brk, "eighths": "lots", "complete": false }),
+            )
+            .is_err());
+        assert!(h.dispatch("undo", &Value::Null).is_ok());
+    }
 }

@@ -433,6 +433,76 @@ pub fn set_call_time(s: &mut Schedule, day: StripId, minutes: Option<u32>) -> Re
     Ok(())
 }
 
+/// What has been shot of one scene, every day together (M5).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ShotSoFar {
+    pub eighths: crate::Eighths,
+    /// A day finished the scene.
+    pub complete: bool,
+}
+
+impl Plan {
+    /// What has been shot of `sheet`, or `None` while nothing is reported.
+    pub fn shot_so_far(&self, sheet: SheetId) -> Option<ShotSoFar> {
+        let mut out: Option<ShotSoFar> = None;
+        for x in self.shot_of(sheet) {
+            let o = out.get_or_insert_with(ShotSoFar::default);
+            o.eighths = crate::Eighths(o.eighths.0 + x.eighths.0);
+            o.complete |= x.complete;
+        }
+        out
+    }
+}
+
+/// What a scene of `pages` still has to shoot: nothing once finished, else its length less
+/// what was shot, never below nothing.
+pub fn eighths_left(pages: crate::Eighths, shot: Option<ShotSoFar>) -> crate::Eighths {
+    match shot {
+        Some(x) if x.complete => crate::Eighths::ZERO,
+        Some(x) => crate::Eighths(pages.0.saturating_sub(x.eighths.0)),
+        None => pages,
+    }
+}
+
+/// Records what was shot of `sheet` on the day `day` closes: `eighths` of it, and whether
+/// that day finished it (another day's finish is cleared then). Nothing shot and not
+/// finished takes the day's entry away.
+pub fn record_shot(
+    s: &mut Schedule,
+    sheet: SheetId,
+    day: StripId,
+    eighths: crate::Eighths,
+    complete: bool,
+) -> Result<(), Error> {
+    if s.sheet(sheet).is_none() {
+        return Err(Error::NoSuchSheet(sheet));
+    }
+    if !day_breaks(s).contains(&day) {
+        return Err(refuse("a scene is shot on a shoot day: name its day break"));
+    }
+    if eighths.0 > crate::model::MAX_SHEET_EIGHTHS {
+        return Err(refuse("a scene is 999 pages at the most"));
+    }
+    let p = &mut s.plan;
+    p.scenes_shot
+        .retain(|x| !(x.sheet == sheet && x.day == day));
+    if complete {
+        for x in p.scenes_shot.iter_mut().filter(|x| x.sheet == sheet) {
+            x.complete = false;
+        }
+    }
+    if eighths.0 > 0 || complete {
+        p.scenes_shot.push(SceneShot {
+            sheet,
+            day,
+            eighths,
+            complete,
+        });
+    }
+    tidy(s);
+    Ok(())
+}
+
 /// Sets the long day limit in minutes, or back to the default with `None`.
 pub fn set_long_day(s: &mut Schedule, minutes: Option<u32>) -> Result<(), Error> {
     if let Some(m) = minutes {
@@ -917,6 +987,55 @@ mod tests {
         );
         remove_day_breaks(&mut s, board, sub).unwrap();
         assert!(s.plan.call_times.is_empty(), "removed with their breaks");
+    }
+
+    #[test]
+    fn a_scene_shot_over_two_days_adds_up_and_finishes_once() {
+        let (mut s, _, _, _) = crate::timeline::tests::split_two_days();
+        let (d1, d2) = (breaks(&s)[0], breaks(&s)[1]);
+        let sheet = s.sheets[0].id;
+        let pages = s.sheet(sheet).unwrap().pages;
+        assert_eq!(s.plan.shot_so_far(sheet), None);
+        assert_eq!(eighths_left(pages, None), pages);
+        record_shot(&mut s, sheet, d1, crate::Eighths(3), false).unwrap();
+        record_shot(&mut s, sheet, d2, crate::Eighths(2), true).unwrap();
+        let so_far = s.plan.shot_so_far(sheet).unwrap();
+        assert_eq!(
+            so_far,
+            ShotSoFar {
+                eighths: crate::Eighths(5),
+                complete: true
+            }
+        );
+        assert_eq!(eighths_left(pages, Some(so_far)), crate::Eighths::ZERO);
+        // Finishing it on the first day instead clears the second day's finish.
+        record_shot(&mut s, sheet, d1, crate::Eighths(3), true).unwrap();
+        assert_eq!(s.plan.scenes_shot.iter().filter(|x| x.complete).count(), 1);
+        s.check().unwrap();
+        // Not finished, part shot: what's left is the rest, never below nothing.
+        let part = ShotSoFar {
+            eighths: crate::Eighths(2),
+            complete: false,
+        };
+        assert_eq!(
+            eighths_left(crate::Eighths(6), Some(part)),
+            crate::Eighths(4)
+        );
+        let over = ShotSoFar {
+            eighths: crate::Eighths(9),
+            complete: false,
+        };
+        assert_eq!(
+            eighths_left(crate::Eighths(6), Some(over)),
+            crate::Eighths::ZERO
+        );
+        // Nothing shot and not finished takes the entry away; a strip that isn't a day
+        // break is refused.
+        record_shot(&mut s, sheet, d1, crate::Eighths::ZERO, false).unwrap();
+        record_shot(&mut s, sheet, d2, crate::Eighths::ZERO, false).unwrap();
+        assert!(s.plan.scenes_shot.is_empty());
+        let not_a_break = s.boards[0].sub_boards[0].strips[0].id;
+        assert!(record_shot(&mut s, sheet, not_a_break, crate::Eighths(1), false).is_err());
     }
 
     #[test]

@@ -238,6 +238,32 @@ pub fn set_call(s: &mut Schedule, day: u32, call: &str) -> Result<(), String> {
     p::set_call_time(s, StripId(day), minutes).map_err(upper)
 }
 
+/// Records what was shot of `sheet` on the day `day` closes (M5): `eighths` as typed
+/// (`3/8`, `1 2/8`; empty for none) and whether that day finished it.
+pub fn set_scene_shot(
+    s: &mut Schedule,
+    sheet: u32,
+    day: u32,
+    eighths: &str,
+    complete: bool,
+) -> Result<(), String> {
+    let e = eighths.trim();
+    let e = if e.is_empty() {
+        method_schedule_core::Eighths::ZERO
+    } else {
+        e.parse::<method_schedule_core::Eighths>()
+            .map_err(|_| format!("{e:?} isn't a page length, such as 3/8 or 1 2/8."))?
+    };
+    p::record_shot(
+        s,
+        method_schedule_core::model::SheetId(sheet),
+        StripId(day),
+        e,
+        complete,
+    )
+    .map_err(upper)
+}
+
 /// The long day limit as typed (`12`, `10:30`); empty for the default.
 pub fn set_long(s: &mut Schedule, value: &str) -> Result<(), String> {
     let v = value.trim();
