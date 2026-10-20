@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{Manager, Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 
-use method_schedule_core::diff::{diff, Diff};
+use method_schedule_core::diff::diff;
 use method_schedule_core::merge::{merge_with, Merged, Side};
 use method_schedule_core::Schedule;
 
@@ -69,64 +69,7 @@ fn modified(p: &Path) -> Option<SystemTime> {
 // ---------------------------------------------------------------------------
 // What the page draws
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct ChangeDto {
-    /// `added`, `removed`, `changed`, `moved`.
-    pub kind: &'static str,
-    /// `title`, `category`, `element`, `sheet`, `board`, `sub_board`, `calendar`, `strip`.
-    pub subject: &'static str,
-    pub text: String,
-}
-
-/// Changes under one heading: Schedule, Categories, Elements, Sheets, Boards, Calendars,
-/// Strips (the engine's order).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct GroupDto {
-    pub group: &'static str,
-    pub changes: Vec<ChangeDto>,
-}
-
-/// The changes of a diff, grouped under their headings in the engine's order.
-pub fn groups(d: &Diff) -> Vec<GroupDto> {
-    let mut out: Vec<GroupDto> = Vec::new();
-    for c in &d.changes {
-        let g = c.subject.group();
-        let dto = ChangeDto {
-            kind: c.kind.key(),
-            subject: c.subject.key(),
-            text: c.text.clone(),
-        };
-        match out.last_mut() {
-            Some(last) if last.group == g => last.changes.push(dto),
-            _ => out.push(GroupDto {
-                group: g,
-                changes: vec![dto],
-            }),
-        }
-    }
-    out
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct WhatChangedDto {
-    /// The older side: `"other.mtsc"`, `"harbor.mtsc as saved on disk"`.
-    pub from: String,
-    /// The schedule in the window.
-    pub to: String,
-    pub count: usize,
-    pub groups: Vec<GroupDto>,
-}
-
-/// What changed from `older` to `newer`.
-pub fn compare(older: &Schedule, newer: &Schedule, from: String, to: String) -> WhatChangedDto {
-    let d = diff(older, newer);
-    WhatChangedDto {
-        from,
-        to,
-        count: d.changes.len(),
-        groups: groups(&d),
-    }
-}
+pub use method_schedule_session::changes::*;
 
 // ---------------------------------------------------------------------------
 // Files picked for merging

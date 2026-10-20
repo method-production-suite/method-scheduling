@@ -5493,3 +5493,13 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   weekly build stays on Apple silicon only, to keep it cheap.
 - **First shipped in** the next release (0.3.0); 0.2.0 is Apple silicon only.
 
+## 226. The browser host revises and compares; merging stays on the desktop (2026-10-20)
+
+- **Built on the recommendation**, reversible (ROADMAP.md, Waiting on the owner).
+- **Revise and What Changed** run in the browser host as on the desktop: the script or the
+  other schedule comes in as a file the person picks; "since saved" compares with the
+  schedule as it was last opened or saved from text in that host.
+- **Merge doesn't**, for now: it finds the common version in the backups and the file on
+  disk, and a browser host keeps neither. A host that wants it hands in the base schedule
+  too; that is a contract addition (no `COMMANDS_VERSION` change) when a partner asks.
+

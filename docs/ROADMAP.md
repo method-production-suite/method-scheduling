@@ -33,6 +33,9 @@ section. Everything else on this page goes ahead without waiting.
 - **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
+- **Merge in the browser host** (D226), built on the recommendation: the browser host offers
+  Revise and What Changed but not Merge, which needs a common version from backups a browser
+  doesn't keep. Reverse it and the host takes the base schedule as a third file.
 - **Unknown keys in a schedule file** (D224). Today the reader refuses any key it doesn't
   know, which catches typos, hand edits gone wrong and files from a newer version before
   anything is lost; the cost is that a file another app adds a key to won't open in an older
@@ -127,7 +130,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| The host's remaining commands: revise, merge and What Changed with their picked files (`Host::dispatch` with 123 commands, `COMMANDS_VERSION`, `host_info` and the read-only switch are in; files in as base64 for open, the sample, templates, import script and tags and layouts, downloads for save, templates, exports, call sheet and layouts, and the picture store for element and sheet images, 2026-10-20) | S | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
 
