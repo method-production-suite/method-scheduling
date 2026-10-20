@@ -1,0 +1,2 @@
+# Git repositories allowed in Cargo.lock, read by scripts/check-crate-ages.py (SUITE-STANDARDS.md §6),
+# each pinned in Cargo.toml with rev = the full commit. None.
