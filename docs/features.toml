@@ -432,7 +432,7 @@ ref = ["BYD-09", "D73"]
 [[feature]]
 group = "beyond"
 title = "Schedule locks and drift"
-text = "Lock the schedule as sent, then see each actor's work days added, dropped and moved since."
+text = "Lock the schedule as sent, then see each actor's work days added, dropped and moved since, on screen or as a spreadsheet."
 status = "have"
 ref = ["BYD-05", "D74"]
 
@@ -471,6 +471,13 @@ group = "files"
 title = "Windows and Linux, tested"
 text = "Both build from the same code today; printing, keys and file types still need a hands-on check."
 status = "soon"
+
+[[feature]]
+group = "beyond"
+title = "What was shot"
+text = "Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan."
+status = "have"
+ref = ["D224"]
 
 [[feature]]
 group = "beyond"

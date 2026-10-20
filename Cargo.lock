@@ -1829,7 +1829,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-app"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -1846,7 +1846,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-cli"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -1855,11 +1855,11 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-core"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "method-schedule-format"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "method-schedule-core",
  "serde",
@@ -1868,7 +1868,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-session"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "method-schedule-core",
  "method-schedule-format",
@@ -1878,7 +1878,7 @@ dependencies = [
 
 [[package]]
 name = "method-schedule-web"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "js-sys",
  "method-schedule-session",
@@ -4880,7 +4880,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "method-schedule-session",
 ]
