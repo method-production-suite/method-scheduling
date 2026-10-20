@@ -5,7 +5,7 @@ at your option: see [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APAC
 Copyright (c) 2026 Method Production Suite Team and the Method Schedule contributors.
 
 The app (`method-schedule-app`) and the command line (`method-schedule`) are built with
-the 446 third-party Rust crates below, each listed with the license we take it
+the 442 third-party Rust crates below, each listed with the license we take it
 under (where a crate offers a choice) and its copyright lines. Each license's full text
 follows the list. The app draws its window with the system's own web view (WebKit on
 macOS and Linux, WebView2 on Windows), which is part of the operating system and not
@@ -179,6 +179,12 @@ License: MIT (offered: Apache-2.0/MIT). Source: https://github.com/emk/cesu8-rs
 
 Authors: Eric Kidd
 
+### cfb 0.14.0
+
+License: MIT (offered: MIT). Source: https://github.com/mdsteele/rust-cfb
+
+Copyright (c) 2017 Matthew D. Steele
+
 ### cfb 0.7.3
 
 License: MIT (offered: MIT). Source: https://github.com/mdsteele/rust-cfb
@@ -271,27 +277,21 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/RustCrypto
 
 Copyright (c) 2021 RustCrypto Developers
 
-### cssparser 0.36.0
+### cssparser 0.37.0
 
 License: MPL-2.0 (offered: MPL-2.0). Source: https://github.com/servo/rust-cssparser
 
 Authors: Simon Sapin
 
-### cssparser-macros 0.6.1
+### cssparser-macros 0.7.1
 
 License: MPL-2.0 (offered: MPL-2.0). Source: https://github.com/servo/rust-cssparser
 
 Authors: Simon Sapin
 
-### ctor 0.8.0
+### ctor 1.0.13
 
-License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/mmastrac/rust-ctor
-
-Authors: Matt Mastracci
-
-### ctor-proc-macro 0.0.7
-
-License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/mmastrac/rust-ctor
+License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/mmastrac/linktime
 
 Authors: Matt Mastracci
 
@@ -371,6 +371,12 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/soc/dirs-r
 
 Copyright (c) 2018-2019 dirs-rs contributors
 
+### dirs 7.0.0
+
+License: MIT (offered: MIT OR Apache-2.0). Source: https://codeberg.org/dirs/dirs-rs
+
+Copyright (c) 2018-2019 dirs-rs contributors
+
 ### dirs-sys 0.5.0
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/dirs-dev/dirs-sys-rs
@@ -401,7 +407,7 @@ License: MIT (offered: MIT). Source: https://github.com/OpenByteDev/dlopen2
 
 Authors: Szymon Wieloch, OpenByte
 
-### dom_query 0.27.0
+### dom_query 0.28.0
 
 License: MIT (offered: MIT). Source: https://github.com/niklak/dom_query
 
@@ -438,18 +444,6 @@ Authors: David Tolnay
 License: MPL-2.0 (offered: MPL-2.0). Source: https://github.com/upsuper/dtoa-short
 
 Authors: Xidorn Quan
-
-### dtor 0.3.0
-
-License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/mmastrac/rust-ctor
-
-Authors: Matt Mastracci
-
-### dtor-proc-macro 0.0.6
-
-License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/mmastrac/rust-ctor
-
-Authors: Matt Mastracci
 
 ### dunce 1.0.5
 
@@ -781,7 +775,7 @@ Copyright (c) 2013-2014 The Rust Project Developers.
 
 Copyright (c) 2015-2020 The rust-hex Developers
 
-### html5ever 0.38.0
+### html5ever 0.39.0
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/servo/html5ever
 
@@ -933,6 +927,12 @@ License: MIT (offered: MIT). Source: https://github.com/bojand/infer
 
 Copyright (c) 2019 Bojan
 
+### infer 0.22.0
+
+License: MIT (offered: MIT). Source: https://github.com/bojand/infer
+
+Copyright (c) 2019 Bojan
+
 ### ipnet 2.12.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/krisprice/ipnet
@@ -1029,13 +1029,13 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/wasm-bindg
 
 Copyright (c) 2014 Alex Crichton
 
-### json-patch 3.0.1
+### json-patch 4.2.0
 
 License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/idubrov/json-patch
 
 Copyright (c) 2017 Ivan Dubrov
 
-### jsonptr 0.6.3
+### jsonptr 0.7.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/chanced/jsonptr
 
@@ -1043,9 +1043,9 @@ Copyright 2024 Chance Dinkins
 
 Copyright (c) 2022 Chance Dinkins
 
-### keyboard-types 0.7.0
+### keyboard-types 0.8.3
 
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/pyfisch/keyboard-types
+License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rust-windowing/keyboard-types
 
 Copyright (c) 2017 Pyfisch
 
@@ -1111,7 +1111,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rust-lang/
 
 Copyright (c) 2014 The Rust Project Developers
 
-### markup5ever 0.38.0
+### markup5ever 0.39.0
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/servo/html5ever
 
@@ -1179,7 +1179,7 @@ License: MIT (offered: MIT). Source: https://github.com/tokio-rs/mio
 
 Copyright (c) 2014 Carl Lerche and other MIO contributors
 
-### muda 0.19.3
+### muda 0.20.0
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/muda
 
@@ -1190,6 +1190,12 @@ Copyright (c) 2022-2022 Tauri Programme within The Commons Conservancy
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rust-mobile/ndk
 
 Authors: The Rust Mobile contributors
+
+### ndk-context 0.1.1
+
+License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rust-windowing/android-ndk-rs
+
+Authors: The Rust Windowing contributors
 
 ### ndk-sys 0.6.0+11769913
 
@@ -1679,7 +1685,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/kornelski/
 
 Copyright (c) 2015 Steven Fackler
 
-### selectors 0.36.1
+### selectors 0.38.0
 
 License: MPL-2.0 (offered: MPL-2.0). Source: https://github.com/servo/stylo
 
@@ -1921,7 +1927,7 @@ License: MIT (offered: MIT). Source: https://github.com/mystor/synstructure
 
 Copyright 2016 Nika Layzell
 
-### tao 0.35.3
+### tao 0.37.1
 
 License: Apache-2.0 (offered: Apache-2.0). Source: https://github.com/tauri-apps/tao
 
@@ -1939,31 +1945,31 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/composefs/
 
 Copyright (c) The tar-rs Project Contributors
 
-### tauri 2.11.6
+### tauri 2.12.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-codegen 2.6.3
+### tauri-codegen 2.7.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-macros 2.6.3
+### tauri-macros 2.7.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-plugin-dialog 2.7.3
+### tauri-plugin-dialog 2.8.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/plugins-workspace
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-plugin-fs 2.5.2
+### tauri-plugin-fs 2.6.0
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/plugins-workspace
 
@@ -1975,19 +1981,19 @@ License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-runtime 2.11.3
+### tauri-runtime 2.12.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-runtime-wry 2.11.4
+### tauri-runtime-wry 2.12.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-utils 2.9.3
+### tauri-utils 2.10.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
@@ -2163,7 +2169,7 @@ License: MIT (offered: MIT). Source: https://github.com/tokio-rs/tracing
 
 Copyright (c) 2019 Tokio Contributors
 
-### tray-icon 0.24.2
+### tray-icon 0.25.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/tauri-apps/tray-icon
 
@@ -2191,36 +2197,6 @@ Copyright 2014 Paho Lurie-Gregg
 
 Copyright (c) 2014 Paho Lurie-Gregg
 
-### unic-char-property 0.9.0
-
-License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/open-i18n/rust-unic/
-
-Authors: The UNIC Project Developers
-
-### unic-char-range 0.9.0
-
-License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/open-i18n/rust-unic/
-
-Authors: The UNIC Project Developers
-
-### unic-common 0.9.0
-
-License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/open-i18n/rust-unic/
-
-Authors: The UNIC Project Developers
-
-### unic-ucd-ident 0.9.0
-
-License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/open-i18n/rust-unic/
-
-Authors: The UNIC Project Developers
-
-### unic-ucd-version 0.9.0
-
-License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/open-i18n/rust-unic/
-
-Authors: The UNIC Project Developers
-
 ### unicode-ident 1.0.26
 
 License: MIT and Unicode-3.0 (offered: (MIT OR Apache-2.0) AND Unicode-3.0). Source: https://github.com/dtolnay/unicode-ident
@@ -2245,7 +2221,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/servo/rust
 
 Copyright (c) 2013-2025 The rust-url developers
 
-### urlpattern 0.3.0
+### urlpattern 0.6.0
 
 License: MIT (offered: MIT). Source: https://github.com/denoland/rust-urlpattern
 
@@ -2329,6 +2305,14 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/wasm-bindg
 
 Copyright (c) 2014 Alex Crichton
 
+### web-time 1.1.0
+
+License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/daxpedda/web-time
+
+Copyright 2023 dAxpeDDa
+
+Copyright (c) 2023 dAxpeDDa
+
 ### web_atoms 0.2.6
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/servo/html5ever
@@ -2355,7 +2339,7 @@ Copyright (c) 2016 Boucher, Antoni <bouanto@zoho.com>
 
 License: CDLA-Permissive-2.0 (offered: CDLA-Permissive-2.0). Source: https://github.com/rustls/webpki-roots
 
-### webview2-com 0.38.2
+### webview2-com 0.39.1
 
 License: MIT (offered: MIT). Source: https://github.com/wravery/webview2-rs
 
@@ -2363,7 +2347,7 @@ License: MIT (offered: MIT). Source: https://github.com/wravery/webview2-rs
 
 License: MIT (offered: MIT). Source: https://github.com/wravery/webview2-rs
 
-### webview2-com-sys 0.38.2
+### webview2-com-sys 0.39.1
 
 License: MIT (offered: MIT). Source: https://github.com/wravery/webview2-rs
 
@@ -2391,31 +2375,31 @@ License: MIT (offered: MIT/Apache-2.0). Source: https://github.com/retep998/wina
 
 Authors: Peter Atashian
 
-### window-vibrancy 0.6.0
+### window-vibrancy 0.8.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri-plugin-vibrancy
 
 Copyright (c) 2020-2022 Tauri Programme within The Commons Conservancy
 
-### windows 0.61.3
+### windows 0.62.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-collections 0.2.0
+### windows-collections 0.3.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-core 0.61.2
+### windows-core 0.62.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-future 0.2.1
+### windows-future 0.3.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2433,31 +2417,25 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows-link 0.1.3
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows-link 0.2.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-numerics 0.2.0
+### windows-numerics 0.3.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-result 0.3.4
+### windows-result 0.4.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
 Copyright (c) Microsoft Corporation.
 
-### windows-strings 0.4.2
+### windows-strings 0.5.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2511,7 +2489,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows-threading 0.1.0
+### windows-threading 0.2.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2681,7 +2659,7 @@ License: Unicode-3.0 (offered: Unicode-3.0). Source: https://github.com/unicode-
 
 Copyright © 2020-2024 Unicode, Inc.
 
-### wry 0.55.1
+### wry 0.57.0
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/wry
 

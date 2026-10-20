@@ -1342,10 +1342,10 @@ back as one plain sentence the page shows in its status line (or in the open dia
 ## Updates and releases
 
 One version, in the root `Cargo.toml` (`[workspace.package]`); the bundles take it from
-there. Bundles are made with the Tauri CLI, pinned at 2.11.4 (no npm):
+there. Bundles are made with the Tauri CLI, pinned at 2.12.1 (no npm):
 
 ```bash
-cargo install tauri-cli --locked --version 2.11.4
+cargo install tauri-cli --locked --version 2.12.1
 ```
 
 **A Mac release, on the owner's Mac** (decisions.md, entry 196):
@@ -1535,8 +1535,8 @@ untrusted (a schedule or a script is data from anywhere).
 ## Dependencies
 
 Tauri crates are pinned exactly, at the versions and features Method Budget uses:
-`tauri` 2.11.6 with `default-features = false` and only `wry`, `common-controls-v6`, `x11`
-and `dbus`; `tauri-build` 2.6.3; `tauri-plugin-dialog` 2.7.3. `serde` 1.0.229 and
+`tauri` 2.12.1 with `default-features = false` and only `wry`, `common-controls-v6`, `x11`
+and `dbus`; `tauri-build` 2.7.1; `tauri-plugin-dialog` 2.8.1. `serde` 1.0.229 and
 `serde_json` 1.0.151 as elsewhere. Every crate in `Cargo.lock` is a version Method Budget's
 lock already has, and must be at least 14 days old (`python3 scripts/check-crate-ages.py`,
 run in CI).
