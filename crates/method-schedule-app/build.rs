@@ -197,6 +197,8 @@ const COMMANDS: &[&str] = &[
     // The Help menu: the sample and the user guide, built in (src/help.rs)
     "open_sample",
     "user_guide",
+    "host_info",
+    "menu_table",
     "whats_new",
     "notices",
     "open_link",

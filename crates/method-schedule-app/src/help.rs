@@ -60,6 +60,21 @@ pub async fn open_sample<R: Runtime>(
     finish(&window, &state.lock(), Some(SAMPLE_NOTICE.into())).map(Some)
 }
 
+/// The host the page runs in (ui/js/host.js, docs/research/web-session.md): the desktop
+/// app. A browser host answers `"web"`.
+#[tauri::command]
+pub fn host_info() -> method_schedule_session::host::HostInfo {
+    method_schedule_session::host::HostInfo::new("desktop", false)
+}
+
+/// The menus a page draws itself, as a browser host gives them (the desktop draws its
+/// native menu instead and the page never asks it; answered here so both hosts take the
+/// same commands).
+#[tauri::command]
+pub fn menu_table() -> Vec<method_schedule_session::menu::MenuDto> {
+    method_schedule_session::menu::web_menus()
+}
+
 /// Help > User Guide: the guide's text, for the page to show.
 #[tauri::command]
 pub fn user_guide() -> String {

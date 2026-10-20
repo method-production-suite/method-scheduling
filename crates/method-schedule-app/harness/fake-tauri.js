@@ -1896,6 +1896,12 @@ const commands = {
       sb.wrap = w || null;
     });
   },
+  // The host (src/host.rs, ui/js/host.js): window.__hostKind = 'web' plays the browser build.
+  host_info: () => ({ kind: window.__hostKind || 'desktop', version: '0.3.0', commands_version: 1, read_only: false }),
+  menu_table: () => [
+    { title: 'File', items: [{ id: 'file.open', label: 'Open\u2026' }, null, { id: 'file.save', label: 'Save' }] },
+    { title: 'Edit', items: [{ id: 'edit.undo', label: 'Undo' }] },
+  ],
   preferences: () => ({ ...fakePrefs }),
   set_preferences: ({ prefs }) => {
     if (!['sun', 'mon'].includes(prefs.week_start)) throw `"${prefs.week_start}" is not a week start (sun or mon).`;

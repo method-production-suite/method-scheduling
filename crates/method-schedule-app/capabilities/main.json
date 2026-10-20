@@ -169,6 +169,8 @@
     "allow-new-from-template",
     "allow-open-sample",
     "allow-user-guide",
+    "allow-host-info",
+    "allow-menu-table",
     "allow-whats-new",
     "allow-notices",
     "allow-open-link",

@@ -1970,6 +1970,8 @@ pub fn run() {
             crate::templates::new_from_template,
             crate::help::open_sample,
             crate::help::user_guide,
+            crate::help::host_info,
+            crate::help::menu_table,
             crate::help::whats_new,
             crate::help::notices,
             crate::help::open_link,

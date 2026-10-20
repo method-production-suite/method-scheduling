@@ -29,6 +29,7 @@ pub mod find;
 pub mod flagcolors;
 pub mod host;
 pub mod layouts;
+pub mod menu;
 pub mod plan;
 pub mod redflags;
 pub mod reports;

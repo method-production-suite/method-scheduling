@@ -9,14 +9,14 @@ copied as written, run against the host's stand-ins for the desktop's helpers.
     python3 scripts/host-dispatch.py --check  # exit 1 when it is out of date (xtask ci)
 
 EXCLUDE lists commands that look schedule-only but use desktop state (image files, the
-revision flow's pending pick); the host serves them in later phases.
+revision flow's pending pick), and host_info and menu_table, which each host answers itself.
 """
 import collections, glob, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 CHECK = "--check" in sys.argv[1:]
-EXCLUDE = {"element_image", "sheet_image", "revise_apply"}
+EXCLUDE = {"element_image", "sheet_image", "revise_apply", "host_info", "menu_table"}
 SRC='crates/method-schedule-app/src/'
 cmds=[]
 for path in sorted(glob.glob(SRC+'*.rs')):
