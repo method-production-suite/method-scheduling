@@ -25,6 +25,7 @@ use crate::view::{self, View};
 mod b64;
 mod files;
 mod generated;
+mod local;
 
 pub use b64::{decode as b64_decode, encode as b64_encode};
 pub use files::{Downloads, FileIn, FileOut};
@@ -47,6 +48,7 @@ pub fn commands() -> Vec<&'static str> {
     generated::COMMANDS
         .iter()
         .chain(files::COMMANDS)
+        .chain(local::COMMANDS)
         .chain(OWN)
         .copied()
         .collect()
@@ -154,6 +156,9 @@ pub struct Host {
     /// The revision picked and previewed, waiting for its apply (the desktop keeps one too).
     revision: Option<files::Revision>,
     tokens: u64,
+    /// The preferences (the desktop keeps them in its data folder; a host keeps them where
+    /// it likes and hands them back with `set_preferences`).
+    prefs: crate::reportsetup::Prefs,
 }
 
 #[derive(Deserialize)]
@@ -295,8 +300,10 @@ impl Host {
             }
             _ => {}
         }
-        if files::COMMANDS.contains(&command) {
-            if self.read_only && !files::READS.contains(&command) {
+        let file = files::COMMANDS.contains(&command);
+        if file || local::COMMANDS.contains(&command) {
+            let read = files::READS.contains(&command) || local::READS.contains(&command);
+            if self.read_only && !read {
                 return Err(Error::Refused(READ_ONLY.to_string()));
             }
             let a: DocArg = args(command, args_json)?;
@@ -304,7 +311,12 @@ impl Host {
                 Some(_) => Some(self.doc(a.doc)?),
                 None => self.doc(None).ok(),
             };
-            if let Some(r) = self.run_file(command, args_json, state) {
+            let run = if file {
+                self.run_file(command, args_json, state)
+            } else {
+                self.run_local(command, args_json, state)
+            };
+            if let Some(r) = run {
                 return r;
             }
         }

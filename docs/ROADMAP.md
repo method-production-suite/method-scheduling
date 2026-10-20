@@ -130,7 +130,8 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
+| The page in the browser: a menu bar drawn from the desktop's menu table (moved to the session crate), the page's `host_info` guards (Autosave, windows, backups, the updater hidden on the web), pictures and preferences kept with the schedule a host saves (`method-schedule-web`, its shim, `cargo xtask web` and its headless smoke test are in, 2026-10-20) | S | phase 2 |
+| The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the

@@ -343,7 +343,7 @@ impl Host {
                 "import_script" | "import_script_tags" => {
                     let f = file_arg(command, a)?;
                     let state = need()?;
-                    let lines = f.lines_per_page.unwrap_or(fountain::LINES_PER_PAGE);
+                    let lines = f.lines_per_page.unwrap_or(self.prefs.fountain_lines);
                     let mut s = state.lock();
                     let tags = command == "import_script_tags";
                     let script = script_of(&f.file, tags, lines)?;
@@ -427,7 +427,7 @@ impl Host {
                         return Err(format!("{} is too large to open.", r.file.name).into());
                     }
                     let state = need()?;
-                    let lines = r.lines_per_page.unwrap_or(fountain::LINES_PER_PAGE);
+                    let lines = r.lines_per_page.unwrap_or(self.prefs.fountain_lines);
                     let script = script_of(&r.file, r.tags, lines)?;
                     let (matched, changed, added, omitted, lines) =
                         revision_preview(state.lock().schedule(), &script, r.tags)?;
