@@ -2,7 +2,11 @@ use super::*;
 use crate::board;
 use crate::session::{read_script, Session};
 use method_schedule_core::headers::HeaderId;
-use method_schedule_core::setup::{PageBreak, ReportColumn, ReportKind, TextSize};
+use method_schedule_core::model::{StripColumn, StripField, StripLayout};
+use method_schedule_core::reports;
+use method_schedule_core::setup::{
+    PageBreak, ReportColumn, ReportKind, ReportOptions, ReportSetup, TextSize,
+};
 use std::path::Path;
 
 /// Harbor Light on the first sub-board, three eighths a day, starting 2027-03-01, with
