@@ -14,7 +14,7 @@
 # target/release-mac/: `Method Schedule.app` and `Method-Schedule-<version>-<arch>.dmg`.
 #
 # Needs Xcode's command line tools and the Tauri CLI, nothing else:
-#   cargo install tauri-cli --locked --version 2.11.4
+#   cargo install tauri-cli --locked --version 2.12.1
 #
 # Notarizing needs a keychain profile, made once by the owner (the app-specific password
 # is typed at the prompt, never on the command line or in a file):
@@ -34,7 +34,7 @@ cd "$(dirname "$0")/.."
 IDENTITY="${METHOD_SIGN_IDENTITY:-Developer ID Application: Clockwork Post Production, LLC (XSRB3D643J)}"
 PROFILE="${METHOD_NOTARY_PROFILE:-method-schedule-notary}"
 TARGET="${METHOD_MAC_TARGET:-}"
-TAURI_CLI_VERSION="2.11.4"
+TAURI_CLI_VERSION="2.12.1"
 OUT="target/release-mac"
 
 say() { printf 'release-mac: %s\n' "$*"; }

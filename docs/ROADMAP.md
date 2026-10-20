@@ -27,7 +27,8 @@ section. Everything else on this page goes ahead without waiting.
   rule since 2026-10-18; everything else here is tested offscreen): a file opened from the Finder opens in its
   own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past
   wrap; Layouts and Red Flag Types rename then click; K185 and K187 on paper; crash
-  recovery in the window (`scripts/crash-check.sh`, M2); and in the reference app E-L5,
+  recovery in the window (`scripts/crash-check.sh`, M2); the app on Tauri 2.12 opening, its
+  menus and a Save dialog (the move's live check, Windows and Linux too); and in the reference app E-L5,
   E-S34 and the two report questions (M1's review row).
 - **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
 
@@ -186,7 +187,6 @@ every picture retaken.
 | Item | Size | Refs |
 |---|---|---|
 | Builds and installers: the NSIS setup on Windows, AppImage and `.deb` on Linux, under version-free names (built unsigned by `release.yml`, D196, D210); Windows ships unsigned for the first alpha, SmartScreen warning accepted | M | D196, D210 |
-| The Tauri family to 2.12: tauri 2.12.x, tauri-build 2.7.x, the plugins and the CLI (`scripts/install-tauri-cli.sh`: its version and three SHA-256s) in one PR, each at least 14 days old, the lock checked by the crate-age and deny jobs (Dependabot keeps them in a group of their own) | S | MReview on #38 |
 | CI: Linux app builds in the weekly full build (`platforms.yml` builds and tests all three systems every Monday since 2026-10-19, ArtCraft-style; release.yml builds the installers) | S | `.github/workflows/platforms.yml` |
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
 | Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |

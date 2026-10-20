@@ -17,7 +17,7 @@ path = "src/main.rs"
 # Tauri crates pinned exactly, at the versions and features Method Budget uses
 # (docs/APP.md, "Dependencies"). No updater plugin until the repository is public.
 [build-dependencies]
-tauri-build = { version = "=2.6.3", features = [] }
+tauri-build = { version = "=2.7.1", features = [] }
 
 [dependencies]
 method-schedule-core = { path = "../method-schedule-core" }
@@ -27,8 +27,8 @@ method-schedule-format = { path = "../method-schedule-format" }
 method-schedule-session = { path = "../method-schedule-session", features = ["std-clock"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
-tauri = { version = "=2.11.6", default-features = false, features = ["wry", "common-controls-v6", "x11", "dbus"] }
-tauri-plugin-dialog = "=2.7.3"
+tauri = { version = "=2.12.1", default-features = false, features = ["wry", "common-controls-v6", "x11", "dbus"] }
+tauri-plugin-dialog = "=2.8.1"
 # In-app updates (src/updater.rs, decision 213), Method Budget's versions: the plugin
 # fetches latest.json and checks its minisign signature; reqwest (already in the build
 # through the plugin) gives its redirect rule; semver compares versions for What's New.
