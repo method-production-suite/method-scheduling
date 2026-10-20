@@ -352,7 +352,7 @@ pub(crate) fn edit_with(
 /// Today, on the host's clock (src/clock.rs), where the desktop reads the system's.
 pub(crate) fn today() -> Option<method_schedule_core::Date> {
     let ms = crate::clock::wall_ms();
-    (ms > 0).then(|| method_schedule_core::Date((ms / 86_400_000) as i32))
+    (ms > 0).then_some(method_schedule_core::Date((ms / 86_400_000) as i32))
 }
 
 pub(crate) use reply as to_reply;
