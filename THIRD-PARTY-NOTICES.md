@@ -1613,7 +1613,7 @@ Copyright (c) 2022 1Password
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rustls/rustls-platform-verifier
 
-### rustls-webpki 0.103.15
+### rustls-webpki 0.103.16
 
 License: ISC (offered: ISC). Source: https://github.com/rustls/webpki
 
@@ -2351,7 +2351,7 @@ License: MIT (offered: MIT). Source: https://github.com/tauri-apps/webkit2gtk-rs
 
 Copyright (c) 2016 Boucher, Antoni <bouanto@zoho.com>
 
-### webpki-root-certs 1.0.9
+### webpki-root-certs 1.0.10
 
 License: CDLA-Permissive-2.0 (offered: CDLA-Permissive-2.0). Source: https://github.com/rustls/webpki-roots
 
