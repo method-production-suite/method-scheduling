@@ -29,13 +29,43 @@ use crate::Eighths;
 /// Category names a script's tags use for the cast.
 const CAST_NAMES: [&str; 3] = ["cast", "cast members", "cast member"];
 
-/// The category a tag goes in: the cast category for a cast name, else the one with its
-/// name, made when missing.
+/// The usual breakdown names a script's tags may use for one of our default categories
+/// (DEFAULT_CATEGORIES), as `(their name, ours)`. Our reading (E-I5, IMP-04).
+const TAG_NAMES: &[(&str, &str)] = &[
+    ("props", "Hand props"),
+    ("prop", "Hand props"),
+    ("vehicles", "Picture vehicles"),
+    ("vehicle", "Picture vehicles"),
+    ("extras", "Background"),
+    ("background actors", "Background"),
+    ("extras/atmosphere", "Background"),
+    ("costume", "Wardrobe"),
+    ("costumes", "Wardrobe"),
+    ("makeup", "Hair and makeup"),
+    ("makeup/hair", "Hair and makeup"),
+    ("hair/makeup", "Hair and makeup"),
+    ("special effects", "Practical effects"),
+    ("livestock", "Animals"),
+    ("animal wrangler", "Animals"),
+    ("sound", "Sound and music"),
+    ("music", "Sound and music"),
+];
+
+/// The category a tag goes in: the cast category for a cast name; the one with its name;
+/// else our default category a usual breakdown name stands for, when the schedule has it
+/// ([`TAG_NAMES`]); else a new one with its name.
 fn tag_category(s: &mut Schedule, name: &str) -> CategoryId {
     if CAST_NAMES.iter().any(|c| same_name(c, name)) {
         return s.cast_or_add();
     }
-    s.add_category(name)
+    if let Some(id) = s.category_named(name) {
+        return id;
+    }
+    let ours = TAG_NAMES
+        .iter()
+        .find(|(theirs, _)| same_name(theirs, name))
+        .and_then(|(_, ours)| s.category_named(ours));
+    ours.unwrap_or_else(|| s.add_category(name))
 }
 
 /// Tags `sheet` with `tags`, making elements and categories as needed. Returns the
@@ -396,6 +426,44 @@ mod tests {
     use super::*;
     use crate::fountain::parse;
     use crate::model::{Place, StripKind};
+
+    /// IMP-04 with an invented tagged script (fixtures/scripts/field-station-tagged.fdx):
+    /// the usual breakdown names land in our default categories, and nothing new is made.
+    #[test]
+    fn a_tagged_script_fills_our_default_categories() {
+        let text = include_str!("../../../fixtures/scripts/field-station-tagged.fdx");
+        let script = crate::fdx::parse_with_tags(text).unwrap();
+        let mut s = Schedule::with_default_categories("Tagged");
+        let before = s.categories.len();
+        let cast = s.cast_or_add();
+        let sheets = import_tagged(&mut s, &script, cast).unwrap();
+        assert_eq!(sheets.len(), 3);
+        assert_eq!(s.categories.len(), before, "no new categories");
+        let in_cat = |cat: &str, name: &str| {
+            let c = s.category_named(cat).unwrap();
+            s.element_named(c, name)
+                .unwrap_or_else(|| panic!("{name} in {cat}"))
+        };
+        let mara = in_cat("Cast", "MARA");
+        let teo = in_cat("Cast", "TEO");
+        let radio = in_cat("Hand props", "HAND RADIO");
+        let truck = in_cat("Picture vehicles", "PARK TRUCK");
+        let drum = in_cat("Set dressing", "FUEL DRUM");
+        let on = |i: usize| s.sheet(sheets[i]).unwrap().elements.clone();
+        for e in [mara, radio, drum] {
+            assert!(on(0).contains(&e));
+        }
+        for e in [teo, truck] {
+            assert!(on(1).contains(&e));
+        }
+        assert!(on(2).contains(&radio) && on(2).contains(&mara));
+        // A name we don't know still makes its own category.
+        let mut t = Schedule::with_default_categories("Other");
+        assert_eq!(
+            tag_category(&mut t, "Greenery"),
+            t.category_named("Greenery").unwrap()
+        );
+    }
 
     const DRAFT1: &str = "\
 INT. KITCHEN - DAY #1#
