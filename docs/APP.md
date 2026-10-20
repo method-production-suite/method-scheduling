@@ -1414,8 +1414,9 @@ What else turns updates on, all the owner's:
 
 1. **The release secrets**: `TAURI_SIGNING_PRIVATE_KEY` (the text of the private key file)
    and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` in the repository's Actions secrets. With them,
-   `release.yml` makes the signed `Method-Schedule_<version>_aarch64.app.tar.gz` and
-   `scripts/update-manifest.py` writes `latest.json` into the draft.
+   `release.yml` makes the signed `Method-Schedule_<version>_universal.app.tar.gz` (one
+   app for Intel and Apple silicon, decision 225) and `scripts/update-manifest.py` writes
+   `latest.json` into the draft, listing it under both `darwin-aarch64` and `darwin-x86_64`.
 2. **The Apple signing secrets** (`DEVELOPER_ID_CERT_P12_BASE64`, `CERT_PASSWORD`,
    `KEYCHAIN_PASSWORD`, `AC_API_KEY_ID`, `AC_API_ISSUER_ID`, `AC_API_KEY_P8_BASE64`), so the
    build an update installs is signed and notarized like the first one.

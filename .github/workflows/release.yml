@@ -1,5 +1,5 @@
 # Release builds on a version tag (decisions.md, entries 196 and 210): the app bundled with
-# the Tauri bundler for macOS on Apple silicon (.dmg), Windows (NSIS setup .exe) and Linux
+# the Tauri bundler for macOS, one universal app for Intel and Apple silicon (.dmg), Windows (NSIS setup .exe) and Linux
 # (.deb and AppImage), under version-free names so the website can link
 # releases/latest/download/<file>, attached to a draft GitHub release for a person to read
 # over and publish. Nothing is published by this workflow.
@@ -86,10 +86,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Apple silicon only (the suite standard); Intel Macs keep the version they have.
-          - name: macos-arm64
+          # One universal app for Intel and Apple silicon (SUITE-STANDARDS.md section 3,
+          # the owner, 2026-10-19): both targets built, joined with lipo by the Tauri CLI.
+          - name: macos-universal
             os: macos-latest
-            target: aarch64-apple-darwin
+            target: universal-apple-darwin
             bundles: app,dmg
           - name: windows-x64
             os: windows-latest
@@ -125,7 +126,14 @@ jobs:
         if: matrix.target != ''
         env:
           TARGET: ${{ matrix.target }}
-        run: rustup target add "$TARGET"
+        run: |
+          set -euo pipefail
+          # A universal Mac build needs both chips' targets.
+          if [ "$TARGET" = universal-apple-darwin ]; then
+            rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          else
+            rustup target add "$TARGET"
+          fi
       - name: Tauri CLI
         # The prebuilt CLI, its version and SHA-256s pinned in the script, instead of
         # compiling it here (Method Budget's; it took half a macOS build's time).
@@ -265,12 +273,12 @@ jobs:
           set -euo pipefail
           for app in "target/$TARGET/release/bundle/macos/"*.app; do
             codesign --verify --deep --strict --verbose=2 "$app"
-            # Apple silicon only: every executable must be exactly arm64, not x86_64 or
-            # universal.
+            # Universal: every executable must hold exactly x86_64 and arm64, compared in
+            # a fixed order, not just printed.
             for exe in "$app/Contents/MacOS/"*; do
-              archs="$(lipo -archs "$exe")"
-              if [ "$archs" != arm64 ]; then
-                echo "::error::$(basename "$exe") is built for '$archs', not arm64 alone."
+              archs="$(lipo -archs "$exe" | tr ' ' '\n' | sort | tr '\n' ' ' | sed 's/ $//')"
+              if [ "$archs" != "arm64 x86_64" ]; then
+                echo "::error::$(basename "$exe") is built for '$archs', not x86_64 and arm64 both."
                 exit 1
               fi
               echo "$(basename "$exe"): $archs"
@@ -326,7 +334,7 @@ jobs:
               # The updater archive and its signature, named as latest.json expects (no
               # spaces: the name is the download address).
               if [ "${UPDATER:-no}" = yes ]; then
-                name="Method-Schedule_${GITHUB_REF_NAME#v}_aarch64.app.tar.gz"
+                name="Method-Schedule_${GITHUB_REF_NAME#v}_universal.app.tar.gz"
                 one "$root/macos/*.app.tar.gz" "$name"
                 one "$root/macos/*.app.tar.gz.sig" "$name.sig"
                 mv "dist/$name" "dist/$name.sig" updater/

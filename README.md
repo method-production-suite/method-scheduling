@@ -17,7 +17,7 @@ production runs on. No subscription, and your schedule is a file you own.
 - **Bring your scripts with you.** A Fountain or `.fdx` script comes in as one breakdown
   sheet per scene, and later drafts merge into the schedule you already have.
 
-Status: early alpha. The latest version is out for Macs with Apple silicon; elsewhere it builds from source.
+Status: early alpha. The latest version is out for Macs, Intel and Apple silicon alike; elsewhere it builds from source.
 Website: [methodschedule.com](https://methodschedule.com).
 
 <picture>
@@ -42,7 +42,7 @@ Website: [methodschedule.com](https://methodschedule.com).
 | Computer | Built | Signed | Tested |
 | --- | --- | --- | --- |
 | Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple | By a person throughout development, and by the automated tests weekly |
-| Mac, Intel | No: the Mac app is for Apple silicon only | | |
+| Mac, Intel | Yes, the same app (`.dmg`), built for both chips | Signed and notarized by Apple | The Intel half by the automated tests, run under Rosetta before each release; not yet on an Intel Mac by a person |
 | Windows, 64-bit | Yes, an installer (`.exe`) | Not yet: Windows will warn that the publisher is unknown | Automated tests weekly; never installed by a person yet |
 | Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests weekly; never installed by a person yet |
 
@@ -76,7 +76,7 @@ free, open tools for making films, from the first draft to the last shoot day.
 
 | Computer | Download | Status |
 |---|---|---|
-| macOS, Apple silicon | `Method-Schedule-macOS.dmg` | Signed and notarized from 0.1.0. Checked by hand on a Mac. |
+| macOS, Intel and Apple silicon | `Method-Schedule-macOS.dmg` | One universal app, signed and notarized. Checked by hand on an Apple silicon Mac; Intel from the next release. |
 | Windows, x64 | `Method-Schedule-windows-x64-setup.exe` | Built by CI, never installed by a person yet. Reports welcome. |
 | Linux, x64 | `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` | Built by CI, never installed by a person yet. Reports welcome. |
 

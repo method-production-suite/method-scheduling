@@ -5476,3 +5476,20 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Still to come**: the board marking shot scenes, pages left, and shot against planned in
   the reports.
 
+## 225. One universal Mac app, for Intel and Apple silicon (2026-10-19)
+
+- **The owner's decision** for the whole suite (SUITE-STANDARDS.md section 3): "universal Mac
+  builds at each one's next release", reversing the Apple-silicon-only rule of 2026-10-16
+  (decision 210).
+- **The build**: `release.yml` builds `universal-apple-darwin` (both chips, joined by the
+  Tauri CLI), still compiling before any signing material is unpacked. The `.dmg` keeps its
+  version-free name. The check fails unless every executable in the app holds exactly
+  `x86_64` and `arm64`.
+- **Updates**: one signed archive, `Method-Schedule_<version>_universal.app.tar.gz`, listed
+  in `latest.json` under both `darwin-aarch64` and `darwin-x86_64`; the app's updater asks
+  for its own chip's entry, so an Intel Mac finds it with no change in the app.
+- **Tested before each release** on an Apple silicon Mac: the whole test suite for
+  `x86_64-apple-darwin` under Rosetta, and the Intel half of the app run under Rosetta. The
+  weekly build stays on Apple silicon only, to keep it cheap.
+- **First shipped in** the next release (0.3.0); 0.2.0 is Apple silicon only.
+

@@ -4,7 +4,8 @@
     python3 scripts/update-manifest.py --dir updater --version 0.2.0 --out updater/latest.json
 
 `--dir` holds the macOS updater archive and its signature as the release workflow names
-them: Method-Schedule_<version>_aarch64.app.tar.gz and the same with .sig. The archive's
+them: Method-Schedule_<version>_universal.app.tar.gz and the same with .sig, one app for
+Intel and Apple silicon listed under both platforms. The archive's
 download address is the release's own (github.com/<repo>/releases/download/v<version>/...),
 so the manifest can only point at a file of the same release. The notes are
 docs/releases/<version>.md when it exists.
@@ -24,8 +25,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "method-production-suite/method-scheduling"
 CONF = ROOT / "crates/method-schedule-app/tauri.conf.json"
-# Apple silicon only (decision 210).
-PLATFORMS = {"darwin-aarch64": "aarch64"}
+# One universal Mac app (SUITE-STANDARDS.md section 3, 2026-10-19) under both platforms: the
+# updater asks for the entry of the chip it runs on.
+PLATFORMS = {"darwin-aarch64": "universal", "darwin-x86_64": "universal"}
 
 
 def fail(msg):
