@@ -550,6 +550,12 @@ impl Host {
                                 .ok_or("This schedule hasn't been saved to a file yet.")?;
                             (older, format!("{name} as last saved"))
                         }
+                        "backup" => {
+                            return Err(
+                                "Backups are kept by the Method Schedule app, not in the browser."
+                                    .into(),
+                            );
+                        }
                         _ => return Err("Unknown comparison.".into()),
                     };
                     let newer = state.lock().schedule().clone();

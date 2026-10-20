@@ -1490,10 +1490,15 @@ const CANNED_CHANGES = [
   { group: 'Strips', changes: [{ kind: 'moved', subject: 'strip', text: 'Board "Board 1": scene 3 moved on "Main" from position 4, day 2 to position 1, day 1' }] },
 ];
 
-function whatChanged(against) {
+function whatChanged(against, backup) {
   if (against === 'file') {
     if (cancelled()) return null;
     return { from: 'harbor-copy.mtsc', to: `${fileName} as it is now`, count: 4, groups: CANNED_CHANGES };
+  }
+  // A backup from Revert to Backup's list, by its name (src/diffmerge.rs).
+  if (against === 'backup') {
+    if (!backup) throw 'Pick a backup to compare with.';
+    return { from: 'the backup from 2026-10-11 14:03 UTC', to: `${fileName} as it is now`, count: 4, groups: CANNED_CHANGES };
   }
   if (against !== 'saved') throw 'Unknown comparison.';
   const dirty = JSON.stringify(model) !== saved;
@@ -1734,7 +1739,7 @@ const commands = {
     if (board !== model.shown) throw `fake: board ${board} is not the board shown`;
     return fakeConflicts(model);
   },
-  what_changed: ({ against }) => whatChanged(against),
+  what_changed: ({ against, backup }) => whatChanged(against, backup),
   merge_pick_file: () => {
     if (window.__mergeUntitled) throw 'Save this schedule first: a merge needs the version both copies started from, and a schedule never saved has no file or backups to find it in.';
     if (cancelled()) return null;

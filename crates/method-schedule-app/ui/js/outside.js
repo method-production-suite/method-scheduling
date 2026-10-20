@@ -10,7 +10,7 @@
 import { invoke, listen } from './api.js';
 import { el } from './dom.js';
 import { confirmDialog, customDialog, isModalOpen } from './modal.js';
-import { runMerge } from './diffmerge.js';
+import { runMerge, whatChanged } from './diffmerge.js';
 import { backupLine, outsideButtons, outsideMessage } from './logic.js';
 
 /** The question: resolves with the choice (`later` when dismissed). */
@@ -43,9 +43,12 @@ function pickBackup(list) {
       ...list.backups.map((b) => el('option', { text: backupLine(b), attrs: { value: b.name } })),
     );
     if (list.backups.length) select.value = list.backups[0].name;
-    const revert = el('button', { class: 'btn btn-primary', text: 'Revert', attrs: { type: 'button' }, on: { click: () => close(select.value || null) } });
+    const revert = el('button', { class: 'btn btn-primary', text: 'Revert', attrs: { type: 'button' }, on: { click: () => close(select.value ? { revert: select.value } : null) } });
     revert.disabled = !list.backups.length;
-    select.addEventListener('dblclick', () => select.value && close(select.value));
+    // What changed from the picked backup to the schedule as it is now (M4).
+    const compare = el('button', { class: 'btn', text: 'What Changed', attrs: { type: 'button' }, on: { click: () => close(select.value ? { compare: select.value } : null) } });
+    compare.disabled = !list.backups.length;
+    select.addEventListener('dblclick', () => select.value && close({ revert: select.value }));
     const cancel = el('button', { class: 'btn', text: list.backups.length ? 'Cancel' : 'Close', attrs: { type: 'button' }, on: { click: () => close(null) } });
     const say = list.backups.length
       ? `The versions of ${list.file} kept before saves replaced them, newest first. The one you pick becomes the schedule here as one step: Undo takes it back, and the file as it is now goes into the backups first.`
@@ -56,7 +59,7 @@ function pickBackup(list) {
       el('h2', { class: 'modal-title', text: 'Revert to Backup', attrs: { id: 'revert-title' } }),
       el('p', { class: 'modal-message', text: say }),
       list.backups.length ? el('label', { class: 'field', attrs: { for: 'revert-pick' } }, 'Backup', select) : null,
-      el('div', { class: 'modal-actions' }, cancel, revert),
+      el('div', { class: 'modal-actions' }, cancel, compare, revert),
     );
   });
 }
@@ -117,8 +120,9 @@ export function initOutside(ctx) {
         ctx.say(e, true);
         return;
       }
-      const name = await pickBackup(list);
-      if (name) await ctx.apply(invoke('revert_to_backup', { name }));
+      const picked = await pickBackup(list);
+      if (picked && picked.compare) await whatChanged('backup', ctx.say, picked.compare);
+      else if (picked && picked.revert) await ctx.apply(invoke('revert_to_backup', { name: picked.revert }));
     },
   };
 }
