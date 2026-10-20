@@ -39,11 +39,11 @@ section. Everything else on this page goes ahead without waiting.
 - **Merge in the browser host** (D226), built on the recommendation: the browser host offers
   Revise and What Changed but not Merge, which needs a common version from backups a browser
   doesn't keep. Reverse it and the host takes the base schedule as a third file.
-- **Unknown keys in a schedule file** (D224, D227), built on the recommendation: the
-  reader stays strict, and one reserved `extensions` object (at the top level and on the
-  schedule, categories, red flag types, elements, sheets, boards and sub-boards) is kept
-  and written back untouched. Additive: every existing file writes back byte for byte.
-  Reversible until the next release ships it; reverse it and the key is refused again.
+- **Unknown keys in a schedule file** (D224, D227): **approved by the owner** (2026-10-20,
+  with the v0.4.0 go-ahead). The reader stays strict, and one reserved `extensions` object
+  (at the top level and on the schedule, categories, red flag types, elements, sheets,
+  boards and sub-boards) is kept and written back untouched. Additive: every existing file
+  writes back byte for byte. Ships in 0.4.0.
 - **The browser build** (D222): **decided by the owner** (2026-10-18), all five as
   recommended. The partner hosts the whole page; Method Budget's partner terms apply; a
   read-only viewer keeps views, Find, printing, the call sheet and exports, with edits
@@ -227,6 +227,7 @@ kept or offered as a pick, in tests and in a live run.
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east and New Zealand's (others keep a typed offset today) | S | D72, D193, D220, BYD-08 |
 | Per-person call times, feeding the rest checks | M | D71, D73, BYD-09 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
+| Import Storyteller's script scenes file (`.mscenes`, D229, EXCHANGE.md): exact pages and eighths, omitted and lettered scenes, story days, non-speaking cast, episode and act; a revision when the schedule already has the script | S | D229 |
 | Script revision workflow: revision colors and dates, a report of what each draft changed | M | D69, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |

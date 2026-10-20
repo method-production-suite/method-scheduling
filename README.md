@@ -175,7 +175,7 @@ docs/features.toml.
 - **More reports.** Breakdown by day, element detail, daily category totals, the vertical one-line with its cast grid, conflicts, red flags and a multi-unit one-line merged by date.
 - **Report designer.** Columns on up to four lines with merged cells, header layouts with your production info, date ranges and named copies, all kept in the schedule.
 - **PDF.** Print any report or save it as a PDF.
-- **Excel and CSV.** One-line, day out of days, elements, breakdown, element detail and the whole board as workbooks whose totals are working formulas, or as CSV.
+- **Spreadsheets and CSV.** One-line, day out of days, elements, breakdown, element detail and the whole board as workbooks whose totals are working formulas, or as CSV.
 
 ### Files and safety
 
@@ -191,7 +191,7 @@ docs/features.toml.
 
 - **Keyboard first.** Move strips, insert day breaks and banners, step through sheets and switch tabs from the keyboard; a shortcut sheet lists every key.
 - **Find and replace.** Search the text fields, replace in the results, or build a search from field, comparison and value rows.
-- **Scriptable command line.** `method-schedule` imports scripts, sets day breaks and writes the reports as text, CSV or Excel, with no window and no network.
+- **Scriptable command line.** `method-schedule` imports scripts, sets day breaks and writes the reports as text, CSV or spreadsheets (.xlsx), with no window and no network.
 - **Coding agents.** An MCP server lets coding agents read and edit schedules through the same engine, only in the folders you allow.
 - **Git merge driver.** Keep schedules in git and let `method-schedule merge-driver` combine two people's edits, flagging only real conflicts.
 

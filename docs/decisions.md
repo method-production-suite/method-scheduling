@@ -5505,8 +5505,9 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 
 ## 227. `extensions`: one reserved place for other apps' keys (2026-10-20)
 
-- **Built on the recommendation** (D224's open question; ROADMAP.md, Waiting on the owner),
-  reversible until a release ships it: after that, files other apps wrote may hold it.
+- **Built on the recommendation** (D224's open question), then **approved by the owner** on
+  2026-10-20 with the go-ahead for 0.4.0, which ships it: from then on, files other apps
+  wrote may hold it.
 - **The reader stays strict.** An `extensions` object, kept and written back untouched,
   may sit at the top level, on the schedule and on each category, red flag type, element,
   sheet, board and sub-board (FORMAT.md, Extensions). Empty, `null` or not an object is
@@ -5532,4 +5533,18 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   "Costumes" to Wardrobe, "Makeup" to Hair and makeup, "Special Effects" to Practical
   effects, "Livestock" to Animals, "Sound" and "Music" to Sound and music); any other name
   makes its own category, as before.
+
+## 229. Script scenes from Storyteller: a `.mscenes` file we import (2026-10-20)
+
+- **Agreed with the Storyteller session** (its decision S4, recorded there as decision 23),
+  docs only on both sides; MOrg asked the two apps to settle it between them.
+- **What**: Storyteller writes a script scenes file (`method-script-scenes`, version 1,
+  `.mscenes`, plain JSON) with its own pagination, and File > Import Script reads it beside
+  Fountain and `.fdx`. The spec is in EXCHANGE.md, "Script scenes from Storyteller", and in
+  Storyteller's production spec, section 4.4.
+- **Our asks, all taken**: readers ignore unknown keys and read every version number; an
+  optional `episode`, `story_day` and `nonspeaking`; `tags` reserved in the tagged `.fdx`
+  shape; an omitted scene has `eighths` 1; `source_hash` opaque; `page` one printed string;
+  heading split sent and taken as sent.
+- **Frozen** when Storyteller first ships the writer. The reader is a roadmap item (M5).
 

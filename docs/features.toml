@@ -299,7 +299,7 @@ ref = ["EXP-01"]
 
 [[feature]]
 group = "reports"
-title = "Excel and CSV"
+title = "Spreadsheets and CSV"
 text = "One-line, day out of days, elements, breakdown, element detail and the whole board as workbooks whose totals are working formulas, or as CSV."
 status = "have"
 ref = ["EXP-02", "EXP-03", "EXP-09", "EXP-10", "EXP-11", "D14"]
@@ -367,7 +367,7 @@ ref = ["SPL-05", "SPL-06", "D34", "D82"]
 [[feature]]
 group = "keys"
 title = "Scriptable command line"
-text = "`method-schedule` imports scripts, sets day breaks and writes the reports as text, CSV or Excel, with no window and no network."
+text = "`method-schedule` imports scripts, sets day breaks and writes the reports as text, CSV or spreadsheets (.xlsx), with no window and no network."
 status = "have"
 ref = ["D13", "D14", "D23"]
 
