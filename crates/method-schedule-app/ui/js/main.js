@@ -1835,6 +1835,7 @@ function stripMenuItems() {
     merge: ['board.merge', null, null, false],
     duplicate: ['board.duplicate', null, null, false],
     continue: ['board.continue_scene', null, null, false],
+    shot: [null, null, () => shotDialog(), false],
     break_above: ['board.break_above'],
     break_below: ['board.break_below'],
     banner_above: ['board.banner_above'],
@@ -1852,6 +1853,49 @@ function stripMenuItems() {
     return { label: m.label, key, run: own || (() => run(id, 'context')), disabled: m.disabled };
   };
   return model.map(item);
+}
+
+/** The day break closing the day `stripId` is planned on, on the board shown; null off a day. */
+function dayBreakOf(stripId) {
+  for (const sb of state.view.board.sub_boards) {
+    for (const d of sb.days) if (d.strips.some((x) => x.id === stripId)) return d.end.id;
+  }
+  return null;
+}
+
+/**
+ * The strip menu's Shot…: what was shot of the scene on the day it is planned on (M5), its
+ * page length and whether that finished it. Empty and not finished takes the day's entry away.
+ */
+async function shotDialog() {
+  const focus = selectedRow();
+  if (!focus || focus.kind !== 'scene' || !focus.strip.sheet) return;
+  const day = dayBreakOf(focus.strip.id);
+  if (day === null) return say('A scene is shot on a shoot day: schedule it first.', true);
+  const answer = await customDialog((close) => {
+    const pages = el('input', { attrs: { type: 'text', id: 'shot-pages', value: focus.strip.pages || '', 'aria-label': 'Pages shot' } });
+    const done = el('input', { attrs: { type: 'checkbox', id: 'shot-done', checked: focus.strip.shot !== 'part' } });
+    const go = () => close({ eighths: pages.value, complete: done.checked });
+    pages.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') go();
+    });
+    return el(
+      'div',
+      { class: 'modal', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'shot-title' } },
+      el('h2', { class: 'modal-title', text: `Scene ${focus.strip.scene || ''} shot`.replace('  ', ' '), attrs: { id: 'shot-title' } }),
+      el('p', { class: 'modal-message', text: `On the day it is planned. It is ${focus.strip.pages || 'no'} pages long${focus.strip.shot_text ? `; ${focus.strip.shot_text.toLowerCase()} so far` : ''}. Leave the pages empty to take this day's back.` }),
+      el('label', { class: 'bd-field', attrs: { for: 'shot-pages' } }, 'Pages shot (such as 3/8 or 1 2/8)', pages),
+      el('label', { class: 'bd-check', attrs: { for: 'shot-done' } }, done, 'This day finished the scene'),
+      el(
+        'div',
+        { class: 'modal-actions' },
+        el('button', { class: 'btn', text: 'Cancel', attrs: { type: 'button' }, on: { click: () => close(null) } }),
+        el('button', { class: 'btn btn-primary', text: 'Save', attrs: { type: 'button' }, on: { click: go } }),
+      ),
+    );
+  });
+  if (!answer) return;
+  await command(invoke('set_shot', { sheet: focus.strip.sheet, day, eighths: answer.eighths, complete: answer.complete }));
 }
 
 function openStripMenu(x, y) {

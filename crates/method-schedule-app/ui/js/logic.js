@@ -307,6 +307,7 @@ export function stripMenu({ rows, focus, clip, subBoards }) {
     { id: 'merge', label: 'Merge Strips…', disabled: scenes.length < 2 },
     { id: 'duplicate', label: 'Duplicate Strip', disabled: !scenes.length },
     { id: 'continue', label: 'Continue on Next Day', disabled: !focus || focus.kind !== 'scene' || focus.list === null },
+    { id: 'shot', label: 'Shot…', disabled: !focus || focus.kind !== 'scene' || focus.list === null },
     { id: 'move', label: 'Move To', items: move, disabled: none },
     'sep',
     { id: 'break', label: 'Insert Day Break', disabled: onYard, items: [{ id: 'break_above', label: 'Above' }, { id: 'break_below', label: 'Below' }] },

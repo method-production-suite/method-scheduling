@@ -252,13 +252,14 @@ test('KEY-03: the strip menu follows the selection', () => {
   assert.equal(m.open.disabled, true);
   m = menu([yard], yard);
   assert.equal(m.continue.disabled, true, 'not from the Boneyard');
+  assert.equal(m.shot.disabled, true, 'shot on a shoot day, never in the Boneyard (M5)');
   assert.equal(m.break.disabled, true);
   assert.equal(m.banner.disabled, true);
   assert.equal(m['move:yard'].disabled, true);
   m = menu([], null);
   for (const k of ['cut', 'copy', 'delete', 'move', 'open']) assert.equal(m[k].disabled, true, k);
   const order = L.stripMenu({ rows: [scene], focus: scene, clip: null, subBoards }).map((x) => (x === 'sep' ? '-' : x.id));
-  assert.deepEqual(order, ['open', '-', 'cut', 'copy', 'paste', 'delete', '-', 'merge', 'duplicate', 'continue', 'move', '-', 'break', 'banner']);
+  assert.deepEqual(order, ['open', '-', 'cut', 'copy', 'paste', 'delete', '-', 'merge', 'duplicate', 'continue', 'shot', 'move', '-', 'break', 'banner']);
 });
 
 test('KEY-04: Delete asks for scenes, banners and parts, never for day breaks alone', () => {

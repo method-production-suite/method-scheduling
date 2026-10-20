@@ -149,6 +149,8 @@ let lookNow = { shoot_day_strip: false, screen_time: false, sunrise: false, suns
 /** The extras a day break shows besides its totals: screen time, sunrise, sunset, quantities, text. */
 export function dayExtras(day, look) {
   const parts = [];
+  // The pages its scenes still have to shoot, once anything is reported shot (M5).
+  if (day.left) parts.push(day.left);
   if (look.screen_time && day.screen_time) parts.push(`Screen ${day.screen_time}`);
   if (look.sunrise && day.sunrise) parts.push(`Sunrise ${day.sunrise}`);
   if (look.sunset && day.sunset) parts.push(`Sunset ${day.sunset}`);
@@ -281,7 +283,7 @@ function stripRow(strip, selected, pos, size) {
   // dimmed, and said in its title.
   const row = option(
     strip.id,
-    `scene ${strip.tone}${colorClass(strip, palette)}${flags.length ? ` flagged${flagType}` : ''}${clash.length ? ' conflicted' : ''}${strip.omitted ? ' omitted' : ''}${isFound(strip, foundMarks) ? ' found' : ''}${lines > 1 ? ` h${lines}` : ''}`,
+    `scene ${strip.tone}${colorClass(strip, palette)}${flags.length ? ` flagged${flagType}` : ''}${clash.length ? ' conflicted' : ''}${strip.omitted ? ' omitted' : ''}${strip.shot ? ` shot-${strip.shot}` : ''}${isFound(strip, foundMarks) ? ' found' : ''}${lines > 1 ? ` h${lines}` : ''}`,
     selected,
     pos,
     size,
@@ -296,6 +298,8 @@ function stripRow(strip, selected, pos, size) {
     }),
   );
   if (strip.omitted) row.title = `Scene ${strip.scene || '(no number)'}, omitted: the last script revision no longer has it`;
+  // What was shot of it (M5): marked, dimmed once finished, and said in its title.
+  else if (strip.shot_text) row.title = `Scene ${strip.scene || '(no number)'}: ${strip.shot_text}`;
   return row;
 }
 

@@ -289,6 +289,14 @@ export function planFakes(ctx) {
         else plan.calls[day] = minutes;
       });
     },
+    // As plan::record_shot (M5): kept for the page only; the fake's board doesn't mark it.
+    set_shot: ({ sheet, day, eighths, complete }) => {
+      if (typeof sheet !== 'number' || typeof day !== 'number' || typeof complete !== 'boolean') throw 'fake: set_shot needs sheet, day and complete';
+      return planEdit((m, plan) => {
+        plan.shot = plan.shot || {};
+        plan.shot[`${sheet}:${day}`] = { eighths: String(eighths), complete };
+      });
+    },
     // As timeline::push_past_wrap: the previewed strips, whole and in order, go just after
     // the day's break; refused when they are no longer what would move.
     push_past_wrap: ({ sub_board, day, strips }) => {

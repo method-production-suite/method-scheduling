@@ -223,6 +223,22 @@ pub fn set_call_time<R: Runtime>(
     finish(&window, &s, None)
 }
 
+/// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
+/// finished it.
+#[tauri::command]
+pub fn set_shot<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    sheet: u32,
+    day: u32,
+    eighths: String,
+    complete: bool,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_scene_shot(x, sheet, day, &eighths, complete))?;
+    finish(&window, &s, None)
+}
+
 #[tauri::command]
 pub fn set_long_day<R: Runtime>(window: WebviewWindow<R>, state: Doc, value: String) -> CmdResult {
     let mut s = state.lock();
