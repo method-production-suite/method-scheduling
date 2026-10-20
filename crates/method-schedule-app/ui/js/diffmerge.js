@@ -140,7 +140,25 @@ export async function runMerge(token, say, show) {
       }
     }
 
-    baseSelect.addEventListener('change', () => {
+    baseSelect.addEventListener('change', async () => {
+      if (baseSelect.value === 'pick') {
+        // Another file as the base: picked as Merge Changes From picks one.
+        let picked = null;
+        try {
+          picked = await invoke('merge_pick_file');
+        } catch (e) {
+          error.textContent = String(e);
+          error.hidden = false;
+        }
+        if (!picked) {
+          baseSelect.value = baseValueOf(choice.base);
+          return;
+        }
+        choice.base = { kind: 'file', token: picked.token };
+        choice.picks = {};
+        refresh();
+        return;
+      }
       choice.base = baseChoiceOf(baseSelect.value);
       // Conflict keys belong to one base's merge: start the picks again.
       choice.picks = {};
@@ -151,6 +169,7 @@ export async function runMerge(token, say, show) {
       baseSelect.replaceChildren(
         el('option', { text: 'Found automatically', attrs: { value: 'auto' } }),
         ...dto.bases.map((b) => el('option', { text: b.label, attrs: { value: b.id } })),
+        el('option', { text: 'Another file…', attrs: { value: 'pick' } }),
       );
       baseSelect.value = baseValueOf(choice.base);
       baseWhy.textContent = dto.base_label ? `${dto.base_label}. ${dto.base_reason}` : dto.base_reason;

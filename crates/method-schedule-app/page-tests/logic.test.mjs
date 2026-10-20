@@ -642,9 +642,10 @@ test('outside changes: Later first, the default last and primary, every choice s
 });
 
 test('merge bases: the list value and the base asked for, both ways', () => {
-  for (const v of ['auto', 'disk', 'last_read', 'film 2026-10-11 14.03.00.000 UTC.mtsc']) {
+  for (const v of ['auto', 'disk', 'last_read', 'film 2026-10-11 14.03.00.000 UTC.mtsc', 'file:3']) {
     assert.equal(L.baseValueOf(L.baseChoiceOf(v)), v);
   }
+  assert.deepEqual(L.baseChoiceOf('file:3'), { kind: 'file', token: 3 }, 'a picked file (M4)');
   assert.deepEqual(L.baseChoiceOf('last_read'), { kind: 'last_read' });
   assert.deepEqual(L.baseChoiceOf('x.mtsc'), { kind: 'backup', name: 'x.mtsc' });
 });

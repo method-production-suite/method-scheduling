@@ -1533,6 +1533,11 @@ function mergePreview(token, base, picks) {
   } else if (base.kind === 'disk') {
     id = 'disk';
     reason = 'You picked the file on disk.';
+  } else if (base.kind === 'file' && base.token === 1) {
+    // A schedule file picked as the base (src/diffmerge.rs, BaseChoice::File).
+    bases.push({ id: 'file:1', label: 'harbor-copy.mtsc' });
+    id = 'file:1';
+    reason = 'You picked this file.';
   } else if (base.kind === 'backup' && MERGE_BASES.some((b) => b.id === base.name)) {
     id = base.name;
     reason = 'You picked this backup.';
