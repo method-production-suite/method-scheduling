@@ -268,6 +268,80 @@ mod tests {
         }
     }
 
+    /// Keys Windows and the usual Linux desktops keep for themselves (M3): a shortcut on
+    /// one of them would never reach the app, or would do something else first.
+    const SYSTEM_KEYS: &[&str] = &[
+        "ctrl+alt+delete",
+        "ctrl+alt+backspace",
+        "ctrl+shift+escape",
+        "ctrl+escape",
+        "ctrl+alt+tab",
+        "ctrl+alt+t",
+        "ctrl+alt+l",
+        "ctrl+alt+left",
+        "ctrl+alt+right",
+        "ctrl+alt+up",
+        "ctrl+alt+down",
+        "alt+tab",
+        "alt+escape",
+        "alt+space",
+        "alt+f1",
+        "alt+f2",
+        "alt+f4",
+        "alt+f7",
+        "alt+f8",
+        "alt+f10",
+    ];
+
+    /// Every key spec shortcuts.js gives Windows and Linux (`other`, or `keys` for both).
+    fn other_platform_keys() -> Vec<String> {
+        let mut out = Vec::new();
+        for line in SHORTCUTS_JS.lines().filter(|l| l.contains("{ id: '")) {
+            let Some(at) = line.find("other: ").or_else(|| line.find("keys: ")) else {
+                continue;
+            };
+            let rest = &line[at..];
+            let end = rest.find("scope:").unwrap_or(rest.len());
+            for (i, part) in rest[..end].split('\'').enumerate() {
+                if i % 2 == 1 {
+                    out.push(part.to_string());
+                }
+            }
+        }
+        out
+    }
+
+    /// The same key spec however its parts are ordered, `mod` as Ctrl.
+    fn normal(spec: &str) -> String {
+        let mut parts: Vec<String> = spec
+            .split('+')
+            .map(|p| {
+                if p == "mod" {
+                    "ctrl".into()
+                } else {
+                    p.to_string()
+                }
+            })
+            .collect();
+        let key = parts.pop().unwrap_or_default();
+        parts.sort();
+        parts.push(key);
+        parts.join("+")
+    }
+
+    #[test]
+    fn no_shortcut_uses_a_key_windows_or_linux_keeps() {
+        let keys = other_platform_keys();
+        assert!(keys.len() > 50, "{keys:?}");
+        let reserved: Vec<String> = SYSTEM_KEYS.iter().map(|k| normal(k)).collect();
+        for k in &keys {
+            assert!(
+                !reserved.contains(&normal(k)),
+                "{k} is a key Windows or Linux keeps for itself"
+            );
+        }
+    }
+
     #[test]
     fn the_banner_key_inserts_above_first_in_the_menu() {
         // Behavior note 17: the reference app's New Banner (Cmd B) goes above the

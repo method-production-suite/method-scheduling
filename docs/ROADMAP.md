@@ -30,7 +30,9 @@ section. Everything else on this page goes ahead without waiting.
   recovery in the window (`scripts/crash-check.sh`, M2); the app on Tauri 2.12 opening, its
   menus and a Save dialog (the move's live check, Windows and Linux too); and in the reference app E-L5,
   E-S34 and the two report questions (M1's review row).
-- **Windows and Linux machines** for M3's hand checks (the screen block 3 list).
+- **Windows and Linux machines** for M3's hand checks (the screen block 3 list), including
+  the keys: every shortcut is Ctrl there, and a test keeps them off the keys Windows and
+  the usual Linux desktops keep for themselves; pressing them is the live check.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
 - **Merge in the browser host** (D226), built on the recommendation: the browser host offers
@@ -190,7 +192,6 @@ every picture retaken.
 | CI: Linux app builds in the weekly full build (`platforms.yml` builds and tests all three systems every Monday since 2026-10-19, ArtCraft-style; release.yml builds the installers) | S | `.github/workflows/platforms.yml` |
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
 | Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |
-| Keys: the reference app's menu keys mapped to Ctrl, conflicts with system keys | S | D79, D106 |
 | Single instance handling and the system recent documents list | S | APP.md "Not yet" |
 | File associations for `.mtsc` and `.mtst` | S | |
 | The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. Also carries the release-workflow fix that compiles before any signing key is unpacked (local branch `ci/compile-before-secrets`) | M | D213, D214, SUITE-STANDARDS.md section 1 |
