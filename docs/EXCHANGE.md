@@ -261,3 +261,90 @@ in version 1 (decisions.md, entries 201 to 203): `first` and `last` optional, pr
 wrap kept in `shoot_days`, `days_hash`, the shoot dates list, the identity rules above,
 absent rather than empty values, byte order for the `by_` keys, the reading rules and the
 number rule.
+
+---
+
+# Script scenes from Storyteller
+
+The other way: a file Method Storyteller writes and Method Schedule reads, one sheet per
+scene with Storyteller's own pages and lengths, so nothing is estimated (decision 229;
+Storyteller's decision S4, agreed with the Storyteller session on 2026-10-20). The same spec
+is in Method Storyteller's `docs/production-spec.md`, section 4.4; when the two differ, the
+newer dated entry settles it and both are brought back in line.
+
+Storyteller writes it from File > Export for Method Schedule… and
+`method-storyteller export-scenes SCRIPT OUT`: a **script scenes file**, `.mscenes`, plain
+JSON. Method Schedule reads it through File > Import Script, beside `.fountain` and `.fdx`
+(entries 8 and 9). Fountain lengths are an estimate and `.fdx` can't always say what was
+omitted or how a scene is lettered; this file carries both, and every scene's page and
+eighths match the script.
+
+**Version 1** (`format` `method-script-scenes`). Frozen when Storyteller first ships the
+writer; from then on, changes are additive only (a new optional field, never one removed,
+renamed or given a new meaning), and a change that would break a reader gets a new `format`
+name. **Readers ignore keys they do not know and read every version number**, so an older
+Method Schedule reads a newer file. (This is the budget exchange's reading rule; Method
+Schedule's own `.mtsc` reader stays strict.)
+
+Rules, as in the budget exchange: UTF-8, pretty JSON, keys in the order below, one trailing
+newline. No nulls: an optional value the script does not have is left out. Numbers are
+whole and never negative; dates are `YYYY-MM-DD`.
+
+## Script scenes: top level
+
+| Key | | What it holds |
+|---|---|---|
+| `format` | always | `"method-script-scenes"` |
+| `version` | always | `1` |
+| `title` | always | The title page's title, `""` when there is none |
+| `episode` | optional | A TV script's episode number or title |
+| `written_by` | optional | The title page's credit |
+| `draft` | optional | The title page's draft text, as written |
+| `generated` | always | The date the file was written |
+| `source_hash` | always | 16 hex digits of a stable digest of the script's content. Opaque: a reader only compares it, to tell that this exact script was already imported |
+| `pages` | always | The script's length in whole pages |
+| `eighths` | always | The script's length in eighths: the sum of the scenes' |
+| `scenes` | always | The scenes, in script order |
+
+## Script scenes: each scene
+
+| Key | | What it holds |
+|---|---|---|
+| `index` | always | Its position, from 1; keeps script order and matches scenes when numbers repeat |
+| `number` | optional | As printed: `12`, `12A`, or `A` in a multi-camera script |
+| `heading` | always | The heading's full text |
+| `int_ext` | optional | `INT`, `EXT` or `INT/EXT`; left out when the heading has none |
+| `set` | optional | The heading's location part |
+| `time` | optional | Its time of day, such as `NIGHT` |
+| `story_day` | optional | The story day, such as `DAY 3` or `NIGHT 2` |
+| `page` | always | The page it starts on, as printed, a string: `12`, or `12A` on a locked page |
+| `eighths` | always | Its length in eighths, at least 1 |
+| `cast` | always | Speaking characters, in first-seen order, extensions such as (V.O.) and (CONT'D) dropped |
+| `nonspeaking` | optional | Characters in the scene who do not speak, in first-seen order, apart from `cast` |
+| `omitted` | optional | `true` for an omitted scene, which then has `cast` `[]` and `eighths` `1` |
+| `title` | optional | The scene's title |
+| `summary` | optional | The scene's summary |
+| `color` | optional | The scene's colour, `#RRGGBB` |
+| `act` | optional | The TV act it is in, such as `ACT ONE` |
+| `tags` | reserved | Production tags, `[{"category", "name"}]`, the shape of the tagged `.fdx` import (entry 228 maps usual names such as "Props" to our categories). Not written in version 1; the name is kept for them |
+
+## Script scenes: how Method Schedule reads them
+
+- `number` is the sheet's scene number; a scene without one gets its `index`, and the
+  import notice says so.
+- `eighths` is the page length, exactly; `page` is the sheet's script pages text.
+- `int_ext`, `set` and `time` are taken as sent; a missing one is split from `heading` as
+  the Fountain import does.
+- `cast` becomes the sheet's speaking cast and `nonspeaking` is added to its cast, not as
+  speaking (a revision import keeps the two apart, entry 91's rules).
+- `summary` goes to the synopsis, with `title` in front as `title: summary` when both are
+  there (a sheet has no separate title).
+- `act` goes to the Sequence field, `story_day` to Script Day, and `episode` to every
+  sheet's Episode.
+- An omitted scene becomes an omitted sheet, struck on the board and counting no pages, so
+  a revision import matches it.
+- `color` is kept in the file but not used by version 1 of the reader (strip colours follow
+  the board's rules); a later reader may offer it.
+- `source_hash` is compared with the last import's to say "this script is already in".
+- The first import of a file into a new schedule takes its `title` as the schedule's, as
+  the Fountain import does; re-importing it is a script revision (entry 91).

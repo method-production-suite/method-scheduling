@@ -228,6 +228,7 @@ kept or offered as a pick, in tests and in a live run.
 | Per-person call times, feeding the rest checks | M | D71, D73, BYD-09 |
 | Schedule lock reports: drift per actor as a printed report (the spreadsheet is in, 2026-10-20: Schedule Locks > Drift > Export Excel or CSV) | S | D74, BYD-05 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
+| Import Storyteller's script scenes file (`.mscenes`, D229, EXCHANGE.md): exact pages and eighths, omitted and lettered scenes, story days, non-speaking cast, episode and act; a revision when the schedule already has the script | S | D229 |
 | Script revision workflow: revision colors and dates, a report of what each draft changed | M | D69, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |

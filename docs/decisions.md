@@ -5533,3 +5533,17 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   effects, "Livestock" to Animals, "Sound" and "Music" to Sound and music); any other name
   makes its own category, as before.
 
+## 229. Script scenes from Storyteller: a `.mscenes` file we import (2026-10-20)
+
+- **Agreed with the Storyteller session** (its decision S4, recorded there as decision 23),
+  docs only on both sides; MOrg asked the two apps to settle it between them.
+- **What**: Storyteller writes a script scenes file (`method-script-scenes`, version 1,
+  `.mscenes`, plain JSON) with its own pagination, and File > Import Script reads it beside
+  Fountain and `.fdx`. The spec is in EXCHANGE.md, "Script scenes from Storyteller", and in
+  Storyteller's production spec, section 4.4.
+- **Our asks, all taken**: readers ignore unknown keys and read every version number; an
+  optional `episode`, `story_day` and `nonspeaking`; `tags` reserved in the tagged `.fdx`
+  shape; an omitted scene has `eighths` 1; `source_hash` opaque; `page` one printed string;
+  heading split sent and taken as sent.
+- **Frozen** when Storyteller first ships the writer. The reader is a roadmap item (M5).
+
