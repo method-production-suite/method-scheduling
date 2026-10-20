@@ -2153,7 +2153,7 @@ for (const [btn, id, label] of [
   ['btn-open', 'file.open', 'Open a schedule'],
   ['btn-save', 'file.save', 'Save'],
   ['btn-save-as', 'file.save_as', 'Save as a new file'],
-  ['btn-import', 'file.import_script', 'Import a script (Fountain or Final Draft) into the Boneyard'],
+  ['btn-import', 'file.import_script', 'Import a script (Fountain, .fdx or .mscenes) into the Boneyard'],
   ['btn-undo', 'edit.undo', 'Undo'],
   ['btn-redo', 'edit.redo', 'Redo'],
 ]) {

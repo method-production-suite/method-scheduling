@@ -289,7 +289,7 @@ pub async fn import_script<R: Runtime>(
         .dialog()
         .file()
         .set_title("Import script")
-        .add_filter("Screenplay", &["fountain", "fdx"])
+        .add_filter("Screenplay", &["fountain", "fdx", "mscenes"])
         .set_parent(&window)
         .blocking_pick_file()
     else {
@@ -304,7 +304,12 @@ pub async fn import_script<R: Runtime>(
     let script = session::read_script_with(&path, lines)?;
     let mut s = state.lock();
     let added = s.import_script(&script)?;
-    finish(&window, &s, Some(session::import_notice(added))).map(Some)
+    finish(
+        &window,
+        &s,
+        Some(session::import_notice_for(&script, added)),
+    )
+    .map(Some)
 }
 
 /// Saves the open schedule: to its file, or where a Save dialog says. False when the user

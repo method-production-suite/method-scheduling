@@ -144,7 +144,7 @@
 
   // Where the desktop shows an Open dialog: what the picker offers.
   const SCHEDULE = '.mtsc,.json';
-  const SCRIPT = '.fountain,.fdx,.txt';
+  const SCRIPT = '.fountain,.fdx,.mscenes,.txt';
   const PICTURE = '.png,.jpg,.jpeg,.gif,.webp';
   const PICKS = {
     // The schedule, and its pictures picked with it (Save downloads them beside it).

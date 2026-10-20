@@ -48,7 +48,7 @@ export const SHORTCUTS = [
   { id: 'file.new_from_template', label: 'Start a new schedule from a template', scope: 'menu' },
   { id: 'file.save_template', label: "Save this schedule's setup as a template (no sheets, strips, events or red flags)", scope: 'menu' },
   { id: 'file.revert_backup', label: 'Revert to one of the backups kept of this schedule file', scope: 'menu' },
-  { id: 'file.import_script', label: 'Import a script (Fountain or Final Draft) into the Boneyard', scope: 'menu' },
+  { id: 'file.import_script', label: 'Import a script (Fountain, .fdx or .mscenes) into the Boneyard', scope: 'menu' },
   { id: 'file.what_changed', label: 'What changed from another schedule file to this one', scope: 'menu' },
   { id: 'file.what_changed_saved', label: 'What changed since this schedule was last saved', scope: 'menu' },
   { id: 'file.merge', label: 'Merge changes from another copy of this schedule', scope: 'menu' },
@@ -129,7 +129,7 @@ export const SHORTCUTS = [
   { id: 'breakdown.field_order', label: "Choose the order of the sheet's header fields", scope: 'menu' },
 
   // The Plan menu (plan.js)
-  { id: 'plan.import_tags', label: 'Import a Final Draft script with its production tags as elements', scope: 'menu' },
+  { id: 'plan.import_tags', label: 'Import a tagged .fdx script with its production tags as elements', scope: 'menu' },
   { id: 'plan.revise', label: 'Merge a revised script into this schedule, keeping tags and places', scope: 'menu' },
   { id: 'plan.timeline', label: "Each shoot day's clock times from its call time, with warnings", scope: 'menu' },
   { id: 'plan.locations', label: 'Place sheet locations on the map for sunrise and sunset', scope: 'menu' },

@@ -5546,5 +5546,6 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   optional `episode`, `story_day` and `nonspeaking`; `tags` reserved in the tagged `.fdx`
   shape; an omitted scene has `eighths` 1; `source_hash` opaque; `page` one printed string;
   heading split sent and taken as sent.
-- **Frozen** when Storyteller first ships the writer. The reader is a roadmap item (M5).
+- **Frozen** when Storyteller first ships the writer. The reader is built (2026-10-20):
+  Import Script, Revise, the command line and the browser host read `.mscenes`.
 

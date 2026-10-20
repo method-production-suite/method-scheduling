@@ -94,7 +94,7 @@ export function planCommands(ctx) {
         'Import Script Revision',
         'pl-rev',
         el('p', { class: 'modal-message', text: 'Scenes are matched by number, then by heading, and keep their tags and places. New scenes go to the Boneyard; scenes the draft no longer has are marked omitted, not deleted. You see what changes before anything does.' }),
-        el('label', { class: 'pl-check' }, check, ' Also read production tags (Final Draft files only)'),
+        el('label', { class: 'pl-check' }, check, ' Also read production tags (.fdx files only)'),
         el('div', { class: 'modal-actions' }, button('Cancel', () => close(null)), el('button', { class: 'btn btn-primary', text: 'Choose Script', attrs: { type: 'button', 'data-autofocus': true }, on: { click: () => close(check.checked) } })),
       );
     });

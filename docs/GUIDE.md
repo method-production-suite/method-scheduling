@@ -18,9 +18,12 @@ To start your own:
 
 - **File > New** gives an empty schedule with the usual categories (Cast, Background,
   Stunts, Hand props and the rest).
-- **File > Import Script** reads a Fountain (`.fountain`) or Final Draft (`.fdx`) script:
-  one breakdown sheet per scene, its heading split into I/E, set and time of day, its
-  length in eighths and the speaking characters as cast. The scenes land in the Boneyard.
+- **File > Import Script** reads a Fountain (`.fountain`) or `.fdx` script, or a script
+  scenes file from Method Storyteller (`.mscenes`): one breakdown sheet per scene, its
+  heading split into I/E, set and time of day, its length in eighths and the speaking
+  characters as cast. The scenes land in the Boneyard. A script scenes file brings its own
+  exact pages and lengths, story days, the characters who don't speak, the episode and act,
+  and the scenes the script omits.
 - **File > New from Template** starts from the setup of an earlier show (categories,
   elements, layouts, report list) without its scenes.
 

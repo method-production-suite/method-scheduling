@@ -3882,20 +3882,30 @@ impl Schedule {
                 IntExt::ExtInt => "EXT/INT",
                 IntExt::Unknown => "",
             };
+            let x = &scene.extra;
             let sheet = self.add_sheet(Sheet {
                 scenes: scene.number.clone().unwrap_or_default(),
                 int_ext: int_ext.to_string(),
                 set: scene.set.clone(),
                 time_of_day: scene.time_of_day.clone(),
                 pages: scene.length,
+                script_pages: x.script_page.clone(),
+                script_day: x.story_day.clone(),
+                synopsis: x.synopsis.clone(),
+                sequence: x.sequence.clone(),
+                episode: x.episode.clone(),
                 ..Sheet::default()
             });
-            for name in &scene.characters {
+            // Speaking cast first, then the cast who don't speak (a script scenes file).
+            for name in scene.characters.iter().chain(&x.nonspeaking) {
                 let el = match self.element_named(cast, name) {
                     Some(el) => el,
                     None => self.add_element(cast, name)?,
                 };
                 self.tag_with_links(sheet, el)?;
+            }
+            if x.omitted && !self.plan.omitted.contains(&sheet) {
+                self.plan.omitted.push(sheet);
             }
             out.push(sheet);
         }

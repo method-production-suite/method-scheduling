@@ -142,7 +142,7 @@ pub fn lines_per_page_prop() -> (&'static str, Value) {
         "lines_per_page",
         schema::integer(
             "Lines on a page when a Fountain script is paginated (7 lines an eighth at \
-             56). Default 56. Final Draft files keep their own lengths.",
+             56). Default 56. An .fdx or .mscenes file keeps its own lengths.",
             i64::from(MIN_LINES_PER_PAGE),
             i64::from(MAX_LINES_PER_PAGE),
         ),
