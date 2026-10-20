@@ -131,7 +131,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| Pictures kept with a schedule the browser saves: the picture store downloaded beside the `.mtsc` and handed back when it opens (the browser's menu bar from the desktop's table, the page's `host_info` guards and preferences kept in the browser are in, 2026-10-20) | S | phase 2 |
 | The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the
