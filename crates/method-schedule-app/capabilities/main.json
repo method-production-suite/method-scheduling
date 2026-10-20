@@ -146,6 +146,7 @@
     "allow-lock-schedule",
     "allow-delete-lock",
     "allow-drift-data",
+    "allow-export-drift",
     "allow-pin-strips",
     "allow-suggest-order",
     "allow-apply-suggested-order",

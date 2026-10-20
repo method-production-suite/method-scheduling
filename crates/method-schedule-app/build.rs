@@ -166,6 +166,7 @@ const COMMANDS: &[&str] = &[
     "lock_schedule",
     "delete_lock",
     "drift_data",
+    "export_drift",
     "pin_strips",
     "suggest_order",
     "apply_suggested_order",

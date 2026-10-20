@@ -36,6 +36,7 @@ pub(super) const COMMANDS: &[&str] = &[
     "export_report",
     "export_budget",
     "export_call_sheet",
+    "export_drift",
     "revise_pick",
     "revise_apply",
     "what_changed",
@@ -58,6 +59,7 @@ pub(super) const READS: &[&str] = &[
     "export_report",
     "export_budget",
     "export_call_sheet",
+    "export_drift",
     "element_image",
     "sheet_image",
     "revise_pick",
@@ -188,6 +190,12 @@ struct ReportArgs {
 struct CallSheetArgs {
     sub_board: u32,
     day: u32,
+    format: String,
+}
+
+#[derive(Deserialize)]
+struct DriftArgs {
+    name: String,
     format: String,
 }
 
@@ -551,6 +559,21 @@ impl Host {
                         from,
                         format!("{name} as it is now"),
                     )))
+                }
+                "export_drift" => {
+                    let r: DriftArgs = args(command, a)?;
+                    let format = Format::parse(&r.format)
+                        .ok_or("That export format isn't one the app knows.")?;
+                    let state = need()?;
+                    let s = state.lock();
+                    let bytes = crate::export::drift_bytes(s.schedule(), &r.name, format)?;
+                    let name = format!(
+                        "{} - Drift since {}.{}",
+                        stem(&s),
+                        crate::export::safe_file_stem(&r.name),
+                        format.extension()
+                    );
+                    reply(Ok(Downloads::one(name, bytes)))
                 }
                 "add_element_image" | "add_sheet_image" => {
                     let i: ImageArgs = args(command, a)?;

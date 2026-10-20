@@ -347,6 +347,40 @@ pub fn drift_data(state: Doc, name: String) -> CmdResult<DriftDto> {
     drift_view(state.lock().schedule(), &name)
 }
 
+/// Schedule Locks > Export: each actor's drift since lock `name` as an Excel workbook or a
+/// CSV file (`format`: `xlsx` or `csv`), where a Save dialog says.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn export_drift<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    name: String,
+    format: String,
+) -> CmdResult<ExportOutcome> {
+    let format = crate::export::Format::parse(&format)
+        .ok_or("That export format isn't one the app knows.")?;
+    let (bytes, dir, stem, open) = {
+        let s = state.lock();
+        let bytes = crate::export::drift_bytes(s.schedule(), &name, format)?;
+        let (dir, stem, open) = crate::export::place(&s);
+        (bytes, dir, stem, open)
+    };
+    let (title, filter) = format.dialog_text();
+    let ext = format.extension();
+    crate::export::save_dialog(
+        &window,
+        title,
+        filter,
+        ext,
+        format!(
+            "{stem} - Drift since {}.{ext}",
+            crate::export::safe_file_stem(&name)
+        ),
+        dir,
+        open.as_deref(),
+        &bytes,
+    )
+}
+
 // ---------------------------------------------------------------------------
 // Pins and the order suggestion
 

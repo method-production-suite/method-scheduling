@@ -378,6 +378,11 @@ export function planFakes(ctx) {
         plan.locks = plan.locks.filter((x) => !sameName(x, name));
       });
     },
+    // As plan::export_drift: the Save dialog's outcome, a file named for the lock.
+    export_drift: ({ name, format }) => {
+      if (!['xlsx', 'csv'].includes(format)) throw "That export format isn't one the app knows.";
+      return { done: true, file: `Harbor - Drift since ${name}.${format}` };
+    },
     drift_data: ({ name }) => ({
       lock: name,
       actors: [{ name: 'KIT', board_id: '1', before: 3, after: 3, added: '2027-03-03', dropped: '2027-03-02', moved: ['Sc 3: 2027-03-02 to 2027-03-03'] }],
