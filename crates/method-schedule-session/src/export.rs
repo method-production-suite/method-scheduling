@@ -172,6 +172,12 @@ pub fn file_bytes(wb: &Workbook, format: Format) -> Result<Vec<u8>, String> {
     }
 }
 
+/// Each actor's drift since lock `name` (D74, BYD-05) as a file in `format`.
+pub fn drift_bytes(s: &Schedule, name: &str, format: Format) -> Result<Vec<u8>, String> {
+    let wb = export::drift_table(s, name).map_err(|e| capitalize(&e.to_string()))?;
+    file_bytes(&wb, format)
+}
+
 /// The budget exchange file for sub-board `sub`, stamped `today`. Refused, with a plain
 /// sentence, while the sub-board has no start date.
 pub fn budget_text(s: &Schedule, sub: u32, today: Option<Date>) -> Result<String, String> {

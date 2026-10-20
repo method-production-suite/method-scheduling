@@ -533,6 +533,54 @@ pub fn shot_against_planned(
     })
 }
 
+/// Each actor's drift against a schedule lock (D74, BYD-05): a row per actor whose work
+/// days changed since lock `name`, with the days before and after and the days added,
+/// dropped and moved, in words.
+pub fn drift_table(s: &Schedule, name: &str) -> Result<Workbook, ExportError> {
+    let d = method_schedule_core::drift::drift(s, name)?;
+    let days = |v: &[method_schedule_core::drift::WorkDay]| {
+        v.iter().map(|w| w.text(s)).collect::<Vec<_>>().join(", ")
+    };
+    let rows = d
+        .changed()
+        .map(|a| {
+            let moved: Vec<String> = a
+                .moved
+                .iter()
+                .map(|m| {
+                    let scene = s.sheet(m.sheet).map_or("", |h| h.scenes.as_str());
+                    format!("{scene}: {} to {}", m.from.text(s), m.to.text(s))
+                })
+                .collect();
+            vec![
+                Cell::text(a.board_id.as_deref().unwrap_or("")),
+                Cell::text(a.name.as_str()),
+                Cell::Int(a.before as u64),
+                Cell::Int(a.after as u64),
+                Cell::text(days(&a.added)),
+                Cell::text(days(&a.dropped)),
+                Cell::text(moved.join("; ")),
+            ]
+        })
+        .collect();
+    Ok(Workbook {
+        title: s.title.clone(),
+        sheets: vec![Sheet {
+            name: "Drift",
+            columns: names(&[
+                "board_id",
+                "actor",
+                "days_before",
+                "days_after",
+                "added",
+                "dropped",
+                "moved",
+            ]),
+            rows,
+        }],
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -754,6 +802,33 @@ mod tests {
     }
 
     /// Behavior note 23: the red flag table, open ends empty, by first date.
+    #[test]
+    fn drift_lists_the_actors_whose_days_changed() {
+        let mut s = method_schedule_core::sample::field_station();
+        let b = s.boards[0].id;
+        method_schedule_core::drift::lock(&mut s, b, "Locked", None).unwrap();
+        assert!(drift_table(&s, "Locked").unwrap().sheets[0].rows.is_empty());
+        // The first day's first scene moved to the end of the sub-board's last day.
+        let sb = s.boards[0].sub_boards[0].id;
+        let d = days(&s, b, sb).unwrap();
+        let first = d.days[0].strips[0];
+        let last = s.boards[0].sub_boards[0].strips.len() - 1;
+        s.move_strips(
+            b,
+            &[first],
+            Place {
+                sub_board: Some(sb),
+                index: last,
+            },
+        )
+        .unwrap();
+        let wb = drift_table(&s, "Locked").unwrap();
+        assert!(!wb.sheets[0].rows.is_empty());
+        assert_eq!(wb.sheets[0].columns[1], "actor");
+        assert!(drift_table(&s, "Nope").is_err());
+        xlsx::write(&wb).unwrap();
+    }
+
     #[test]
     fn shot_against_planned_counts_by_day_and_by_scene() {
         use method_schedule_core::plan::record_shot;

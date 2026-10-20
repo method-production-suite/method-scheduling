@@ -355,8 +355,19 @@ export function planCommands(ctx) {
               el('td', { text: a.moved.join('; ') }),
             ),
           );
+          // The drift as a spreadsheet (BYD-05), where a Save dialog says.
+          const exportAs = async (format) => {
+            try {
+              const out = await invoke('export_drift', { name: lockName, format });
+              if (out && out.done) ctx.say(`Exported ${out.file}.`);
+            } catch (e) {
+              error.textContent = String(e);
+              error.hidden = false;
+            }
+          };
           driftBox.replaceChildren(
             el('h3', { class: 'pl-sub', text: `Drift since ${d.lock}` }),
+            el('div', { class: 'pl-bar' }, button('Export Excel…', () => exportAs('xlsx'), 'btn btn-mini'), ' ', button('Export CSV…', () => exportAs('csv'), 'btn btn-mini')),
             rows.length ? table(['ID', 'Actor', 'Days', 'Added', 'Dropped', 'Moved'], rows) : el('p', { class: 'modal-message', text: 'No actor’s days changed since the lock.' }),
             d.unchanged && rows.length ? el('p', { class: 'modal-message', text: `${d.unchanged} more actors are unchanged.` }) : '',
           );

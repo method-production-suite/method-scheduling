@@ -1947,6 +1947,7 @@ pub fn run() {
             crate::plan::lock_schedule,
             crate::plan::delete_lock,
             crate::plan::drift_data,
+            crate::plan::export_drift,
             crate::plan::pin_strips,
             crate::plan::suggest_order,
             crate::plan::apply_suggested_order,
