@@ -165,14 +165,13 @@ unchanged, and CI checks both.
 
 **Goal**: the app opens a rich invented sample that shows every feature (SUITE-STANDARDS.md
 section 8, the owner, 2026-10-18), and it matches Method Budget's sample through the real
-exchange file. Alongside M2b.
+exchange file. Alongside M2b. Nothing left on it.
 
-| Item | Size | Refs |
-|---|---|---|
-| Pictures on elements: a few props and vehicles, drawn (not generated), kept beside the fixture | S | D223 |
-
-Done: Help > Open Sample opens Field Station, untitled, and the first launch with nothing
-to open shows it once (2026-10-19). Earlier (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
+Done: pictures on the park truck, the quad bike, the hand radio and the paper map, drawn in
+code by `scripts/make-sample-pictures.py` (not generated), kept in `fixtures/images/` beside
+the fixture and carried in the app for the untitled sample (2026-10-20). Help > Open Sample
+opens Field Station, untitled, and the first launch with nothing to open shows it once
+(2026-10-19). Earlier (decision 223): the shared shape agreed with Method Budget; Storyteller's 90-scene
 script, our first 11 scenes kept; Field Station rebuilt from it with the real importer
 (18 days, three locations, a second unit, nine cast with one silent, an element in every
 category, background counts, banners, call times, red flags, prep 2027-04-05 to wrap

@@ -295,11 +295,16 @@ impl Host {
         Some((|| -> Result<Value, Error> {
             match command {
                 "new_schedule" => open(self, Session::new(), None),
-                "open_sample" => open(
-                    self,
-                    session::sample_session()?,
-                    Some(session::SAMPLE_NOTICE.into()),
-                ),
+                "open_sample" => {
+                    for (name, bytes) in session::SAMPLE_IMAGES {
+                        self.images.insert((*name).to_string(), bytes.to_vec());
+                    }
+                    open(
+                        self,
+                        session::sample_session()?,
+                        Some(session::SAMPLE_NOTICE.into()),
+                    )
+                }
                 "open_schedule" => {
                     let f = file_arg(command, a)?;
                     let schedule = session::parse_schedule(&f.file.bytes, Path::new(&f.file.name))?;
@@ -726,7 +731,24 @@ mod tests {
             &json!({ "element": element, "file": file("Ranger Truck.png", PNG) }),
         )
         .unwrap();
-        assert_eq!(h.image_names(), vec!["images/Ranger Truck.png".to_string()]);
+        assert!(h
+            .image_names()
+            .contains(&"images/Ranger Truck.png".to_string()));
+        // The sample's own pictures came with it (M2c).
+        let truck = method_schedule_core::sample::field_station()
+            .elements
+            .iter()
+            .find(|e| e.name == "PARK TRUCK")
+            .unwrap()
+            .id
+            .0;
+        let shown = h
+            .dispatch("element_image", &json!({ "element": truck, "at": 0 }))
+            .unwrap();
+        assert!(shown
+            .as_str()
+            .unwrap()
+            .starts_with("data:image/png;base64,"));
         let url = h
             .dispatch("element_image", &json!({ "element": element, "at": 0 }))
             .unwrap();
