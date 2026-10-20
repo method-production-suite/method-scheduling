@@ -127,6 +127,9 @@ versions:
   merge-driver BASE OURS THEIRS [PATH] [--theirs]
                                   the same merge as a git merge driver: writes the result
                                   over OURS; exit 1 on conflicts (docs/MERGE.md)
+  git-setup [--global] [--theirs] sets git up to merge schedules with merge-driver: in this
+                                  repository (its .gitattributes and config), or for every
+                                  repository with --global
   explain FILE ELEMENT [--category CAT]
                                   why an element's day out of days counts are what they
                                   are, date by date
@@ -274,6 +277,7 @@ fn run(args: &[String]) -> Result<String, String> {
         Some("totals") => totals_cmd(rest),
         Some("mcp") => mcp_cmd(rest),
         Some("diff") => diff_cmd(rest),
+        Some("git-setup") => git_setup_cmd(rest),
         Some("explain") => explain_cmd(rest),
         Some("find") => find_cmd(rest),
         Some("replace") => replace_cmd(rest),
@@ -1168,6 +1172,105 @@ fn mcp_config(args: &[String]) -> Result<mcp::Config, String> {
 fn mcp_cmd(args: &[String]) -> Result<String, String> {
     mcp::serve_stdio(mcp_config(args)?)?;
     Ok(String::new())
+}
+
+/// The line in a `.gitattributes` file that sends schedules to the driver.
+const GIT_ATTRIBUTE: &str = "*.mtsc merge=method-schedule";
+
+/// The driver line git runs: base, ours (replaced by the result), theirs and the path.
+fn driver_line(theirs: bool) -> String {
+    format!(
+        "method-schedule merge-driver %O %A %B %P{}",
+        if theirs { " --theirs" } else { "" }
+    )
+}
+
+/// `text` with the driver's attribute line added, or `None` when it is there already.
+fn with_attribute(text: &str) -> Option<String> {
+    if text.lines().any(|l| l.trim() == GIT_ATTRIBUTE) {
+        return None;
+    }
+    let mut out = text.to_string();
+    if !out.is_empty() && !out.ends_with('\n') {
+        out.push('\n');
+    }
+    out.push_str(GIT_ATTRIBUTE);
+    out.push('\n');
+    Some(out)
+}
+
+/// `method-schedule git-setup [--global] [--theirs]`: the driver in git's config, and the
+/// attribute line in this repository's `.gitattributes` (with `--global`, in git's own
+/// attributes file, `core.attributesfile` or its default).
+fn git_setup_cmd(args: &[String]) -> Result<String, String> {
+    let mut global = false;
+    let mut theirs = false;
+    for a in args {
+        match a.as_str() {
+            "--global" => global = true,
+            "--theirs" => theirs = true,
+            other => return Err(format!("git-setup doesn't take {other}")),
+        }
+    }
+    let git = |a: &[&str]| -> Result<String, String> {
+        let out = std::process::Command::new("git")
+            .args(a)
+            .output()
+            .map_err(|_| "git isn't installed or isn't on the PATH".to_string())?;
+        if !out.status.success() {
+            return Err(String::from_utf8_lossy(&out.stderr).trim().to_string());
+        }
+        Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+    };
+    let scope: &[&str] = if global { &["--global"] } else { &[] };
+    let attributes = if global {
+        match git(&["config", "--global", "--get", "core.attributesfile"]) {
+            Ok(p) if !p.is_empty() => std::path::PathBuf::from(p),
+            _ => {
+                let base = std::env::var_os("XDG_CONFIG_HOME")
+                    .map(std::path::PathBuf::from)
+                    .or_else(|| {
+                        std::env::var_os("HOME").map(|h| std::path::Path::new(&h).join(".config"))
+                    })
+                    .ok_or("can't find your home folder for git's attributes file")?;
+                base.join("git").join("attributes")
+            }
+        }
+    } else {
+        let top = git(&["rev-parse", "--show-toplevel"]).map_err(|_| {
+            "this folder isn't in a git repository; run it there, or use --global".to_string()
+        })?;
+        std::path::Path::new(&top).join(".gitattributes")
+    };
+    let set = |key: &str, value: &str| {
+        let mut a = vec!["config"];
+        a.extend_from_slice(scope);
+        a.extend([key, value]);
+        git(&a).map(|_| ())
+    };
+    set("merge.method-schedule.name", "Method Schedule merge")?;
+    set("merge.method-schedule.driver", &driver_line(theirs))?;
+    let old = std::fs::read_to_string(&attributes).unwrap_or_default();
+    let added = match with_attribute(&old) {
+        Some(text) => {
+            if let Some(dir) = attributes.parent() {
+                std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+            }
+            std::fs::write(&attributes, text)
+                .map_err(|e| format!("{}: {e}", attributes.display()))?;
+            true
+        }
+        None => false,
+    };
+    Ok(format!(
+        "git merges schedules with Method Schedule {}: the driver is in git's {} config, and {} {}.\n\
+         When a merge leaves conflicts, the file is still a valid schedule with each settled for {}; check them, then git add it.\n",
+        if global { "in every repository" } else { "in this repository" },
+        if global { "global" } else { "repository" },
+        attributes.display(),
+        if added { "now sends .mtsc files to it" } else { "already sent .mtsc files to it" },
+        if theirs { "theirs" } else { "ours" },
+    ))
 }
 
 fn diff_cmd(args: &[String]) -> Result<String, String> {
@@ -3060,11 +3163,12 @@ mod tests {
             assert!(r.is_ok(), "{c:?}: {r:?}");
             ran.insert(c[0].to_string());
         }
-        // `mcp` serves stdin, and merge and merge-driver have their own exit codes
-        // (run before `run`); each has its own test.
+        // `mcp` serves stdin, merge and merge-driver have their own exit codes (run before
+        // `run`), and git-setup writes git's config (tests/merge_driver.rs runs it in a
+        // folder of its own); each has its own test.
         let m = merge_cmd(&args(&["merge", &copy, &copy, &copy])).unwrap();
         assert!(!m.conflicts);
-        for name in ["mcp", "merge", "merge-driver"] {
+        for name in ["mcp", "merge", "merge-driver", "git-setup"] {
             ran.insert(name.to_string());
         }
         let help = run_str(&["help"]).unwrap();

@@ -152,13 +152,15 @@ its badge.
   folder, another computer, a colleague), nothing is written over it. The app asks:
   Load Theirs, Keep Mine, or Merge when you both changed it. Later puts the question off.
 - **What Changed** (File menu) lists every change between this schedule and another file,
-  or since you last saved.
+  or since you last saved. Revert to Backup's list has it too, for one backup.
 - **Merge Changes From** brings what changed in another copy of the schedule into yours,
   against the version you both started from. Where you both changed the same thing, you
   pick yours or theirs. The result always hangs together.
 - **With git**, `method-schedule merge-driver` does the same merge for every schedule file
-  in a repository. Set it up once (docs/MERGE.md has the two lines), and a merge either
-  goes through or marks the file for you to settle.
+  in a repository. Set it up once with `method-schedule git-setup` in the repository (or
+  `method-schedule git-setup --global` for all of them), and a merge either goes through or
+  marks the file for you to settle. The file stays a schedule either way: open it, check
+  the listed conflicts, then `git add` it.
 
 ## The budget exchange file
 
