@@ -131,6 +131,7 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
+| `/try/` live with 0.5.0: the feature list's "Try it in your browser" moves to built and the site links `try/` in that release's `site/`; MOrg adds the demo build to the website's sync at 0.5.0 (the hardening is in, #84) | S | WEBSITE.md |
 | The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the

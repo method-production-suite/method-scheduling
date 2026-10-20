@@ -438,7 +438,7 @@ export function createRedFlags(host, actions) {
         { class: 'el-row' },
         el('h2', { text: `Red flags on ${dto.board_name}: ${dto.sub_board_name}` }),
         el('span', { class: 'bd-spacer' }),
-        el('button', { class: 'btn', text: 'Export…', title: 'Every red flag as an Excel workbook or CSV', attrs: { type: 'button', id: 'rf-export' }, on: { click: () => actions.exportTable() } }),
+        el('button', { class: 'btn', text: 'Export…', title: 'Every red flag as a spreadsheet (.xlsx) or CSV', attrs: { type: 'button', id: 'rf-export' }, on: { click: () => actions.exportTable() } }),
         el('button', { class: 'btn', text: 'Print…', title: 'Print the Red flags report: every flag, then the clashes', attrs: { type: 'button', id: 'rf-print' }, on: { click: () => actions.print(false) } }),
         el('button', { class: 'btn', text: 'Save as PDF…', title: 'Save the Red flags report as a PDF', attrs: { type: 'button', id: 'rf-pdf' }, on: { click: () => actions.print(true) } }),
       ),

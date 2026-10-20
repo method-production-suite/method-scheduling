@@ -381,7 +381,7 @@ export function planCommands(ctx) {
           };
           driftBox.replaceChildren(
             el('h3', { class: 'pl-sub', text: `Drift since ${d.lock}` }),
-            el('div', { class: 'pl-bar' }, button('Print…', () => printDrift(d), 'btn btn-mini'), ' ', button('Export Excel…', () => exportAs('xlsx'), 'btn btn-mini'), ' ', button('Export CSV…', () => exportAs('csv'), 'btn btn-mini')),
+            el('div', { class: 'pl-bar' }, button('Print…', () => printDrift(d), 'btn btn-mini'), ' ', button('Export Spreadsheet…', () => exportAs('xlsx'), 'btn btn-mini'), ' ', button('Export CSV…', () => exportAs('csv'), 'btn btn-mini')),
             rows.length ? table(['ID', 'Actor', 'Days', 'Added', 'Dropped', 'Moved'], rows) : el('p', { class: 'modal-message', text: 'No actor’s days changed since the lock.' }),
             d.unchanged && rows.length ? el('p', { class: 'modal-message', text: `${d.unchanged} more actors are unchanged.` }) : '',
           );

@@ -1141,7 +1141,7 @@ export function createReports(host, actions) {
     elColBtn.title = ec.join(', ');
     colBtn.title = o.columns.map((c) => reportColumn(c).field).map((f) => (list.fields.find((x) => x[0] === f) || [f, f])[1]).join(', ');
     exportBtn.disabled = !EXPORTABLE[it.kind];
-    exportBtn.title = EXPORTABLE[it.kind] ? 'Export this report as an Excel workbook or CSV' : 'This report prints; File > Export has the spreadsheets';
+    exportBtn.title = EXPORTABLE[it.kind] ? 'Export this report as a spreadsheet (.xlsx) or CSV' : 'This report prints; File > Export has the spreadsheets';
   }
 
   function pick(index) {

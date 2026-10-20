@@ -116,7 +116,7 @@ schedules:
   budget FILE [--out OUT]         budget exchange file: shoot days and element day counts
                                   (docs/EXCHANGE.md); prints it unless --out is given
   dood|oneline|elements FILE --xlsx OUT.xlsx
-                                  write the report as an Excel workbook
+                                  write the report as a spreadsheet (.xlsx)
 
 versions:
   diff OLD NEW                    what changed between two schedules, in plain words

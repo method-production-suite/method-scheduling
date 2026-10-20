@@ -52,7 +52,7 @@ export const SHORTCUTS = [
   { id: 'file.what_changed', label: 'What changed from another schedule file to this one', scope: 'menu' },
   { id: 'file.what_changed_saved', label: 'What changed since this schedule was last saved', scope: 'menu' },
   { id: 'file.merge', label: 'Merge changes from another copy of this schedule', scope: 'menu' },
-  { id: 'file.export', label: 'Export a report as an Excel workbook or CSV', keys: 'mod+e', scope: 'app' },
+  { id: 'file.export', label: 'Export a report as a spreadsheet (.xlsx) or CSV', keys: 'mod+e', scope: 'app' },
   { id: 'file.export_budget', label: 'Export the day counts for a budget', scope: 'menu' },
   { id: 'file.print', label: 'Print the board (Board tab) or the report on the Reports tab', keys: 'mod+p', scope: 'app' },
   { id: 'file.save_pdf', label: 'Save the board (Board tab) or the report on the Reports tab as a PDF', scope: 'menu' },
