@@ -23,6 +23,7 @@ pub mod conflicts;
 pub mod elements;
 pub mod events;
 pub mod explain;
+pub mod export;
 pub mod find;
 pub mod flagcolors;
 pub mod host;
@@ -35,6 +36,7 @@ pub mod safety;
 pub mod session;
 pub mod sheet;
 pub mod split;
+pub mod templates;
 pub mod view;
 
 pub use session::Session;

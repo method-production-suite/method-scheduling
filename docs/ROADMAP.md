@@ -127,7 +127,7 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| The host's remaining commands: files in and out as base64 (open, import script and tags, revise, merge, What Changed, layouts files, templates, the sample) and downloads (save, exports, call sheet), the picture store (element and sheet images), and the revision flow's pick (`Host::dispatch` with 123 commands, `COMMANDS_VERSION`, `host_info` and the read-only switch are in, 2026-10-20) | M | phase 1b |
+| The host's remaining commands: revise, merge and What Changed with their picked files (`Host::dispatch` with 123 commands, `COMMANDS_VERSION`, `host_info` and the read-only switch are in; files in as base64 for open, the sample, templates, import script and tags and layouts, downloads for save, templates, exports, call sheet and layouts, and the picture store for element and sheet images, 2026-10-20) | S | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
 

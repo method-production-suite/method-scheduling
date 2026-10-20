@@ -12,6 +12,7 @@
 //! they are kept is the host's business. Each command takes `doc` (the schedule it acts on;
 //! missing or `null`: the one in front) besides the desktop's arguments.
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::de::DeserializeOwned;
@@ -21,7 +22,12 @@ use serde_json::Value;
 use crate::session::Session;
 use crate::view::{self, View};
 
+mod b64;
+mod files;
 mod generated;
+
+pub use b64::{decode as b64_decode, encode as b64_encode};
+pub use files::{Downloads, FileIn, FileOut};
 
 /// The command contract's version (see the module's notes).
 pub const COMMANDS_VERSION: u32 = 1;
@@ -38,10 +44,16 @@ const OWN: &[&str] = &[
 /// Every command [`Host::dispatch`] runs: the desktop's that need only the schedule, then
 /// the host's own.
 pub fn commands() -> Vec<&'static str> {
-    generated::COMMANDS.iter().chain(OWN).copied().collect()
+    generated::COMMANDS
+        .iter()
+        .chain(files::COMMANDS)
+        .chain(OWN)
+        .copied()
+        .collect()
 }
 
-/// The desktop commands [`Host::dispatch`] runs, by name ([`commands`] adds the host's own).
+/// The desktop commands [`Host::dispatch`] runs that need only the schedule, by name
+/// ([`commands`] adds those that take or give files, and the host's own).
 pub const COMMANDS: &[&str] = generated::COMMANDS;
 
 /// What an edit is told while the host shows schedules read-only ([`Host::set_read_only`]).
@@ -82,6 +94,12 @@ impl std::error::Error for Error {}
 impl From<String> for Error {
     fn from(m: String) -> Error {
         Error::Refused(m)
+    }
+}
+
+impl From<&str> for Error {
+    fn from(m: &str) -> Error {
+        Error::Refused(m.to_string())
     }
 }
 
@@ -128,6 +146,8 @@ pub struct Host {
     front: Option<u32>,
     next: u32,
     read_only: bool,
+    /// The picture store: each picture's bytes by the name a schedule stores for it.
+    images: HashMap<String, Vec<u8>>,
 }
 
 #[derive(Deserialize)]
@@ -175,13 +195,18 @@ impl Host {
             ))
         })?;
         let session = Session::with_schedule(schedule, name.map(std::path::PathBuf::from));
+        self.add_doc(session, None)
+    }
+
+    /// Puts `session` in front as a new schedule, with its view.
+    fn add_doc(&mut self, session: Session, notice: Option<String>) -> Result<Opened, Error> {
         self.next += 1;
         let id = self.next;
         self.docs
             .push((id, DocState(Arc::new(Mutex::new(session)))));
         self.front = Some(id);
         let state = self.doc(Some(id))?;
-        let view = finish(&W, &state.lock(), None)?;
+        let view = finish(&W, &state.lock(), notice)?;
         Ok(Opened { doc: id, view })
     }
 
@@ -251,6 +276,19 @@ impl Host {
                 return reply(Ok(names));
             }
             _ => {}
+        }
+        if files::COMMANDS.contains(&command) {
+            if self.read_only && !files::READS.contains(&command) {
+                return Err(Error::Refused(READ_ONLY.to_string()));
+            }
+            let a: DocArg = args(command, args_json)?;
+            let state = match a.doc {
+                Some(_) => Some(self.doc(a.doc)?),
+                None => self.doc(None).ok(),
+            };
+            if let Some(r) = self.run_file(command, args_json, state) {
+                return r;
+            }
         }
         if !generated::COMMANDS.contains(&command) {
             return Err(Error::UnknownCommand(command.to_string()));

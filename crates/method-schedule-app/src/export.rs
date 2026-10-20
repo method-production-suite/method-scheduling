@@ -12,188 +12,17 @@
 
 use std::path::{Path, PathBuf};
 
-use serde::Serialize;
 use tauri::{Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 
-use method_schedule_core::{Date, Schedule};
+use method_schedule_core::Date;
 use method_schedule_format::exchange;
-use method_schedule_format::export::{self, csv, xlsx, Workbook, PAGES};
 
-use crate::app::{safe_file_stem, CmdResult};
+pub use method_schedule_session::export::*;
+
+use crate::app::CmdResult;
 use crate::docs::Doc;
 use crate::safety::{same_file, write_atomically, Access};
-
-/// The reports File > Export offers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Report {
-    /// The day out of days summary: every element the sub-board schedules.
-    DoodSummary,
-    /// The one-line schedule, following the report's strip layout (decision 103).
-    OneLine,
-    /// The one-line schedule with our stable `day` to `text` columns.
-    OneLineFixed,
-    Elements,
-    /// The day out of days grid, every category (decision 59).
-    DoodGrid,
-    ElementDetail,
-    Breakdown,
-    /// The breakdown by shoot day: a row per day and element.
-    BreakdownDay,
-    /// The whole board of the sub-board, every strip.
-    Board,
-    /// The daily category totals, with a total row of formulas.
-    Totals,
-    /// Every red flag in the schedule, the Red flags tab's table (behavior note 23).
-    RedFlags,
-}
-
-impl Report {
-    /// The page's names: `dood`, `one_line`, `elements`.
-    pub fn parse(s: &str) -> Option<Report> {
-        match s {
-            "dood" => Some(Report::DoodSummary),
-            "one_line" => Some(Report::OneLine),
-            "one_line_fixed" => Some(Report::OneLineFixed),
-            "elements" => Some(Report::Elements),
-            "dood_grid" => Some(Report::DoodGrid),
-            "element_detail" => Some(Report::ElementDetail),
-            "breakdown" => Some(Report::Breakdown),
-            "breakdown_day" => Some(Report::BreakdownDay),
-            "board" => Some(Report::Board),
-            "totals" => Some(Report::Totals),
-            "red_flags" => Some(Report::RedFlags),
-            _ => None,
-        }
-    }
-
-    /// The part of the suggested file name after the schedule's.
-    fn file_label(self) -> &'static str {
-        match self {
-            Report::DoodSummary => "Day Out of Days",
-            Report::OneLine | Report::OneLineFixed => "One-Line",
-            Report::Elements => "Elements",
-            Report::DoodGrid => "Day Out of Days Grid",
-            Report::ElementDetail => "Element Detail",
-            Report::Breakdown => "Breakdown",
-            Report::BreakdownDay => "Breakdown by Day",
-            Report::Board => "Board",
-            Report::Totals => "Daily Totals",
-            Report::RedFlags => "Red Flags",
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Format {
-    Xlsx,
-    Csv,
-}
-
-impl Format {
-    pub fn parse(s: &str) -> Option<Format> {
-        match s {
-            "xlsx" => Some(Format::Xlsx),
-            "csv" => Some(Format::Csv),
-            _ => None,
-        }
-    }
-
-    fn extension(self) -> &'static str {
-        match self {
-            Format::Xlsx => "xlsx",
-            Format::Csv => "csv",
-        }
-    }
-
-    /// The Save dialog's title and filter name.
-    fn dialog_text(self) -> (&'static str, &'static str) {
-        match self {
-            Format::Xlsx => ("Export Excel workbook", "Excel workbook"),
-            Format::Csv => ("Export CSV file", "CSV file"),
-        }
-    }
-}
-
-/// How an export ended.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
-pub struct ExportOutcome {
-    /// False when the Save dialog was cancelled: nothing was written.
-    pub done: bool,
-    /// The file written, by name (never its folder).
-    pub file: Option<String>,
-}
-
-fn ids(
-    s: &Schedule,
-    sub: u32,
-) -> Result<
-    (
-        method_schedule_core::model::BoardId,
-        method_schedule_core::model::SubBoardId,
-    ),
-    String,
-> {
-    let (b, sb) = crate::view::sub_ref(s, sub)?;
-    Ok((b.id, sb.id))
-}
-
-fn capitalize(s: &str) -> String {
-    let mut c = s.chars();
-    match c.next() {
-        Some(f) => f.to_uppercase().chain(c).collect::<String>() + ".",
-        None => String::new(),
-    }
-}
-
-/// `report`'s table for sub-board `sub`. The one-line schedule lists Cast board IDs.
-pub fn workbook(s: &Schedule, sub: u32, report: Report) -> Result<Workbook, String> {
-    let (b, sb) = ids(s, sub)?;
-    let wb = match report {
-        Report::DoodSummary => export::dood_summary(s, b, sb),
-        Report::OneLine => export::one_line(s, b, sb, s.cast(), export::OneLineColumns::Layout),
-        Report::OneLineFixed => export::one_line(s, b, sb, s.cast(), export::OneLineColumns::Fixed),
-        Report::Elements => export::element_list(s, b, sb),
-        Report::DoodGrid => export::dood_grid(s, b, sb, None),
-        Report::ElementDetail => export::element_detail(s, b, sb),
-        Report::Breakdown => export::breakdown(s, b, sb),
-        Report::BreakdownDay => export::breakdown_day(s, b, sb),
-        Report::Board => export::board(s, b),
-        Report::Totals => export::daily_totals(s, b, sb),
-        Report::RedFlags => Ok(export::red_flags(s)),
-    };
-    wb.map_err(|e| capitalize(&e.to_string()))
-}
-
-/// The file's bytes: the workbook, or its one table as CSV without the page-length text
-/// column (it repeats the eighths), with a UTF-8 byte order mark so Excel reads accented
-/// letters.
-pub fn file_bytes(wb: &Workbook, format: Format) -> Result<Vec<u8>, String> {
-    match format {
-        Format::Xlsx => xlsx::write(wb).map_err(|e| capitalize(&e.to_string())),
-        Format::Csv => {
-            let sheet = wb.sheets.first().ok_or("There is nothing to export.")?;
-            Ok(csv::write(
-                &sheet.without(PAGES),
-                csv::Delimiter::Comma,
-                true,
-            ))
-        }
-    }
-}
-
-/// The budget exchange file for sub-board `sub`, stamped `today`. Refused, with a plain
-/// sentence, while the sub-board has no start date.
-pub fn budget_text(s: &Schedule, sub: u32, today: Option<Date>) -> Result<String, String> {
-    let (b, sb) = ids(s, sub)?;
-    if let Some(x) = Some(crate::view::sub_ref(s, sub)?.1).filter(|x| x.start.is_none()) {
-        return Err(format!(
-            "Set a start date for {} before exporting for a budget: the file counts days by date.",
-            x.name
-        ));
-    }
-    exchange::to_string(s, b, sb, today).map_err(|e| capitalize(&e.to_string()))
-}
 
 /// Today's local date, as `method-schedule budget` stamps the file.
 fn today() -> Option<Date> {
@@ -346,7 +175,7 @@ mod tests {
     use crate::safety::tests::temp_dir;
     use crate::session::SessionFiles;
     use crate::session::{read_script, Session};
-    use method_schedule_format::export::Cell;
+    use method_schedule_format::export::{self, xlsx, Cell, PAGES};
 
     fn harbor(start: bool) -> Session {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))

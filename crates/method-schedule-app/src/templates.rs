@@ -10,8 +10,6 @@ use serde::Serialize;
 use tauri::{Manager, Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 
-use method_schedule_core::Schedule;
-
 use crate::app::{finish, settle_unsaved, CmdResult};
 use crate::docs::Doc;
 use crate::safety::{self, Access};
@@ -19,25 +17,12 @@ use crate::safety_app::{self, Safety};
 use crate::session::{self, Session};
 use crate::view::View;
 
-/// A template file's working extension.
-pub const EXTENSION: &str = "mtst";
-
-/// A new, untitled session from a template's schedule (or any schedule, taken as one).
-pub fn session_from(schedule: &Schedule) -> Session {
-    let mut t = schedule.to_template();
-    t.title = session::UNTITLED.to_string();
-    Session::with_schedule(t, None)
-}
+pub use method_schedule_session::templates::*;
 
 /// Reads a template file (or a schedule file, used as one) into a new untitled session.
 pub fn open_template(path: &Path) -> Result<Session, String> {
     let (schedule, _) = session::read_schedule(path)?;
     Ok(session_from(&schedule))
-}
-
-/// The template text for a schedule: our own file, marked as a template.
-pub fn template_text(s: &Schedule) -> String {
-    method_schedule_format::to_template_string(s)
 }
 
 /// The folder templates are kept in: the data folder's `Templates/` (made when needed).
@@ -152,6 +137,7 @@ mod tests {
     use super::*;
     use crate::session::SessionFiles;
     use method_schedule_core::model::Sheet;
+    use method_schedule_core::Schedule;
 
     #[test]
     fn a_template_round_trips_into_an_untitled_schedule() {

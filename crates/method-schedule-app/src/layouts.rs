@@ -95,7 +95,7 @@ pub fn use_one_line_layout<R: Runtime>(
     edit_with(&window, &state, |s| pick_one_line(s, id))
 }
 
-const EXT: &str = "mtlayouts";
+const EXT: &str = LAYOUTS_EXTENSION;
 
 /// Save Layouts: the named layouts `ids` (all when empty) into a layout file where a Save
 /// dialog says. Never replaces the open schedule's file.
