@@ -378,7 +378,7 @@ mod local {
     }
 }
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(any(unix, windows, target_arch = "wasm32")))]
 mod local {
     pub fn today() -> Option<method_schedule_core::Date> {
         None

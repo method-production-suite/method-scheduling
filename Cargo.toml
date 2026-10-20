@@ -7,6 +7,7 @@ members = [
     "crates/method-schedule-cli",
     "crates/method-schedule-session",
     "crates/method-schedule-app",
+    "crates/method-schedule-web",
     "crates/xtask",
 ]
 
@@ -15,3 +16,10 @@ edition = "2021"
 # The one place the version lives: every crate inherits it.
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
+
+# The browser build (`cargo xtask web`): small over fast.
+[profile.web-release]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1
