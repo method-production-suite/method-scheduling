@@ -21,7 +21,7 @@ import { invoke } from './api.js';
 import { el } from './dom.js';
 import { showDate } from './dates.js';
 import { customDialog, errorLine } from './modal.js';
-import { layout, printPages } from './report.js';
+import { layout, printPages, row, td, th } from './report.js';
 import { callSheetFlows, callSheetJob, callSheetOpts } from './callsheet.js';
 
 let uid = 0;
@@ -320,6 +320,20 @@ export function planCommands(ctx) {
     });
   }
 
+  /** The drift since a lock, printed (BYD-05): a row per actor whose days changed. */
+  async function printDrift(d) {
+    const head = el('tr', {}, th('ID'), th('Actor'), th('Days', 'n'), th('Added'), th('Dropped'), th('Moved'));
+    const rows = d.actors.length
+      ? d.actors.map((a) => row(el('tr', {}, td(a.board_id), td(a.name), td(`${a.before} → ${a.after}`, 'n'), td(a.added), td(a.dropped), td(a.moved.join('; ')))))
+      : [row(el('tr', { class: 'rpt-empty' }, td('No actor’s days changed since the lock.', '', 6)))];
+    const flow = { name: `Drift since ${d.lock}`, cls: '', cols: ['', '', '', '', '', ''], head, rows, intro: el('h2', { class: 'bp-title', text: `Drift since ${d.lock}` }) };
+    try {
+      await printPages((root) => layout(root, [flow], { title: `Drift since ${d.lock}`, place: 'Schedule lock' }), { title: `Drift since ${d.lock}`, subject: 'Schedule lock drift' });
+    } catch (e) {
+      ctx.say(e, true);
+    }
+  }
+
   async function locks() {
     const board = ctx.board();
     let list;
@@ -367,7 +381,7 @@ export function planCommands(ctx) {
           };
           driftBox.replaceChildren(
             el('h3', { class: 'pl-sub', text: `Drift since ${d.lock}` }),
-            el('div', { class: 'pl-bar' }, button('Export Excel…', () => exportAs('xlsx'), 'btn btn-mini'), ' ', button('Export CSV…', () => exportAs('csv'), 'btn btn-mini')),
+            el('div', { class: 'pl-bar' }, button('Print…', () => printDrift(d), 'btn btn-mini'), ' ', button('Export Excel…', () => exportAs('xlsx'), 'btn btn-mini'), ' ', button('Export CSV…', () => exportAs('csv'), 'btn btn-mini')),
             rows.length ? table(['ID', 'Actor', 'Days', 'Added', 'Dropped', 'Moved'], rows) : el('p', { class: 'modal-message', text: 'No actor’s days changed since the lock.' }),
             d.unchanged && rows.length ? el('p', { class: 'modal-message', text: `${d.unchanged} more actors are unchanged.` }) : '',
           );
