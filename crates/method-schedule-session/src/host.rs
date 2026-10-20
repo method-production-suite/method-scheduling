@@ -148,6 +148,12 @@ pub struct Host {
     read_only: bool,
     /// The picture store: each picture's bytes by the name a schedule stores for it.
     images: HashMap<String, Vec<u8>>,
+    /// Each schedule as it was last opened or saved from text, for What Changed's "since
+    /// saved"; a new schedule has none.
+    saved: HashMap<u32, method_schedule_core::Schedule>,
+    /// The revision picked and previewed, waiting for its apply (the desktop keeps one too).
+    revision: Option<files::Revision>,
+    tokens: u64,
 }
 
 #[derive(Deserialize)]
@@ -195,7 +201,15 @@ impl Host {
             ))
         })?;
         let session = Session::with_schedule(schedule, name.map(std::path::PathBuf::from));
-        self.add_doc(session, None)
+        self.add_saved_doc(session)
+    }
+
+    /// Puts a schedule opened from text in front, remembering it as saved.
+    fn add_saved_doc(&mut self, session: Session) -> Result<Opened, Error> {
+        let copy = session.schedule().clone();
+        let opened = self.add_doc(session, None)?;
+        self.saved.insert(opened.doc, copy);
+        Ok(opened)
     }
 
     /// Puts `session` in front as a new schedule, with its view.
@@ -212,9 +226,12 @@ impl Host {
 
     /// The `.mtsc` text of schedule `doc` (the one in front when `None`). Nothing is
     /// written anywhere: keeping it is the host's.
-    pub fn save_mtsc(&self, doc: Option<u32>) -> Result<Saved, Error> {
+    pub fn save_mtsc(&mut self, doc: Option<u32>) -> Result<Saved, Error> {
         let state = self.doc(doc)?;
         let s = state.lock();
+        if let Some(id) = doc.or(self.front) {
+            self.saved.insert(id, s.schedule().clone());
+        }
         let name = format!("{}.mtsc", s.schedule().title.trim());
         Ok(Saved {
             name,
@@ -264,6 +281,7 @@ impl Host {
                 let a: DocArg = args(command, args_json)?;
                 let id = a.doc.or(self.front).unwrap_or(0);
                 self.docs.retain(|(d, _)| *d != id);
+                self.saved.remove(&id);
                 self.front = self.docs.last().map(|(d, _)| *d);
                 return reply(Ok(()));
             }

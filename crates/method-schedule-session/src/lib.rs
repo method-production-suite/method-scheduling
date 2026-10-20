@@ -16,6 +16,7 @@
 pub mod board;
 pub mod breakdown;
 pub mod calendar;
+pub mod changes;
 pub mod clipboard;
 pub mod clock;
 pub mod conflictmarks;

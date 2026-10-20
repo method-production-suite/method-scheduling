@@ -13,11 +13,13 @@ use serde_json::Value;
 use method_schedule_core::fountain;
 
 use super::{args, finish, reply, DocState, Error, Host, W};
+use crate::changes::compare;
 use crate::export::{budget_text, file_bytes, workbook, ExportOutcome, Format, Report};
 use crate::layouts::{layouts_file, load_layouts, LAYOUTS_EXTENSION};
-use crate::plan::{call_sheet_bytes, upper};
+use crate::plan::{call_sheet_bytes, revision_preview, upper, RevisionDto};
 use crate::session::{self, Session};
 use crate::{elements, split, templates};
+use method_schedule_core::revise::{revise, revision_text};
 
 /// The commands here, each taking a file (`file`) or giving files back (`downloads`).
 pub(super) const COMMANDS: &[&str] = &[
@@ -34,6 +36,9 @@ pub(super) const COMMANDS: &[&str] = &[
     "export_report",
     "export_budget",
     "export_call_sheet",
+    "revise_pick",
+    "revise_apply",
+    "what_changed",
     "add_element_image",
     "add_sheet_image",
     "element_image",
@@ -55,6 +60,8 @@ pub(super) const READS: &[&str] = &[
     "export_call_sheet",
     "element_image",
     "sheet_image",
+    "revise_pick",
+    "what_changed",
 ];
 
 /// A file the person picked, as a host hands it in where the desktop shows an Open
@@ -98,6 +105,15 @@ impl Downloads<ExportOutcome> {
     }
 }
 
+/// A revision picked and previewed by `revise_pick`, applied by `revise_apply` with its
+/// token: the script is read once, so the merge is the one the preview showed.
+pub(super) struct Revision {
+    token: u64,
+    doc: Option<u32>,
+    script: fountain::ImportedScript,
+    tags: bool,
+}
+
 /// A file in the most a schedule file may be (the desktop's `read_limited`).
 const MAX_FILE_BYTES: usize = 64 * 1024 * 1024;
 
@@ -106,6 +122,31 @@ struct FileArg {
     file: FileIn,
     #[serde(default)]
     lines_per_page: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct ReviseArgs {
+    file: FileIn,
+    #[serde(default)]
+    tags: bool,
+    #[serde(default)]
+    lines_per_page: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct TokenArg {
+    token: u64,
+    #[serde(default)]
+    doc: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct AgainstArgs {
+    against: String,
+    #[serde(default)]
+    file: Option<FileIn>,
+    #[serde(default)]
+    doc: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -263,7 +304,7 @@ impl Host {
                     let f = file_arg(command, a)?;
                     let schedule = session::parse_schedule(&f.file.bytes, Path::new(&f.file.name))?;
                     let s = Session::with_schedule(schedule, Some(f.file.name.clone().into()));
-                    open(self, s, None)
+                    reply(Ok(self.add_saved_doc(s)?))
                 }
                 "new_from_template" => {
                     let f = file_arg(command, a)?;
@@ -276,6 +317,10 @@ impl Host {
                     let s = state.lock();
                     let name = format!("{}.{}", stem(&s), session::EXTENSION);
                     let view = finish(&W, &s, None)?;
+                    let doc = args::<super::DocArg>(command, a)?.doc.or(self.front);
+                    if let Some(id) = doc {
+                        self.saved.insert(id, s.schedule().clone());
+                    }
                     reply(Ok(Downloads {
                         reply: view,
                         downloads: vec![FileOut {
@@ -300,12 +345,12 @@ impl Host {
                     let state = need()?;
                     let lines = f.lines_per_page.unwrap_or(fountain::LINES_PER_PAGE);
                     let mut s = state.lock();
-                    let notice = if command == "import_script" {
-                        let script =
-                            session::parse_script(f.file.bytes, Path::new(&f.file.name), lines)?;
-                        session::import_notice(s.import_script(&script)?)
+                    let tags = command == "import_script_tags";
+                    let script = script_of(&f.file, tags, lines)?;
+                    let notice = if tags {
+                        tagged(&mut s, &script)?
                     } else {
-                        tagged(&mut s, &f.file)?
+                        session::import_notice(s.import_script(&script)?)
                     };
                     reply(finish(&W, &s, Some(notice)))
                 }
@@ -376,6 +421,86 @@ impl Host {
                     let name = format!("{} - Call Sheet Day {}.{ext}", stem(&s), r.day);
                     reply(Ok(Downloads::one(name, bytes)))
                 }
+                "revise_pick" => {
+                    let r: ReviseArgs = args(command, a)?;
+                    if r.file.bytes.len() > MAX_FILE_BYTES {
+                        return Err(format!("{} is too large to open.", r.file.name).into());
+                    }
+                    let state = need()?;
+                    let lines = r.lines_per_page.unwrap_or(fountain::LINES_PER_PAGE);
+                    let script = script_of(&r.file, r.tags, lines)?;
+                    let (matched, changed, added, omitted, lines) =
+                        revision_preview(state.lock().schedule(), &script, r.tags)?;
+                    self.tokens += 1;
+                    let token = self.tokens;
+                    let doc = args::<super::DocArg>(command, a)?.doc.or(self.front);
+                    self.revision = Some(Revision {
+                        token,
+                        doc,
+                        script,
+                        tags: r.tags,
+                    });
+                    reply(Ok(RevisionDto {
+                        token,
+                        file: r.file.name,
+                        matched,
+                        changed,
+                        added,
+                        omitted,
+                        lines,
+                    }))
+                }
+                "revise_apply" => {
+                    let t: TokenArg = args(command, a)?;
+                    let doc = t.doc.or(self.front);
+                    let pending = self
+                        .revision
+                        .take()
+                        .filter(|x| x.token == t.token && x.doc == doc)
+                        .ok_or("That revision is no longer waiting; pick the script again.")?;
+                    let state = need()?;
+                    let mut s = state.lock();
+                    let first = s.edit(|x| {
+                        let cast = x.cast_or_add();
+                        let r = revise(x, &pending.script, cast, pending.tags).map_err(upper)?;
+                        Ok(revision_text(x, &r)
+                            .lines()
+                            .next()
+                            .unwrap_or_default()
+                            .to_string())
+                    })?;
+                    let notice = format!("Revision merged: {first} Undo takes it back.");
+                    reply(finish(&W, &s, Some(notice)))
+                }
+                "what_changed" => {
+                    let w: AgainstArgs = args(command, a)?;
+                    let state = need()?;
+                    let name = state.lock().display_name();
+                    let (older, from) = match w.against.as_str() {
+                        "file" => {
+                            let f = w.file.ok_or("Pick a schedule to compare with.")?;
+                            let older = session::parse_schedule(&f.bytes, Path::new(&f.name))?;
+                            (older, f.name)
+                        }
+                        "saved" => {
+                            let id = w.doc.or(self.front).unwrap_or(0);
+                            let older = self
+                                .saved
+                                .get(&id)
+                                .cloned()
+                                .ok_or("This schedule hasn't been saved to a file yet.")?;
+                            (older, format!("{name} as last saved"))
+                        }
+                        _ => return Err("Unknown comparison.".into()),
+                    };
+                    let newer = state.lock().schedule().clone();
+                    reply(Ok(compare(
+                        &older,
+                        &newer,
+                        from,
+                        format!("{name} as it is now"),
+                    )))
+                }
                 "add_element_image" | "add_sheet_image" => {
                     let i: ImageArgs = args(command, a)?;
                     let state = need()?;
@@ -406,23 +531,32 @@ impl Host {
     }
 }
 
-/// Imports a Final Draft script with its production tags (decisions.md, IMP-04), as the
-/// desktop's Import Script with Tags; the notice it shows.
-fn tagged(s: &mut Session, file: &FileIn) -> Result<String, Error> {
+/// A picked script, with tags (`.fdx` only) or without; a Fountain one at `lines` a page.
+fn script_of(file: &FileIn, tags: bool, lines: u32) -> Result<fountain::ImportedScript, Error> {
+    if !tags {
+        return Ok(session::parse_script(
+            file.bytes.clone(),
+            Path::new(&file.name),
+            lines,
+        )?);
+    }
     let fdx_file = Path::new(&file.name)
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
     if !fdx_file {
-        return Err("Production tags come only from Final Draft (.fdx) files."
-            .to_string()
-            .into());
+        return Err("Production tags come only from Final Draft (.fdx) files.".into());
     }
     let text = text(file, "a script")?;
-    let script = method_schedule_core::fdx::parse_with_tags(&text).map_err(upper)?;
+    Ok(method_schedule_core::fdx::parse_with_tags(&text).map_err(upper)?)
+}
+
+/// Imports a script read with its production tags (decisions.md, IMP-04), as the
+/// desktop's Import Script with Tags; the notice it shows.
+fn tagged(s: &mut Session, script: &fountain::ImportedScript) -> Result<String, Error> {
     let tags: usize = script.scenes.iter().map(|s| s.tags.len()).sum();
     let added = s.edit(|x| {
         let cast = x.cast_or_add();
-        method_schedule_core::revise::import_tagged(x, &script, cast)
+        method_schedule_core::revise::import_tagged(x, script, cast)
             .map(|v| v.len())
             .map_err(upper)
     })?;
@@ -622,5 +756,86 @@ mod tests {
             &json!({ "element": element, "file": file("b.png", PNG) }),
         );
         assert_eq!(refused.unwrap_err().message(), super::super::READ_ONLY);
+    }
+
+    #[test]
+    fn a_revision_previews_then_merges_with_its_token() {
+        let mut h = Host::new();
+        h.dispatch("new_schedule", &Value::Null).unwrap();
+        let first =
+            b"INT. RANGER STATION - DAY\n\nA radio crackles.\n\nEXT. RIDGE - NIGHT\n\nWind.\n";
+        h.dispatch(
+            "import_script",
+            &json!({ "file": file("v1.fountain", first) }),
+        )
+        .unwrap();
+        let second = b"INT. RANGER STATION - DAY\n\nA radio crackles.\n\nEXT. RIDGE - NIGHT\n\nWind.\n\nINT. TRUCK - NIGHT\n\nHeadlights.\n";
+        let p = h
+            .dispatch(
+                "revise_pick",
+                &json!({ "file": file("v2.fountain", second) }),
+            )
+            .unwrap();
+        assert_eq!(p["added"], 1, "{p}");
+        assert_eq!(p["file"], "v2.fountain");
+        let token = p["token"].as_u64().unwrap();
+        assert!(h
+            .dispatch("revise_apply", &json!({ "token": token + 1 }))
+            .is_err());
+        // A wrong token drops the waiting revision, as the desktop's does: pick again.
+        let p = h
+            .dispatch(
+                "revise_pick",
+                &json!({ "file": file("v2.fountain", second) }),
+            )
+            .unwrap();
+        let v = h
+            .dispatch("revise_apply", &json!({ "token": p["token"] }))
+            .unwrap();
+        assert!(v["notice"]
+            .as_str()
+            .unwrap()
+            .starts_with("Revision merged:"));
+        assert!(h
+            .dispatch("revise_apply", &json!({ "token": p["token"] }))
+            .is_err());
+    }
+
+    #[test]
+    fn what_changed_compares_with_a_file_or_the_last_save() {
+        let mut h = Host::new();
+        let text =
+            method_schedule_format::to_string(&method_schedule_core::sample::field_station());
+        let board = h.open_mtsc(&text, Some("fs.mtsc")).unwrap().view.board.id;
+        let none = h
+            .dispatch("what_changed", &json!({ "against": "saved" }))
+            .unwrap();
+        assert_eq!(none["count"], 0);
+        h.dispatch(
+            "rename_board",
+            &json!({ "board": board, "name": "Second unit" }),
+        )
+        .unwrap();
+        let one = h
+            .dispatch("what_changed", &json!({ "against": "saved" }))
+            .unwrap();
+        assert!(one["count"].as_u64().unwrap() >= 1, "{one}");
+        assert_eq!(one["from"], "fs.mtsc as last saved");
+        let vs = h
+            .dispatch(
+                "what_changed",
+                &json!({ "against": "file", "file": file("old.mtsc", text.as_bytes()) }),
+            )
+            .unwrap();
+        assert_eq!(vs["count"], one["count"]);
+        h.dispatch("save_mtsc", &json!({})).unwrap();
+        let after = h
+            .dispatch("what_changed", &json!({ "against": "saved" }))
+            .unwrap();
+        assert_eq!(after["count"], 0, "saving moves the mark");
+        h.dispatch("new_schedule", &Value::Null).unwrap();
+        assert!(h
+            .dispatch("what_changed", &json!({ "against": "saved" }))
+            .is_err());
     }
 }
