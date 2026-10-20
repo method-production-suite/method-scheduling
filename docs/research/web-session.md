@@ -2,7 +2,7 @@
 
 Status: **phase 1 begun** (written 2026-10-16, brought up to date 2026-10-18 when the
 owner asked for it to be built, decision 222; the session crate, its clock and
-`cargo xtask wasm-check` are in, and the core of the session has moved: see ROADMAP.md, M2b). Written because a partner asked whether
+`cargo xtask wasm-check` are in, every window-free module has moved, and `Host::dispatch` runs 123 desktop commands, generated from their own bodies by `scripts/host-dispatch.py`: see ROADMAP.md, M2b). Written because a partner asked whether
 Method Schedule can run in their web app. It follows the way Method Budget did it
 (`../method-budget/docs/research/web-session.md`, decisions 70 to 73 there, all built on
 2026-10-12), so the two apps offer a partner the same shape. Read that note first: this one

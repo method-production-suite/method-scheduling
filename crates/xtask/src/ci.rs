@@ -35,6 +35,10 @@ pub fn steps(cargo: &str) -> Vec<(&'static str, Vec<String>)> {
         ),
         ("site", v(&["python3", "scripts/site.py", "--check"])),
         ("brand", v(&["python3", "scripts/make-brand.py", "--check"])),
+        (
+            "host dispatch",
+            v(&["python3", "scripts/host-dispatch.py", "--check"]),
+        ),
     ]
 }
 
@@ -68,7 +72,15 @@ mod tests {
         let names: Vec<_> = steps("cargo").into_iter().map(|(w, _)| w).collect();
         assert_eq!(
             names,
-            ["format", "clippy", "tests", "page tests", "site", "brand"]
+            [
+                "format",
+                "clippy",
+                "tests",
+                "page tests",
+                "site",
+                "brand",
+                "host dispatch"
+            ]
         );
         let all: Vec<String> = steps("cargo").into_iter().flat_map(|(_, a)| a).collect();
         assert!(all.iter().any(|a| a == "--all-targets"));
