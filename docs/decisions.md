@@ -5505,8 +5505,9 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 
 ## 227. `extensions`: one reserved place for other apps' keys (2026-10-20)
 
-- **Built on the recommendation** (D224's open question; ROADMAP.md, Waiting on the owner),
-  reversible until a release ships it: after that, files other apps wrote may hold it.
+- **Built on the recommendation** (D224's open question), then **approved by the owner** on
+  2026-10-20 with the go-ahead for 0.4.0, which ships it: from then on, files other apps
+  wrote may hold it.
 - **The reader stays strict.** An `extensions` object, kept and written back untouched,
   may sit at the top level, on the schedule and on each category, red flag type, element,
   sheet, board and sub-board (FORMAT.md, Extensions). Empty, `null` or not an object is
