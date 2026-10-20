@@ -225,7 +225,6 @@ kept or offered as a pick, in tests and in a live run.
 
 | Item | Size | Refs |
 |---|---|---|
-| What was shot, in the reports: shot against planned by day and by scene in the one-line and the reports list, pages left by sub-board (the board is in, 2026-10-20: strips marked part shot or finished and dimmed, pages left on each day break, the strip menu's Shot… records a scene on its planned day) | S | D224, FORMAT.md |
 | Call sheets beyond the printed sheet (decision 207): crew calls, an advance schedule for the next days, a map; distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east and New Zealand's (others keep a typed offset today) | S | D72, D193, D220, BYD-08 |
 | Per-person call times, feeding the rest checks | M | D71, D73, BYD-09 |

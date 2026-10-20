@@ -29,7 +29,7 @@ pub(crate) const OMITTED: &str = "omitted_scene";
 
 pub use more::{
     board, breakdown, breakdown_day, daily_totals, dood_grid, dood_grid_of, element_detail,
-    red_flags,
+    red_flags, shot_against_planned,
 };
 pub use tables::{
     dood_summary, element_list, one_line, one_line_options, one_line_with, OneLineColumns, BREAKS,

@@ -19,6 +19,7 @@ const REPORTS = [
   ['board', 'Board', 'Every strip of the board: each sub-board with its day breaks, then the Boneyard.'],
   ['totals', 'Daily category totals', 'A row per shoot day with how many of each category it uses, then the totals.'],
   ['red_flags', 'Red flags', 'Every red flag in the schedule: its first and last dates, element, type, firmness and note.'],
+  ['shot', 'Shot against planned', 'A row per shoot day with pages planned, shot and still to shoot, then a sheet with a row per scene.'],
 ];
 
 const FORMATS = [
