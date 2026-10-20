@@ -39,11 +39,11 @@ section. Everything else on this page goes ahead without waiting.
 - **Merge in the browser host** (D226), built on the recommendation: the browser host offers
   Revise and What Changed but not Merge, which needs a common version from backups a browser
   doesn't keep. Reverse it and the host takes the base schedule as a third file.
-- **Unknown keys in a schedule file** (D224, D227), built on the recommendation: the
-  reader stays strict, and one reserved `extensions` object (at the top level and on the
-  schedule, categories, red flag types, elements, sheets, boards and sub-boards) is kept
-  and written back untouched. Additive: every existing file writes back byte for byte.
-  Reversible until the next release ships it; reverse it and the key is refused again.
+- **Unknown keys in a schedule file** (D224, D227): **approved by the owner** (2026-10-20,
+  with the v0.4.0 go-ahead). The reader stays strict, and one reserved `extensions` object
+  (at the top level and on the schedule, categories, red flag types, elements, sheets,
+  boards and sub-boards) is kept and written back untouched. Additive: every existing file
+  writes back byte for byte. Ships in 0.4.0.
 - **The browser build** (D222): **decided by the owner** (2026-10-18), all five as
   recommended. The partner hosts the whole page; Method Budget's partner terms apply; a
   read-only viewer keeps views, Find, printing, the call sheet and exports, with edits
