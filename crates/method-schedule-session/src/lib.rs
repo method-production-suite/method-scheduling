@@ -26,6 +26,7 @@ pub mod explain;
 pub mod find;
 pub mod flagcolors;
 pub mod layouts;
+pub mod plan;
 pub mod redflags;
 pub mod reports;
 pub mod reportsetup;
