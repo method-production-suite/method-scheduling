@@ -49,8 +49,20 @@ mod tests {
     fn only_the_clock_reads_the_time() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut found = Vec::new();
-        for entry in std::fs::read_dir(&dir).unwrap() {
-            let path = entry.unwrap().path();
+        // Every .rs file under src/, subfolders (the host's) included.
+        let mut files = Vec::new();
+        let mut dirs = vec![dir];
+        while let Some(d) = dirs.pop() {
+            for entry in std::fs::read_dir(&d).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if path.extension().is_some_and(|e| e == "rs") {
+                    files.push(path);
+                }
+            }
+        }
+        for path in files {
             if path
                 .file_name()
                 .is_some_and(|n| n == "clock.rs" || n == "lib.rs")
