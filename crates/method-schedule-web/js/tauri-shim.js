@@ -145,6 +145,10 @@
   async function invoke(cmd, args) {
     host = await ready;
     if (Object.prototype.hasOwnProperty.call(QUIET, cmd)) return QUIET[cmd];
+    if (cmd === 'open_link' && args.which === 'suite') {
+      window.open('https://methodproduction.com', '_blank', 'noopener');
+      return null;
+    }
     const pick = cmd === 'what_changed' && args.against === 'file' ? { accept: SCHEDULE } : PICKS[cmd];
     if (pick && args.file === undefined) {
       const files = await pickFiles(pick);

@@ -39,9 +39,9 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 use crate::safety::{create_private_dir, write_atomically, Access};
 
 /// Help > Check for Updates…, answered here.
-pub const CHECK_ITEM: &str = "help.check_updates";
+pub const CHECK_ITEM: &str = method_schedule_session::menu::UPDATE_CHECK;
 /// Help > Check for Updates Automatically (a check item), answered here.
-pub const AUTO_ITEM: &str = "help.auto_updates";
+pub const AUTO_ITEM: &str = method_schedule_session::menu::UPDATE_AUTO;
 /// The event every window hears; the payload is a [`Status`].
 pub const STATUS_EVENT: &str = "update-status";
 

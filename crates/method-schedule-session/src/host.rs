@@ -40,6 +40,7 @@ const OWN: &[&str] = &[
     "close_doc",
     "list_docs",
     "host_info",
+    "menu_table",
 ];
 
 /// Every command [`Host::dispatch`] runs: the desktop's that need only the schedule, then
@@ -124,6 +125,18 @@ pub struct HostInfo {
     pub version: &'static str,
     pub commands_version: u32,
     pub read_only: bool,
+}
+
+impl HostInfo {
+    /// `kind` (`"web"` or `"desktop"`) at this version of the contract.
+    pub fn new(kind: &'static str, read_only: bool) -> HostInfo {
+        HostInfo {
+            kind,
+            version: env!("CARGO_PKG_VERSION"),
+            commands_version: COMMANDS_VERSION,
+            read_only,
+        }
+    }
 }
 
 /// The reply to `open_mtsc`: the new schedule's id and its view.
@@ -251,12 +264,7 @@ impl Host {
     }
 
     pub fn host_info(&self) -> HostInfo {
-        HostInfo {
-            kind: "web",
-            version: env!("CARGO_PKG_VERSION"),
-            commands_version: COMMANDS_VERSION,
-            read_only: self.read_only,
-        }
+        HostInfo::new("web", self.read_only)
     }
 
     fn doc(&self, doc: Option<u32>) -> Result<DocState, Error> {
@@ -274,6 +282,7 @@ impl Host {
     pub fn dispatch(&mut self, command: &str, args_json: &Value) -> Result<Value, Error> {
         match command {
             "host_info" => return reply(Ok(self.host_info())),
+            "menu_table" => return reply(Ok(crate::menu::web_menus())),
             "open_mtsc" => {
                 let a: OpenArgs = args(command, args_json)?;
                 return reply(Ok(self.open_mtsc(&a.text, a.name.as_deref())?));

@@ -36,6 +36,7 @@ import { planCommands } from './plan.js';
 import { stripColorsDialog, combosOf } from './colors.js';
 import { printBoard } from './boardprint.js';
 import { openMenu, isMenuOpen } from './ctxmenu.js';
+import { loadHost, isWeb } from './host.js';
 import { bannerPlace, breakdownImagesToggle, deleteQuestion, doodSortAfter, foundOn, sheetBack, splitToggle, stripMenu, themeAttr } from './logic.js';
 
 const state = {
@@ -2068,8 +2069,9 @@ function onKey(e) {
   const sc = matchShortcut(e);
   if (!sc) return;
   if (sc.scope === 'app') {
-    // macOS: the menu item's key equivalent runs it (src/menu.rs).
-    if (menuRunsAppKeys) return;
+    // macOS: the menu item's key equivalent runs it (src/menu.rs); a browser has no such
+    // menu, so the page runs it.
+    if (menuRunsAppKeys && !isWeb()) return;
     // Typing keeps its own Undo and Redo; the Board menu's keys wait for the board. Find's
     // keys work from a field too.
     if (isTextField(e.target) && !FIELD_KEYS.has(sc.id) && (sc.id.startsWith('edit.') || sc.id.startsWith('board.'))) return;
@@ -2140,12 +2142,44 @@ listen('clipboard-changed', (clip) => {
 // The pane beside the board the viewer chose last time (split.js remembers it).
 split.place(state.tab);
 
+/**
+ * In a browser: the menus as buttons at the start of the top bar, each opening the
+ * page's own menu (ctxmenu.js) with the host's table, and no Autosave switch.
+ */
+async function webMode() {
+  $('autosave').closest('label').hidden = true;
+  const menus = await invoke('menu_table');
+  const bar = el('div', { class: 'group menubar', attrs: { role: 'menubar', 'aria-label': 'Menus' } });
+  for (const m of menus) {
+    const b = el('button', { class: 'btn', text: m.title, attrs: { type: 'button', role: 'menuitem', 'aria-haspopup': 'menu' } });
+    b.addEventListener('click', () => {
+      const r = b.getBoundingClientRect();
+      const items = m.items.map((i) => {
+        if (!i) return 'sep';
+        const k = keysFor(shortcutById(i.id));
+        return { label: i.label, key: k.length ? keyText(k[0]) : '', run: () => onMenu(i.id) };
+      });
+      openMenu(r.left, r.bottom, items, { label: m.title, back: b });
+    });
+    bar.append(b);
+  }
+  const top = document.querySelector('.topbar');
+  top.prepend(el('span', { class: 'sep', attrs: { 'aria-hidden': 'true' } }));
+  top.prepend(bar);
+}
+
 if (connected) {
-  // The first view, then a file the system asked to open and schedules to recover.
-  loadPrefs().then(() => apply(invoke('get_view'))).then(() => {
-    safety.start();
-    updates.start();
-  });
+  // The host, the first view, then a file the system asked to open and schedules to
+  // recover (the desktop's).
+  loadHost(invoke)
+    .then(() => (isWeb() ? webMode().catch((e) => say(e, true)) : null))
+    .then(() => loadPrefs())
+    .then(() => apply(invoke('get_view')))
+    .then(() => {
+      if (isWeb()) return;
+      safety.start();
+      updates.start();
+    });
 } else {
   say('This page is not connected to the app. Run it with cargo run -p method-schedule-app.', true);
 }
