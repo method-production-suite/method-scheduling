@@ -34,8 +34,9 @@ const RECORDED = {
   update_whats_new: () => null,
 };
 // Not about the schedule: the stand-in answers these.
-// Found with `discover`: the display preferences (the stand-in's are the defaults).
-const INCIDENTAL = new Set(['preferences']);
+// Found with `discover`: the display preferences (the stand-in's are the defaults) and
+// the host, the desktop app.
+const INCIDENTAL = new Set(['preferences', 'host_info']);
 
 const stand = window.__TAURI__.core.invoke;
 window.__TAURI__.core.invoke = async (cmd, args) => {

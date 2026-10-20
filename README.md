@@ -203,10 +203,11 @@ docs/features.toml.
 - **Day timeline.** Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.
 - **Sunrise and sunset.** Give each location its coordinates and see sunrise and sunset for every dated shoot day, with the US and Canada or EU daylight saving dates.
 - **Rest checks.** Set a turnaround per category and get a warning wherever a rest between wrap and the next call is too short.
-- **Schedule locks and drift.** Lock the schedule as sent, then see each actor's work days added, dropped and moved since.
+- **Schedule locks and drift.** Lock the schedule as sent, then see each actor's work days added, dropped and moved since, on screen or as a spreadsheet.
 - **Strip order suggestion.** A suggested order that groups by location, set and cast around your pinned strips and red flags, with the before and after counts to compare.
 - **Call sheet data.** A shoot day's call sheet data as JSON or CSV, ready for whatever lays out your call sheets.
 - **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set, other elements and notes.
+- **What was shot.** Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan.
 
 ### On the roadmap
 
