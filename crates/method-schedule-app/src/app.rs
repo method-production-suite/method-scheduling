@@ -504,24 +504,7 @@ fn settle_window<R: Runtime>(window: &WebviewWindow<R>, state: &AppState) -> Opt
     }
 }
 
-/// A file name stem from a schedule title: path separators and other characters file
-/// systems reject become spaces.
-pub(crate) fn safe_file_stem(title: &str) -> String {
-    let cleaned: String = title
-        .chars()
-        .map(|c| match c {
-            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => ' ',
-            c if c.is_control() => ' ',
-            c => c,
-        })
-        .collect();
-    let trimmed = cleaned.trim().trim_matches('.').trim();
-    if trimmed.is_empty() {
-        session::UNTITLED.into()
-    } else {
-        trimmed.to_string()
-    }
-}
+pub(crate) use method_schedule_session::export::safe_file_stem;
 
 // ---------------------------------------------------------------------------
 // History

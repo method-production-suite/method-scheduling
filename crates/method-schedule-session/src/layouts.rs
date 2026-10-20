@@ -155,6 +155,9 @@ pub fn pick_one_line(s: &mut Schedule, layout: Option<u32>) -> EditResult {
     s.use_one_line_layout(id).map_err(say)
 }
 
+/// A layout file's extension.
+pub const LAYOUTS_EXTENSION: &str = "mtlayouts";
+
 /// The text of a layout file holding `layouts` (all when empty), and how many.
 pub fn layouts_file(s: &Schedule, layouts: &[u32]) -> EditResult<(String, usize)> {
     let picked: Vec<_> = if layouts.is_empty() {

@@ -546,6 +546,19 @@ pub fn parse_script(
     }
 }
 
+/// What the window says when the sample opens (Help > Open Sample, the first launch,
+/// `--open-sample`).
+pub const SAMPLE_NOTICE: &str = "The Field Station sample: an invented production, untitled until you save it. Help > Open Sample brings it back any time.";
+
+/// The sample, Field Station (the suite's shared invented feature, decision 223), as a new
+/// session: untitled, marked "(sample)" in its title, with nothing unsaved, so the first
+/// Save asks where and nothing built into the app is ever written.
+pub fn sample_session() -> Result<Session, String> {
+    let mut schedule = method_schedule_core::sample::field_station();
+    schedule.title = "Field Station (sample)".to_string();
+    Ok(Session::with_schedule(schedule, None))
+}
+
 /// The name a path shows in messages: its last part.
 pub fn file_name(p: &Path) -> String {
     p.file_name()

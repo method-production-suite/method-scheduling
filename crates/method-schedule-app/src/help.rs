@@ -17,7 +17,6 @@ use tauri::{Manager, Runtime, WebviewWindow};
 use crate::app::{finish, settle_unsaved, CmdResult};
 use crate::docs::Doc;
 use crate::safety_app::{self, Safety};
-use crate::session::Session;
 use crate::view::View;
 
 /// The sample schedule's file text.
@@ -44,18 +43,7 @@ pub const SUITE: &str = "https://methodproduction.com";
 pub const NEW_ISSUE: &str =
     "https://github.com/method-production-suite/method-scheduling/issues/new";
 
-/// What the window says when the sample opens (Help > Open Sample, the first launch,
-/// `--open-sample`).
-pub const SAMPLE_NOTICE: &str = "The Field Station sample: an invented production, untitled until you save it. Help > Open Sample brings it back any time.";
-
-/// The sample, Field Station (the suite's shared invented feature, decision 223), as a new
-/// session: untitled, marked "(sample)" in its title, with nothing unsaved, so the first
-/// Save asks where and nothing built into the app is ever written.
-pub fn sample_session() -> Result<Session, String> {
-    let mut schedule = method_schedule_core::sample::field_station();
-    schedule.title = "Field Station (sample)".to_string();
-    Ok(Session::with_schedule(schedule, None))
-}
+pub use method_schedule_session::session::{sample_session, SAMPLE_NOTICE};
 
 /// Help > Open Sample: the unsaved-changes question when anything is unsaved, as New
 /// asks, then the sample in place of the open schedule. `None` when cancelled.
