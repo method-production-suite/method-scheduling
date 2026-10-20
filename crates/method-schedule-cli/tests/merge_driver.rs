@@ -166,3 +166,56 @@ fn merge_driver_under_git() {
     assert_eq!(settled.sheets[0].set, "NET SHED");
     settled.check().unwrap();
 }
+
+/// `method-schedule git-setup` in a repository, then with `--global` (git's global config
+/// and attributes file kept inside the test's folder): the driver in the config, the line in
+/// the attributes file once, and a second run that adds nothing.
+#[test]
+fn git_setup_sets_the_driver_up_once() {
+    let d = Dir::new("setup");
+    let repo = d.0.join("repo");
+    std::fs::create_dir_all(&repo).unwrap();
+    ok(git(&repo, &["init", "-q"]));
+    let global = d.0.join("global.gitconfig");
+    std::fs::write(&global, "").unwrap();
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_method-schedule"))
+            .arg("git-setup")
+            .args(args)
+            .current_dir(&repo)
+            .env("GIT_CONFIG_GLOBAL", &global)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("HOME", &d.0)
+            .env("XDG_CONFIG_HOME", d.0.join("xdg"))
+            .output()
+            .expect("method-schedule runs")
+    };
+    let first = run(&[]);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert!(String::from_utf8_lossy(&first.stdout).contains("now sends .mtsc files"));
+    let attrs = std::fs::read_to_string(repo.join(".gitattributes")).unwrap();
+    assert_eq!(attrs, "*.mtsc merge=method-schedule\n");
+    let cfg = std::fs::read_to_string(repo.join(".git/config")).unwrap();
+    assert!(
+        cfg.contains("method-schedule merge-driver %O %A %B %P"),
+        "{cfg}"
+    );
+    let again = run(&[]);
+    assert!(String::from_utf8_lossy(&again.stdout).contains("already sent"));
+    assert_eq!(
+        std::fs::read_to_string(repo.join(".gitattributes")).unwrap(),
+        attrs
+    );
+    // --global: git's global config and its default attributes file.
+    let g = run(&["--global", "--theirs"]);
+    assert!(g.status.success(), "{}", String::from_utf8_lossy(&g.stderr));
+    let gcfg = std::fs::read_to_string(&global).unwrap();
+    assert!(gcfg.contains("%P --theirs"), "{gcfg}");
+    let gattrs = std::fs::read_to_string(d.0.join("xdg/git/attributes")).unwrap();
+    assert!(gattrs.contains("*.mtsc merge=method-schedule"));
+    assert!(!run(&["--nope"]).status.success());
+}

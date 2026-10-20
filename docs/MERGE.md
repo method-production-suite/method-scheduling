@@ -230,6 +230,11 @@ method-schedule explain FILE ELEMENT [--category CAT]
 
 ## With git
 
+`method-schedule git-setup` does what follows in the repository it is run in (add
+`--global` for every repository, which writes git's own attributes file,
+`core.attributesfile` or its default; add `--theirs` to settle conflicts for theirs). It
+adds the attribute line once and says whether it was there already. By hand:
+
 Tell git which files use the driver, in the repository's `.gitattributes`:
 
 ```
@@ -239,7 +244,7 @@ Tell git which files use the driver, in the repository's `.gitattributes`:
 and what the driver is, once per repository (or with `--global`):
 
 ```
-git config merge.method-schedule.name "Schedule merge"
+git config merge.method-schedule.name "Method Schedule merge"
 git config merge.method-schedule.driver "method-schedule merge-driver %O %A %B %P"
 ```
 
