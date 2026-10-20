@@ -127,7 +127,7 @@ The Reports tab previews exactly the pages that print. Pick a report, set its da
 header and options, then **Print** or **Save as PDF**. Copy a report to keep two versions
 of it with different options. Production Info sets what the full header prints.
 
-**File > Export** writes a report as an Excel workbook or a CSV: the day out of days, the
+**File > Export** writes a report as a spreadsheet (.xlsx) or a CSV: the day out of days, the
 one-line schedule, the element list, the breakdowns and more. Totals in a workbook are
 working formulas.
 
