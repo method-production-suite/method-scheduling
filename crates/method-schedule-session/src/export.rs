@@ -97,7 +97,7 @@ impl Format {
     /// The Save dialog's title and filter name.
     pub fn dialog_text(self) -> (&'static str, &'static str) {
         match self {
-            Format::Xlsx => ("Export Excel workbook", "Excel workbook"),
+            Format::Xlsx => ("Export spreadsheet", "Spreadsheet (.xlsx)"),
             Format::Csv => ("Export CSV file", "CSV file"),
         }
     }

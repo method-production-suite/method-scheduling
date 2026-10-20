@@ -193,7 +193,7 @@ pub fn tools() -> Vec<Tool> {
                           (or name), banners with their minutes, and the day's pages and \
                           minutes. With `columns`, also the one-line export's first sheet as \
                           `table`: `layout` follows the report's strip layout as the \
-                          reference app's Excel does, `fixed` has the stable day to text \
+                          reference app's spreadsheet export does, `fixed` has the stable day to text \
                           columns.",
             mutating: false,
             destructive: false,

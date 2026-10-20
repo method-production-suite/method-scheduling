@@ -23,7 +23,7 @@ const REPORTS = [
 ];
 
 const FORMATS = [
-  ['xlsx', 'Excel workbook (.xlsx)'],
+  ['xlsx', 'Spreadsheet (.xlsx)'],
   ['csv', 'CSV (.csv)'],
 ];
 
