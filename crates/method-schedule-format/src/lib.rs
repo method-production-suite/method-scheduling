@@ -17,6 +17,7 @@ mod strict_tests;
 
 use serde::{Deserialize, Serialize};
 
+use method_schedule_core::extensions::Extensions;
 use method_schedule_core::layouts::{
     LayoutBody, LayoutId, LayoutKind, LayoutUse, Library, SavedLayout,
 };
@@ -93,6 +94,7 @@ fn write(s: &Schedule, template: bool) -> String {
         version: VERSION,
         template: template.then_some(true),
         schedule: out_schedule(s),
+        extensions: ext_out(s.extensions.file.as_deref()),
     };
     let mut text = serde_json::to_string_pretty(&file).expect("schedules always serialize");
     text.push('\n');
@@ -116,13 +118,22 @@ pub fn from_str(text: &str) -> Result<Schedule, FormatError> {
     if file.template == Some(false) {
         return Err(default_given("template", "false"));
     }
-    let s = in_schedule(file.schedule)?;
+    let mut file = file;
+    let extensions = take_extensions(&mut file)?;
+    let mut s = in_schedule(file.schedule)?;
+    s.extensions = extensions;
     s.check().map_err(|e| FormatError::Invalid(e.to_string()))?;
     // Every key the writer leaves out at its default, written out at it (or as null), is
     // refused: the file would not write back byte for byte (FORMAT.md, "Defaults").
     let written = serde_json::to_value(out_schedule(&s)).map_err(FormatError::Json)?;
     if let Some(given) = given.get("schedule") {
         as_written("schedule", given, &written)?;
+    }
+    if given
+        .get("extensions")
+        .is_some_and(serde_json::Value::is_null)
+    {
+        return Err(default_given("extensions", "null"));
     }
     if file.template == Some(true) {
         if let Some(why) = s.template_problem() {
@@ -288,6 +299,61 @@ fn is_zero(n: &u32) -> bool {
     *n == 0
 }
 
+/// An `extensions` object (decision 224): any JSON object but an empty one.
+type Extension = serde_json::Map<String, serde_json::Value>;
+
+/// The `extensions` object kept as `text` (the core's Extensions holds each as compact
+/// JSON, always an object: [`take_extensions`] made it).
+fn ext_out(text: Option<&str>) -> Option<Extension> {
+    text.and_then(|t| serde_json::from_str(t).ok())
+}
+
+/// One `extensions` object as kept: refused when empty (the writer leaves it out).
+fn ext_in(e: Option<Extension>) -> Result<Option<String>, FormatError> {
+    match e {
+        None => Ok(None),
+        Some(m) if m.is_empty() => Err(default_given("extensions", "{}")),
+        Some(m) => serde_json::to_string(&m)
+            .map(Some)
+            .map_err(FormatError::Json),
+    }
+}
+
+/// Takes every `extensions` object out of the file, by the object it was on.
+fn take_extensions(f: &mut FileTop) -> Result<Extensions, FormatError> {
+    let mut x = Extensions {
+        file: ext_in(f.extensions.take())?,
+        schedule: ext_in(f.schedule.extensions.take())?,
+        objects: Default::default(),
+    };
+    let mut keep = |id: u32, e: &mut Option<Extension>| -> Result<(), FormatError> {
+        if let Some(text) = ext_in(e.take())? {
+            x.objects.insert(id, text);
+        }
+        Ok(())
+    };
+    let s = &mut f.schedule;
+    for c in &mut s.categories {
+        keep(c.id, &mut c.extensions)?;
+    }
+    for t in &mut s.red_flag_types {
+        keep(t.id, &mut t.extensions)?;
+    }
+    for e in &mut s.elements {
+        keep(e.id, &mut e.extensions)?;
+    }
+    for h in &mut s.sheets {
+        keep(h.id, &mut h.extensions)?;
+    }
+    for b in &mut s.boards {
+        keep(b.id, &mut b.extensions)?;
+        for sb in &mut b.sub_boards {
+            keep(sb.id, &mut sb.extensions)?;
+        }
+    }
+    Ok(x)
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FileTop {
@@ -297,6 +363,9 @@ struct FileTop {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     template: Option<bool>,
     schedule: FileSchedule,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -351,6 +420,9 @@ struct FileSchedule {
     dood_codes: Option<setup::FileDoodCodes>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     plan: Option<plan::FilePlan>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -465,6 +537,9 @@ struct FileCategory {
     /// The properties whose values take several lines, by name (decision 119).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     multi_line: Vec<String>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -496,6 +571,9 @@ struct FileElement {
     /// Image paths, relative to the schedule file's folder or absolute.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     images: Vec<String>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -535,6 +613,9 @@ struct FileRedFlagType {
     /// for the schedule's own types (decision 113).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     builtin: Option<String>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 /// A red flag: `from` and `to` together, or `not_before`, or `not_after`.
@@ -611,6 +692,9 @@ struct FileSheet {
     /// Image paths, relative to the schedule file's folder or absolute.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     images: Vec<String>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -639,6 +723,9 @@ struct FileBoard {
     sub_boards: Vec<FileSubBoard>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     boneyard: Vec<FileStrip>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1087,6 +1174,9 @@ struct FileSubBoard {
     calendar: Option<FileCalendar>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     strips: Vec<FileStrip>,
+    /// Additions from other apps, kept and written back untouched (decision 224).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    extensions: Option<Extension>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1353,6 +1443,7 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
                 daily_quantity: c.daily_quantity,
                 properties: c.properties.clone(),
                 multi_line: c.multi_line.clone(),
+                extensions: ext_out(s.extensions.of(c.id.0)),
             })
             .collect(),
         red_flag_types: s
@@ -1363,6 +1454,7 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
                 name: t.name.clone(),
                 color: t.color.map(Rgb::hex),
                 builtin: t.builtin.as_ref().map(|k| k.key().to_string()),
+                extensions: ext_out(s.extensions.of(t.id.0)),
             })
             .collect(),
         elements: s
@@ -1391,6 +1483,7 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
                     })
                     .collect(),
                 images: e.images.clone(),
+                extensions: ext_out(s.extensions.of(e.id.0)),
             })
             .collect(),
         sheets: s
@@ -1427,6 +1520,7 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
                     })
                     .collect(),
                 images: h.images.clone(),
+                extensions: ext_out(s.extensions.of(h.id.0)),
             })
             .collect(),
         boards: s
@@ -1452,9 +1546,11 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
                             start: sb.start.map(|d| d.to_string()),
                             calendar: out_calendar(&sb.calendar),
                             strips: sb.strips.iter().map(out_strip).collect(),
+                            extensions: ext_out(s.extensions.of(sb.id.0)),
                         })
                         .collect(),
                     boneyard: b.boneyard.iter().map(out_strip).collect(),
+                    extensions: ext_out(s.extensions.of(b.id.0)),
                 }
             })
             .collect(),
@@ -1462,6 +1558,7 @@ fn out_schedule(s: &Schedule) -> FileSchedule {
         header_layouts: s.header_layouts.iter().map(setup::out_header).collect(),
         dood_codes: setup::out_codes(&s.dood_codes),
         plan: plan::out_plan(&s.plan),
+        extensions: ext_out(s.extensions.schedule.as_deref()),
     }
 }
 
@@ -1931,6 +2028,7 @@ fn in_schedule(f: FileSchedule) -> Result<Schedule, FormatError> {
         calendar_fields,
         calendar_hidden,
         next_id: f.next_id,
+        extensions: Extensions::default(),
     })
 }
 

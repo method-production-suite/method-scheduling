@@ -10,6 +10,7 @@ pub mod dood;
 pub mod drift;
 pub mod eighths;
 pub mod explain;
+pub mod extensions;
 pub mod fdx;
 pub mod find;
 pub mod fountain;

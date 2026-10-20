@@ -36,13 +36,11 @@ section. Everything else on this page goes ahead without waiting.
 - **Merge in the browser host** (D226), built on the recommendation: the browser host offers
   Revise and What Changed but not Merge, which needs a common version from backups a browser
   doesn't keep. Reverse it and the host takes the base schedule as a third file.
-- **Unknown keys in a schedule file** (D224). Today the reader refuses any key it doesn't
-  know, which catches typos, hand edits gone wrong and files from a newer version before
-  anything is lost; the cost is that a file another app adds a key to won't open in an older
-  Method Schedule. **Recommended**: keep the reader strict, and add one reserved `extensions`
-  object (at the top level and on each object) that the reader keeps and writes back
-  untouched, for additions from other apps or newer versions. Not built: it changes what
-  every schedule file may hold.
+- **Unknown keys in a schedule file** (D224, D227), built on the recommendation: the
+  reader stays strict, and one reserved `extensions` object (at the top level and on the
+  schedule, categories, red flag types, elements, sheets, boards and sub-boards) is kept
+  and written back untouched. Additive: every existing file writes back byte for byte.
+  Reversible until the next release ships it; reverse it and the key is refused again.
 - **The browser build** (D222): **decided by the owner** (2026-10-18), all five as
   recommended. The partner hosts the whole page; Method Budget's partner terms apply; a
   read-only viewer keeps views, Find, printing, the call sheet and exports, with edits
