@@ -31,6 +31,10 @@
   const here = document.currentScript ? document.currentScript.src : window.location.href;
   const doc = document;
   const PREFS_KEY = 'method-schedule-prefs';
+  // The most the page reads into the module: a schedule, a script or a layouts file, and a
+  // picture (the host's own limits are 64 MB and 8 MB; a browser tab is kept well under).
+  const MAX_SCHEDULE_BYTES = 16 * 1024 * 1024;
+  const MAX_PICTURE_BYTES = 8 * 1024 * 1024;
 
   window.__TAURI__ = {
     core: { invoke: (cmd, args) => invoke(cmd, args || {}) },
@@ -63,14 +67,21 @@
     const open = params.get('open');
     if (open) {
       try {
-        const url = new URL(open, window.location.href);
-        const res = await fetch(url);
+        const url = openTarget(open, window.location.href);
+        if (!url) throw new Error('only a schedule file (.mtsc) on this site can be opened from the address');
+        // Same site only, no following a redirect elsewhere, and no bigger than a schedule
+        // file may be.
+        const res = await fetch(url, { credentials: 'same-origin', redirect: 'error' });
         if (!res.ok) throw new Error(`the server answered ${res.status}`);
+        const size = Number(res.headers.get('content-length'));
+        if (size > MAX_SCHEDULE_BYTES) throw new Error('it is too large to be a schedule');
+        const text = await res.text();
+        if (text.length > MAX_SCHEDULE_BYTES) throw new Error('it is too large to be a schedule');
         const name = decodeURIComponent(url.pathname.split('/').pop() || 'Schedule.mtsc');
-        host.openMtsc(await res.text(), name);
+        host.openMtsc(text, name);
         opened = true;
       } catch (e) {
-        notice(`Couldn't open ${open}: ${message(e)}`);
+        notice(`Couldn't open ${String(open).slice(0, 120)}: ${message(e)}`);
       }
     }
     if (!opened) host.dispatch(params.get('sample') === '1' ? 'open_sample' : 'new_schedule', '{}');
@@ -78,7 +89,28 @@
     return host;
   })();
   ready.catch((e) => notice(`Method Schedule couldn't start in this browser: ${message(e)}`));
-  window.__METHOD_SCHEDULE_WEB__ = { ready };
+  window.__METHOD_SCHEDULE_WEB__ = { ready, openTarget };
+
+  // -------------------------------------------------------------------------
+  // What the page will read
+
+  /**
+   * The schedule `?open=` may load: a `.mtsc` (or `.json`) file on this page's own site
+   * over http or https, with no user name or password in it; null for anything else.
+   */
+  function openTarget(open, here) {
+    let url;
+    try {
+      url = new URL(String(open), here);
+    } catch (e) {
+      return null;
+    }
+    const base = new URL(here);
+    if (url.origin !== base.origin || !/^https?:$/.test(url.protocol)) return null;
+    if (url.username || url.password) return null;
+    if (!/\.(mtsc|json)$/i.test(url.pathname)) return null;
+    return url;
+  }
 
   // -------------------------------------------------------------------------
   // Events
@@ -257,6 +289,10 @@
   }
 
   async function fileIn(f) {
+    const picture = /\.(png|jpe?g|gif|webp)$/i.test(f.name);
+    const max = picture ? MAX_PICTURE_BYTES : MAX_SCHEDULE_BYTES;
+    // Refused before it is read, so a huge file never fills the tab.
+    if (f.size > max) throw `${f.name} is too large to open here (${picture ? 'a picture is 8 MB' : 'a file is 16 MB'} at the most).`;
     return { name: f.name, bytes: encode(new Uint8Array(await f.arrayBuffer())) };
   }
 
