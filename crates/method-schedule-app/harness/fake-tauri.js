@@ -1931,7 +1931,7 @@ const commands = {
   },
   export_report: ({ sub_board, report, format }) => {
     subOf(model, sub_board);
-    if (!['dood', 'one_line', 'one_line_fixed', 'elements', 'dood_grid', 'element_detail', 'breakdown', 'breakdown_day', 'board', 'totals', 'red_flags'].includes(report)) throw "That report can't be exported.";
+    if (!['dood', 'one_line', 'one_line_fixed', 'elements', 'dood_grid', 'element_detail', 'breakdown', 'breakdown_day', 'board', 'totals', 'red_flags', 'shot'].includes(report)) throw "That report can't be exported.";
     if (!['xlsx', 'csv'].includes(format)) throw "That export format isn't one the app knows.";
     window.__exported.push({ report, format, sub_board });
     if (cancelled()) return { done: false, file: null };

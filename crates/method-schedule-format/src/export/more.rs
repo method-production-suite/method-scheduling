@@ -437,6 +437,102 @@ pub fn red_flags(s: &Schedule) -> Workbook {
     }
 }
 
+/// What was shot against what was planned (M5, from `plan.days_shot` and
+/// `plan.scenes_shot`): a row per shoot day of the sub-board (its planned and shot dates,
+/// pages planned, shot that day and still to shoot of its scenes, scenes finished that day),
+/// then a sheet with a row per scheduled scene (what was shot of it on every day together,
+/// what is left, the day that finished it). A CSV export holds the first sheet.
+pub fn shot_against_planned(
+    s: &Schedule,
+    board: BoardId,
+    sub: SubBoardId,
+) -> Result<Workbook, ExportError> {
+    use method_schedule_core::plan::eighths_left;
+    let b = s.board(board).ok_or(Error::NoSuchBoard(board))?;
+    let sb = b
+        .sub_boards
+        .iter()
+        .find(|x| x.id == sub)
+        .ok_or(Error::NoSuchSubBoard(sub))?;
+    let ds = days(s, board, sub)?;
+    let number_of: std::collections::HashMap<_, u32> =
+        ds.days.iter().map(|d| (d.break_id, d.number)).collect();
+    let mut day_rows = Vec::new();
+    let mut scene_rows = Vec::new();
+    let mut listed = std::collections::HashSet::new();
+    for d in &ds.days {
+        let planned = sb.start.and_then(|x| sb.calendar.date_of_day(x, d.number));
+        let shot_date = s.plan.day_shot(d.break_id).and_then(|x| x.date);
+        let on_day = s.plan.scenes_shot.iter().filter(|x| x.day == d.break_id);
+        let shot = Eighths(on_day.clone().map(|x| x.eighths.0).sum());
+        let finished = on_day.filter(|x| x.complete).count() as u32;
+        let mut seen = std::collections::HashSet::new();
+        let mut left = 0;
+        for id in d.counted_sheets() {
+            let Some(h) = s.sheet(id) else { continue };
+            if seen.insert(id) {
+                left += eighths_left(h.pages, s.plan.shot_so_far(id)).0;
+            }
+            if listed.insert(id) {
+                let so_far = s.plan.shot_so_far(id).unwrap_or_default();
+                let done_on = s
+                    .plan
+                    .shot_of(id)
+                    .find(|x| x.complete)
+                    .and_then(|x| number_of.get(&x.day).copied());
+                let mut line = vec![Cell::text(h.scenes.as_str()), int(d.number)];
+                line.extend(pages(h.pages));
+                line.extend(pages(so_far.eighths));
+                line.extend(pages(eighths_left(h.pages, s.plan.shot_so_far(id))));
+                line.push(done_on.map_or(Cell::Empty, int));
+                scene_rows.push(line);
+            }
+        }
+        let mut line = vec![int(d.number), Cell::date(planned), Cell::date(shot_date)];
+        line.extend(pages(d.pages));
+        line.extend(pages(shot));
+        line.extend(pages(Eighths(left)));
+        line.push(int(finished));
+        day_rows.push(line);
+    }
+    Ok(Workbook {
+        title: s.title.clone(),
+        sheets: vec![
+            Sheet {
+                name: "Shot by day",
+                columns: names(&[
+                    "day",
+                    "planned_date",
+                    "shot_date",
+                    "planned_eighths",
+                    "planned_pages",
+                    "shot_eighths",
+                    "shot_pages",
+                    "left_eighths",
+                    "left_pages",
+                    "scenes_finished",
+                ]),
+                rows: day_rows,
+            },
+            Sheet {
+                name: "Shot by scene",
+                columns: names(&[
+                    "scene",
+                    "planned_day",
+                    "eighths",
+                    PAGES,
+                    "shot_eighths",
+                    "shot_pages",
+                    "left_eighths",
+                    "left_pages",
+                    "finished_day",
+                ]),
+                rows: scene_rows,
+            },
+        ],
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -658,6 +754,55 @@ mod tests {
     }
 
     /// Behavior note 23: the red flag table, open ends empty, by first date.
+    #[test]
+    fn shot_against_planned_counts_by_day_and_by_scene() {
+        use method_schedule_core::plan::record_shot;
+        let s0 = method_schedule_core::sample::field_station();
+        let (b, sb) = (s0.boards[0].id, s0.boards[0].sub_boards[0].id);
+        let mut s = s0.clone();
+        let d = days(&s, b, sb).unwrap();
+        let day1 = &d.days[0];
+        let sheets: Vec<_> = day1.counted_sheets().collect();
+        let first = s.sheet(sheets[0]).unwrap().pages;
+        record_shot(&mut s, sheets[0], day1.break_id, first, true).unwrap();
+        record_shot(&mut s, sheets[1], day1.break_id, Eighths(1), false).unwrap();
+        let wb = shot_against_planned(&s, b, sb).unwrap();
+        assert_eq!(wb.sheets[0].rows.len(), d.days.len());
+        let row = &wb.sheets[0].rows[0];
+        let col = |name: &str| wb.sheets[0].columns.iter().position(|c| c == name).unwrap();
+        let n = |c: &Cell| match c {
+            Cell::Int(n) => *n as u32,
+            _ => panic!("{c:?}"),
+        };
+        assert_eq!(n(&row[col("shot_eighths")]), first.0 + 1);
+        assert_eq!(n(&row[col("scenes_finished")]), 1);
+        assert_eq!(
+            n(&row[col("left_eighths")]),
+            day1.pages.0 - first.0 - 1,
+            "the day's pages less what was shot"
+        );
+        // Day two: nothing shot, all of it left.
+        let row2 = &wb.sheets[0].rows[1];
+        assert_eq!(n(&row2[col("shot_eighths")]), 0);
+        assert_eq!(n(&row2[col("left_eighths")]), d.days[1].pages.0);
+        // By scene: the finished one names its day, the part-shot one doesn't.
+        let scenes = &wb.sheets[1];
+        let fin = scenes
+            .columns
+            .iter()
+            .position(|c| c == "finished_day")
+            .unwrap();
+        assert_eq!(scenes.rows[0][fin], Cell::Int(1));
+        assert_eq!(scenes.rows[1][fin], Cell::Empty);
+        // Nothing reported: every day has its pages left, and the workbook still writes.
+        let plain = shot_against_planned(&s0, b, sb).unwrap();
+        assert_eq!(
+            n(&plain.sheets[0].rows[0][col("left_eighths")]),
+            day1.pages.0
+        );
+        xlsx::write(&wb).unwrap();
+    }
+
     #[test]
     fn red_flags_table_lists_every_flag() {
         use method_schedule_core::model::{RedFlag, RedFlagDates, RedFlagId};

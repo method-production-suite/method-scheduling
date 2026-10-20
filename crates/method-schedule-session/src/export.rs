@@ -30,6 +30,8 @@ pub enum Report {
     Totals,
     /// Every red flag in the schedule, the Red flags tab's table (behavior note 23).
     RedFlags,
+    /// What was shot against what was planned, by day and by scene (M5).
+    Shot,
 }
 
 impl Report {
@@ -47,6 +49,7 @@ impl Report {
             "board" => Some(Report::Board),
             "totals" => Some(Report::Totals),
             "red_flags" => Some(Report::RedFlags),
+            "shot" => Some(Report::Shot),
             _ => None,
         }
     }
@@ -64,6 +67,7 @@ impl Report {
             Report::Board => "Board",
             Report::Totals => "Daily Totals",
             Report::RedFlags => "Red Flags",
+            Report::Shot => "Shot Against Planned",
         }
     }
 }
@@ -146,6 +150,7 @@ pub fn workbook(s: &Schedule, sub: u32, report: Report) -> Result<Workbook, Stri
         Report::Board => export::board(s, b),
         Report::Totals => export::daily_totals(s, b, sb),
         Report::RedFlags => Ok(export::red_flags(s)),
+        Report::Shot => export::shot_against_planned(s, b, sb),
     };
     wb.map_err(|e| capitalize(&e.to_string()))
 }
