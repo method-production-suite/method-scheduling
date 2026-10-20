@@ -23,7 +23,7 @@
 # Without it the script stops after signing and verifying, before anything is sent.
 #
 # Settings, all optional:
-#   METHOD_SIGN_IDENTITY   the signing identity (default: the Clockwork Post Developer ID)
+#   METHOD_SIGN_IDENTITY   the signing identity (default: the suite's Developer ID, by team ID)
 #   METHOD_NOTARY_PROFILE  the notarytool keychain profile (default method-schedule-notary)
 #   METHOD_MAC_TARGET      a Rust target, such as universal-apple-darwin (default: this Mac's)
 #   METHOD_SKIP_NOTARIZE=1 sign and verify only
@@ -31,7 +31,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IDENTITY="${METHOD_SIGN_IDENTITY:-Developer ID Application: Clockwork Post Production, LLC (XSRB3D643J)}"
+IDENTITY="${METHOD_SIGN_IDENTITY:-XSRB3D643J}"
 PROFILE="${METHOD_NOTARY_PROFILE:-method-schedule-notary}"
 TARGET="${METHOD_MAC_TARGET:-}"
 TAURI_CLI_VERSION="2.12.1"

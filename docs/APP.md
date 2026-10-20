@@ -1355,8 +1355,8 @@ scripts/release-mac.sh
 ```
 
 It builds the release `Method Schedule.app` and `.dmg` with the Tauri bundler, signed with
-the Developer ID in `METHOD_SIGN_IDENTITY` (default the company's, `Developer ID
-Application: Clockwork Post Production, LLC (XSRB3D643J)`) with the hardened runtime and a
+the Developer ID in `METHOD_SIGN_IDENTITY` (default the suite's Developer ID, by its team ID
+`XSRB3D643J`) with the hardened runtime and a
 secure timestamp, signs the `.dmg`, checks both with `codesign --verify --strict --deep`,
 then notarizes the `.dmg` with the notarytool keychain profile in `METHOD_NOTARY_PROFILE`
 (default `method-schedule-notary`), staples it and the app, and checks them with `spctl
