@@ -52,9 +52,10 @@ commands for each step; how the build, signing and updates work is in
 
 ## The release
 
-- **The weekly full build on the release commit:** run `platforms` by hand (Actions >
-  platforms > Run workflow, on main) and wait for green before tagging (SUITE-STANDARDS.md
-  section 6).
+- **The rehearsal on the release commit:** run `release` by hand on main with the tag left
+  empty (Actions > release > Run workflow), and wait for green. It builds, signs and
+  notarizes all three systems and runs every check, and drafts nothing. It is the only full
+  build before a release (SUITE-STANDARDS.md section 6).
 - **Tag** on main: `git tag vX.Y.Z && git push origin vX.Y.Z` (as the owner's
   account, through the repository's credential helper). `release.yml` drafts the release
   with `Method-Schedule-macOS.dmg`, `Method-Schedule-windows-x64-setup.exe`,
@@ -62,7 +63,10 @@ commands for each step; how the build, signing and updates work is in
   updater secrets are set, the update archive and `latest.json`, plus `SHA256SUMS`
   listing every one of them by bare name (checked before upload; the launcher verifies
   downloads against it).
-- **Check the draft**, then publish it, as the checklist says.
+- **Check the draft**: signatures, notarization, Gatekeeper, the architecture check,
+  `latest.json`, `SHA256SUMS` and the files' sizes. Report to MOrg, then publish it: the
+  owner's one yes covers the tag and publishing, unless he says stop (CLAUDE.md, "Faster
+  releases"). A failed check stops it.
 
 ## After publishing
 

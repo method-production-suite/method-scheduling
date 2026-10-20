@@ -15,10 +15,9 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **Tag v0.2.0** once the release pull request has merged and the weekly full build is
-  green on that commit (MOrg brings it to the owner). Then check the draft with the four
-  tests in [research/release-0.2.0.md](research/release-0.2.0.md), the first being the
-  first real update, 0.1.0 to 0.2.0, and publish.
+- **Tag v0.3.0**, the first universal Mac release, once its rehearsal on main is green
+  (MOrg brings it to the owner; one yes covers tag and publish). The owner's four tests are
+  in [research/release-0.3.0.md](research/release-0.3.0.md).
 
 **Needs the owner's hands or hardware**
 - **Screen block 7**, one block on the owner's screen, asked for through MOrg (the suite
