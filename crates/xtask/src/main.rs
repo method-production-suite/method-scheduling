@@ -6,6 +6,8 @@
 //!              pulls in a source of randomness (docs/research/web-session.md)
 
 mod ci;
+#[cfg(test)]
+mod release_workflow;
 mod wasm;
 
 use std::path::PathBuf;
