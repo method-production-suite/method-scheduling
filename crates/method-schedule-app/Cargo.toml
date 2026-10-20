@@ -32,6 +32,6 @@ tauri-plugin-dialog = "=2.8.1"
 # In-app updates (src/updater.rs, decision 213), Method Budget's versions: the plugin
 # fetches latest.json and checks its minisign signature; reqwest (already in the build
 # through the plugin) gives its redirect rule; semver compares versions for What's New.
-tauri-plugin-updater = { version = "=2.12.0", default-features = false, features = ["rustls-tls"] }
+tauri-plugin-updater = { version = "=2.13.1", default-features = false, features = ["rustls-tls"] }
 reqwest = { version = "=0.13.5", default-features = false }
 semver = "=1.0.28"
