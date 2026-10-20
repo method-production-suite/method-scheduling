@@ -346,7 +346,13 @@ pub fn backups(state: &AppState, safety: &Safety) -> Result<BackupsDto, String> 
 /// Makes backup `name` the schedule, as one undo step in this window. The file as it is
 /// now goes into the backups first (unless it is the same as the newest one). Returns the
 /// notice.
-pub fn revert(state: &AppState, safety: &Safety, name: &str) -> Result<String, String> {
+/// Backup `name` of the open schedule's file (its file name in the backups folder), read,
+/// with its label (`Backup from 2026-10-11 14:03 UTC`).
+pub fn read_backup(
+    state: &AppState,
+    safety: &Safety,
+    name: &str,
+) -> Result<(method_schedule_core::Schedule, String), String> {
     let path = own_path(state)?;
     let picked = safety
         .backups_of(&path)
@@ -354,7 +360,12 @@ pub fn revert(state: &AppState, safety: &Safety, name: &str) -> Result<String, S
         .find(|p| file_name(p) == name)
         .ok_or("That backup is no longer in the backups folder.")?;
     let (backup, _) = read_schedule(&picked)?;
-    let label = backup_label(&picked);
+    Ok((backup, backup_label(&picked)))
+}
+
+pub fn revert(state: &AppState, safety: &Safety, name: &str) -> Result<String, String> {
+    let path = own_path(state)?;
+    let (backup, label) = read_backup(state, safety, name)?;
     if !state.lock().changed_on_disk() {
         safety.back_up_file(&path);
     }
@@ -376,7 +387,7 @@ pub fn revert(state: &AppState, safety: &Safety, name: &str) -> Result<String, S
     ))
 }
 
-fn lower_first(s: &str) -> String {
+pub(crate) fn lower_first(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
         Some(f) => f.to_lowercase().chain(c).collect(),
@@ -676,6 +687,32 @@ mod tests {
         fs::remove_file(&path).unwrap();
         assert!(check(&state, true).is_none());
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn what_changed_compares_with_a_chosen_backup() {
+        // M4: Revert to Backup's list has What Changed, read through read_backup.
+        let dir = temp_dir("wc-backup");
+        let safety = Safety::new(Some(&dir.join("data")));
+        let state = AppState::default();
+        let path = dir.join("film.mtsc");
+        rename(&state, "One");
+        save(&state, &safety, &path).unwrap();
+        rename(&state, "Two");
+        save(&state, &safety, &path).unwrap();
+        let name = backups(&state, &safety).unwrap().backups[0].name.clone();
+        let (older, label) = read_backup(&state, &safety, &name).unwrap();
+        assert_eq!(older.title, "One");
+        assert!(label.starts_with("Backup from "));
+        let dto = crate::diffmerge::compare(
+            &older,
+            state.lock().schedule(),
+            format!("the {}", lower_first(&label)),
+            "film.mtsc as it is now".into(),
+        );
+        assert_eq!(dto.count, 1, "the title");
+        assert!(dto.from.starts_with("the backup from "));
+        assert!(read_backup(&state, &safety, "nope.mtsc").is_err());
     }
 
     #[test]

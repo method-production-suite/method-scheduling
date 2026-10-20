@@ -35,11 +35,14 @@ function changeList(groups) {
   return out;
 }
 
-/** File > What Changed (`against` "file") and What Changed Since Saved ("saved"). */
-export async function whatChanged(against, say) {
+/**
+ * File > What Changed (`against` "file"), What Changed Since Saved ("saved"), and a backup
+ * from Revert to Backup's list ("backup", by its name in the backups folder).
+ */
+export async function whatChanged(against, say, backup = null) {
   let dto;
   try {
-    dto = await invoke('what_changed', { against });
+    dto = await invoke('what_changed', { against, backup });
   } catch (e) {
     say(e, true);
     return;

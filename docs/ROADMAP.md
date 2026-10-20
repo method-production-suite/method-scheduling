@@ -207,7 +207,7 @@ installers update themselves.
 | Item | Size | Refs |
 |---|---|---|
 | Merge UI polish: a click on a change goes to its sheet, element, strip or date; each conflict shown side by side | M | D26, APP.md "Not yet" |
-| What Changed against a chosen backup; any file as a merge base | S | D26 |
+| Any file as a merge base (What Changed against a chosen backup is in, 2026-10-20: Revert to Backup's list has What Changed) | S | D26 |
 | Conflict review: a list of every conflict pick, kept with the file until resolved | M | MERGE.md |
 | The git merge driver documented for users, with a setup command | S | D25, MERGE.md |
 | Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |

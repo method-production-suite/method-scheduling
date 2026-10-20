@@ -608,13 +608,15 @@ fn pick<R: Runtime>(
 }
 
 /// What changed from another schedule to the open one: `against` is `"file"` (an Open
-/// dialog, shown here) or `"saved"` (the schedule's own file as it is on disk). `None`
-/// when the dialog was cancelled.
+/// dialog, shown here), `"saved"` (the schedule's own file as it is on disk) or
+/// `"backup"` (backup `backup` of its file, by its name in the backups folder, from Revert
+/// to Backup's list). `None` when the dialog was cancelled.
 #[tauri::command]
 pub async fn what_changed<R: Runtime>(
     window: WebviewWindow<R>,
     state: Doc,
     against: String,
+    backup: Option<String>,
 ) -> CmdResult<Option<WhatChangedDto>> {
     let (path, name) = {
         let s = state.lock();
@@ -630,6 +632,15 @@ pub async fn what_changed<R: Runtime>(
         "saved" => {
             let p = path.ok_or("This schedule hasn't been saved to a file yet.")?;
             (read_schedule(&p)?.0, format!("{name} as saved on disk"))
+        }
+        "backup" => {
+            let b = backup.ok_or("Pick a backup to compare with.")?;
+            let (older, label) =
+                crate::outside::read_backup(&state, &window.state::<Safety>(), &b)?;
+            (
+                older,
+                format!("the {}", crate::outside::lower_first(&label)),
+            )
         }
         _ => return Err("Unknown comparison.".into()),
     };
