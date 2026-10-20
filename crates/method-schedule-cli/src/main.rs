@@ -47,7 +47,7 @@ schedules:
   show FILE                       sheets, boards and shoot days at a glance
   check FILE                      confirm the file reads and hangs together
   fmt FILE                        rewrite the file in canonical form
-  import SCRIPT                   list a script's scenes (Fountain, or .fdx)
+  import SCRIPT                   list a script's scenes (Fountain, .fdx, or .mscenes)
   import SCRIPT --into FILE       add a script's scenes to a schedule (created if missing)
   import ... --lines-per-page N   lines on a Fountain page, 40 to 70 (default 56); also
                                   for revise

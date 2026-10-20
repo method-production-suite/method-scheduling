@@ -1,0 +1,58 @@
+{
+  "format": "method-script-scenes",
+  "version": 1,
+  "title": "Field Station",
+  "episode": "101",
+  "written_by": "Field Station writers",
+  "generated": "2026-10-20",
+  "source_hash": "0f1e2d3c4b5a6978",
+  "pages": 2,
+  "eighths": 16,
+  "scenes": [
+    {
+      "index": 1,
+      "number": "1",
+      "heading": "INT. FIELD STATION - RADIO ROOM - NIGHT",
+      "int_ext": "INT",
+      "set": "FIELD STATION - RADIO ROOM",
+      "time": "NIGHT",
+      "story_day": "DAY 1",
+      "page": "1",
+      "eighths": 6,
+      "cast": ["MARA"],
+      "nonspeaking": ["TEO"],
+      "title": "The call",
+      "summary": "Mara tries the ridge base.",
+      "color": "#5B8FC9",
+      "act": "ACT ONE"
+    },
+    {
+      "index": 2,
+      "number": "1A",
+      "heading": "EXT. RIDGE ROAD - NIGHT",
+      "page": "1A",
+      "eighths": 5,
+      "cast": ["TEO"],
+      "act": "ACT ONE"
+    },
+    {
+      "index": 3,
+      "number": "2",
+      "heading": "OMITTED",
+      "page": "2",
+      "eighths": 1,
+      "cast": [],
+      "omitted": true
+    },
+    {
+      "index": 4,
+      "heading": "INT. FIELD STATION - LAB - NIGHT",
+      "int_ext": "INT",
+      "set": "FIELD STATION - LAB",
+      "time": "NIGHT",
+      "page": "2",
+      "eighths": 4,
+      "cast": ["MARA"]
+    }
+  ]
+}

@@ -39,7 +39,7 @@ export function settingsDialog({ prefs, save }) {
     hint();
     const [week, weekRow] = pick('set-week', 'Weeks start on', WEEK, prefs.week_start || 'sun');
     const [fmt, fmtRow] = pick('set-date', 'Dates show as', FORMATS, prefs.date_format || 'iso');
-    const lines = el('input', { class: 'w-xs', attrs: { id: 'set-lines', type: 'text', inputmode: 'numeric', autocomplete: 'off', value: String(prefs.fountain_lines || FOUNTAIN_LINES.usual), title: `Lines on a page when a Fountain script is imported, ${FOUNTAIN_LINES.min} to ${FOUNTAIN_LINES.max}; at 56 an eighth is 7 lines. Final Draft files keep their own lengths.` } });
+    const lines = el('input', { class: 'w-xs', attrs: { id: 'set-lines', type: 'text', inputmode: 'numeric', autocomplete: 'off', value: String(prefs.fountain_lines || FOUNTAIN_LINES.usual), title: `Lines on a page when a Fountain script is imported, ${FOUNTAIN_LINES.min} to ${FOUNTAIN_LINES.max}; at 56 an eighth is 7 lines. An .fdx or .mscenes file keeps its own lengths.` } });
     const linesRow = el('label', { class: 'field', attrs: { for: 'set-lines' } }, 'Fountain lines per page', lines);
     const error = errorLine();
     const go = async () => {

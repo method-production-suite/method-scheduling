@@ -45,7 +45,7 @@ fn read_script(path: &std::path::Path, tags: bool, lines: u32) -> Result<Importe
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
     if tags && !fdx_file {
-        return Err("Production tags come only from Final Draft (.fdx) files.".to_string());
+        return Err("Production tags come only from .fdx files.".to_string());
     }
     if !tags {
         return session::read_script_with(path, lines);
@@ -70,14 +70,18 @@ fn pick_script<R: Runtime>(
     tags: bool,
     title: &str,
 ) -> Option<std::path::PathBuf> {
-    let exts: &[&str] = if tags { &["fdx"] } else { &["fountain", "fdx"] };
+    let exts: &[&str] = if tags {
+        &["fdx"]
+    } else {
+        &["fountain", "fdx", "mscenes"]
+    };
     window
         .dialog()
         .file()
         .set_title(title)
         .add_filter(
             if tags {
-                "Final Draft script"
+                "Tagged script (.fdx)"
             } else {
                 "Screenplay"
             },

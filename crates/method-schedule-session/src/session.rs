@@ -517,6 +517,26 @@ pub fn import_notice(added: usize) -> String {
     }
 }
 
+/// [`import_notice`] for `script`, saying too when scenes without a number took their
+/// place in the script as one (a script scenes file, decision 229).
+pub fn import_notice_for(script: &fountain::ImportedScript, added: usize) -> String {
+    let unnumbered = script
+        .scenes
+        .iter()
+        .filter(|s| s.extra.numbered_by_place)
+        .count();
+    let base = import_notice(added);
+    match unnumbered {
+        0 => base,
+        1 => {
+            format!("{base} One scene had no number, so it is numbered by its place in the script.")
+        }
+        n => format!(
+            "{base} {n} scenes had no number, so they are numbered by their place in the script."
+        ),
+    }
+}
+
 /// Reads `bytes`, just read from `path`, as a schedule (UTF-8, the format's reader and
 /// `Schedule::check`). Errors start with the file's name.
 pub fn parse_schedule(bytes: &[u8], path: &Path) -> Result<Schedule, String> {
@@ -539,7 +559,13 @@ pub fn parse_script(
     let is_fdx = path
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
-    if is_fdx {
+    let is_scenes = path
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case(method_schedule_format::mscenes::EXTENSION));
+    if is_scenes {
+        method_schedule_format::mscenes::parse(text)
+            .map_err(|e| format!("{}: {e}", file_name(path)))
+    } else if is_fdx {
         fdx::parse(text).map_err(|e| format!("{}: {e}", file_name(path)))
     } else {
         Ok(fountain::parse_with(text, lines_per_page))

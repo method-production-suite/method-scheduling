@@ -51,6 +51,31 @@ pub struct ImportedScene {
     /// Production tags read from the script (`.fdx` only, when asked for), in order of
     /// first appearance, each once.
     pub tags: Vec<ImportedTag>,
+    /// What a script scenes file (`.mscenes`, decision 229) adds; empty from the others.
+    pub extra: SceneExtra,
+}
+
+/// The sheet fields a script scenes file (`.mscenes`, decision 229) fills beyond a
+/// Fountain or `.fdx` scene's, each empty when the file leaves it out.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SceneExtra {
+    /// The page it starts on, as printed (`12A`): the sheet's Script Pages.
+    pub script_page: String,
+    /// The story day (`DAY 3`): the sheet's Script Day.
+    pub story_day: String,
+    /// Characters in the scene who don't speak, first seen first.
+    pub nonspeaking: Vec<String>,
+    /// The synopsis (the scene's title and summary).
+    pub synopsis: String,
+    /// The TV act it is in: the sheet's Sequence.
+    pub sequence: String,
+    /// The episode: the sheet's Episode.
+    pub episode: String,
+    /// The script omits it: an omitted sheet (decision 91).
+    pub omitted: bool,
+    /// It had no scene number, so it took its place in the script as one; the import
+    /// says so.
+    pub numbered_by_place: bool,
 }
 
 /// A tagged item in a script: an element to be, and the name of its category.
@@ -282,6 +307,12 @@ fn is_heading(t: &str, next_blank: bool) -> bool {
         })
 }
 
+/// A scene from its heading alone, split as the Fountain import splits one: INT/EXT, set
+/// and time of day; no characters, no length.
+pub fn scene_from_heading(t: &str) -> ImportedScene {
+    heading(t)
+}
+
 pub(crate) fn heading(t: &str) -> ImportedScene {
     let mut h = t.strip_prefix('.').unwrap_or(t).trim().to_string();
 
@@ -336,6 +367,7 @@ pub(crate) fn heading(t: &str) -> ImportedScene {
         page: 0,
         length: Eighths::ZERO,
         tags: Vec::new(),
+        extra: SceneExtra::default(),
     }
 }
 

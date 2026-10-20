@@ -9,6 +9,7 @@ pub mod exchange;
 pub mod export;
 #[cfg(test)]
 mod fuzz_tests;
+pub mod mscenes;
 pub mod pdf_info;
 mod plan;
 mod setup;

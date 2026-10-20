@@ -409,7 +409,10 @@ impl Host {
                     let notice = if tags {
                         tagged(&mut s, &script)?
                     } else {
-                        session::import_notice(s.import_script(&script)?)
+                        {
+                            let added = s.import_script(&script)?;
+                            session::import_notice_for(&script, added)
+                        }
                     };
                     reply(finish(&W, &s, Some(notice)))
                 }
@@ -624,7 +627,7 @@ fn script_of(file: &FileIn, tags: bool, lines: u32) -> Result<fountain::Imported
         .extension()
         .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
     if !fdx_file {
-        return Err("Production tags come only from Final Draft (.fdx) files.".into());
+        return Err("Production tags come only from .fdx files.".into());
     }
     let text = text(file, "a script")?;
     Ok(method_schedule_core::fdx::parse_with_tags(&text).map_err(upper)?)
@@ -976,5 +979,31 @@ mod tests {
             .dispatch("element_image", &json!({ "element": truck, "at": 0 }))
             .unwrap();
         assert!(shown.as_str().unwrap().starts_with("data:image/png"));
+    }
+
+    #[test]
+    fn a_script_scenes_file_imports_with_its_own_pages() {
+        // Decision 229: Storyteller's .mscenes, through Import Script.
+        let mut h = Host::new();
+        h.dispatch("new_schedule", &Value::Null).unwrap();
+        let text = include_str!("../../../../fixtures/scripts/field-station-sample.mscenes");
+        let v = h
+            .dispatch(
+                "import_script",
+                &json!({ "file": file("field-station.mscenes", text.as_bytes()) }),
+            )
+            .unwrap();
+        let notice = v["notice"].as_str().unwrap();
+        assert!(notice.starts_with("Added 4 scenes"), "{notice}");
+        assert!(notice.contains("One scene had no number"), "{notice}");
+        assert_eq!(v["title"], "Field Station");
+        let bad = h.dispatch(
+            "import_script",
+            &json!({ "file": file("x.mscenes", b"{\"format\":\"other\"}") }),
+        );
+        assert!(bad
+            .unwrap_err()
+            .message()
+            .contains("isn't a script scenes file"));
     }
 }

@@ -71,7 +71,7 @@ impl fmt::Display for FdxError {
             FdxErrorKind::BadChar => "a character that is not allowed in XML",
             FdxErrorKind::UnexpectedEnd => "the file ends too soon",
             FdxErrorKind::MismatchedTag => "a closing tag does not match the open element",
-            FdxErrorKind::NotFinalDraft => "this is not a Final Draft file",
+            FdxErrorKind::NotFinalDraft => "this is not an .fdx script file",
             FdxErrorKind::Malformed(why) => why,
         };
         write!(f, "line {}: {what}", self.line)

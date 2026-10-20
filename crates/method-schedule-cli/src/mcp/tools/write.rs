@@ -75,7 +75,7 @@ pub fn tools() -> Vec<Tool> {
                           of every board's Boneyard, with the speaking characters as \
                           elements of a category (the cast category, whatever it is called, \
                           by default; matched by name, new ones created), as the app's Import Script does. The script is a \
-                          Fountain (.fountain) or Final Draft (.fdx) file inside the roots. \
+                          Fountain (.fountain), .fdx or .mscenes file inside the roots. \
                           Returns the new sheet ids in script order.",
             mutating: true,
             destructive: false,

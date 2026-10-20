@@ -142,7 +142,12 @@ pub fn lines_per_page(args: &[String]) -> Result<u32, String> {
 /// `lines` a page.
 pub fn read_script(path: &str, tags: bool, lines: u32) -> Result<fountain::ImportedScript, String> {
     let text = read(path)?;
-    if path.to_ascii_lowercase().ends_with(".fdx") {
+    if path.to_ascii_lowercase().ends_with(".mscenes") {
+        if tags {
+            return Err(format!("{path}: production tags come only from .fdx files"));
+        }
+        method_schedule_format::mscenes::parse(&text).map_err(|e| format!("{path}: {e}"))
+    } else if path.to_ascii_lowercase().ends_with(".fdx") {
         let r = if tags {
             fdx::parse_with_tags(&text)
         } else {

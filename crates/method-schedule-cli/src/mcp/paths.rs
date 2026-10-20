@@ -27,7 +27,7 @@ pub const READ_SCHEDULE_EXTS: &[&str] = &["mtsc", "json", "mtst"];
 /// never lands on a name another tool reads as its own config.
 pub const NEW_SCHEDULE_EXTS: &[&str] = &["mtsc"];
 /// Scripts `import_script` reads.
-pub const SCRIPT_EXTS: &[&str] = &["fountain", "fdx"];
+pub const SCRIPT_EXTS: &[&str] = &["fountain", "fdx", "mscenes"];
 
 /// The folders the server works in, each canonical (symlinks resolved).
 #[derive(Clone, Debug)]
