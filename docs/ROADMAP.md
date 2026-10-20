@@ -127,7 +127,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| `method-schedule-session`, the last window-free modules: the logic of `plan` (timelines, locations, rest, locks, pins, the order suggestion, call sheet data) and `diffmerge` (What Changed and Merge on schedules already read), with their file reading and clock calls kept on the desktop (`find`, `events`, `breakdown`, `flagcolors`, `split` and the data side of `reports`, `reportsetup` and `layouts` moved, 2026-10-19 and 2026-10-20; `docs`, the open-schedules list, is window bookkeeping and stays) | M | web-session.md phase 1 |
 | `Host::dispatch`, `COMMANDS`, `COMMANDS_VERSION`; files in and out as base64; the picture store; `host_info`; the read-only switch | M | phase 1b |
 | `method-schedule-web`: the exports, the page's invoke shim, the page's `host_info` guards, `cargo xtask web`, a headless smoke test in CI | M | phase 2 |
 | The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
@@ -146,6 +145,13 @@ debug builds (every caller hands in a checked schedule); `mark_saved` and `resta
 their contract written down, asserted and tested in the session crate; and the board and
 view tests that had stayed on the desktop now run in the session crate, the desktop keeping
 only their report and export halves.
+
+Phase 1 done (2026-10-20): every window-free module is in the session crate, the last being
+the logic of `plan` (timelines, locations, rest, locks and drift, pins, the order suggestion,
+call sheet data). `diffmerge` stays on the desktop: it is the file side (reading both files,
+the backups and their times) around the engine's own merge, which the session already
+reaches, and sharing in the browser is the partner's server's (decision 222). `docs`, the
+open-schedules list, is window bookkeeping and stays too.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.
