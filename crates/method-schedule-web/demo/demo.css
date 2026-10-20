@@ -1,0 +1,95 @@
+/* The website's demo (methodschedule.com/try/, docs/WEBSITE.md): a slim note above the
+   app saying it runs in the browser. Colors are the app's own tokens (styles.css), so it
+   follows light and dark with the page. */
+
+body.ms-demo-on {
+  display: flex;
+  flex-direction: column;
+}
+
+body.ms-demo-on > .app {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.ms-demo {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 6px 12px;
+  background: var(--select);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ms-demo[hidden] {
+  display: none;
+}
+
+.ms-demo-home {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ms-demo-text {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+}
+
+.ms-demo-phone {
+  display: none;
+  font-weight: 600;
+}
+
+.ms-demo-get {
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ms-demo-home:hover,
+.ms-demo-get:hover {
+  text-decoration: underline;
+}
+
+.ms-demo-close {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ms-demo-close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* A phone: the app wants a keyboard and a wide window. */
+@media (max-width: 760px) {
+  .ms-demo {
+    flex-wrap: wrap;
+  }
+
+  .ms-demo-text {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .ms-demo-phone {
+    display: inline;
+  }
+}

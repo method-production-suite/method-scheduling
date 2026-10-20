@@ -132,7 +132,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 |---|---|---|
 | Pictures kept with a schedule the browser saves: the picture store downloaded beside the `.mtsc` and handed back when it opens (the browser's menu bar from the desktop's table, the page's `host_info` guards and preferences kept in the browser are in, 2026-10-20) | S | phase 2 |
 | The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
-| The `/try/` demo with Field Station | S | phase 3, WEBSITE.md |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the
 crate itself with Method Budget's injected clock and `cargo xtask wasm-check` in CI, which
@@ -231,7 +230,6 @@ kept or offered as a pick, in tests and in a live run.
 |---|---|---|
 | What was shot, shown: the board marks scenes shot (dimmed when finished), pages left by day and sub-board, shot against planned in the reports, from `plan.days_shot` and `plan.scenes_shot` (D224; the keys are in, written by a production report) | M | D224, FORMAT.md |
 | Call sheets beyond the printed sheet (decision 207): crew calls, an advance schedule for the next days, a map; distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
-| Try it in your browser: the engine as WebAssembly at `/try/` with an invented schedule | L | WEBSITE.md "Try it in your browser, later" |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east and New Zealand's (others keep a typed offset today) | S | D72, D193, D220, BYD-08 |
 | Per-person call times, feeding the rest checks | M | D71, D73, BYD-09 |
 | Schedule lock reports: drift per actor as a printed report and a spreadsheet | S | D74, BYD-05 |
