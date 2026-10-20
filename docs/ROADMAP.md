@@ -226,7 +226,6 @@ kept or offered as a pick, in tests and in a live run.
 | Call sheets beyond the printed sheet (decision 207): crew calls, an advance schedule for the next days, a map; distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east and New Zealand's (others keep a typed offset today) | S | D72, D193, D220, BYD-08 |
 | Per-person call times, feeding the rest checks | M | D71, D73, BYD-09 |
-| Schedule lock reports: drift per actor as a printed report (the spreadsheet is in, 2026-10-20: Schedule Locks > Drift > Export Excel or CSV) | S | D74, BYD-05 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
 | Script revision workflow: revision colors and dates, a report of what each draft changed | M | D69, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
