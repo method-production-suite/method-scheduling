@@ -3,11 +3,14 @@
 // Field Station sample. Nothing is shown. Usage: node scripts/web-smoke.mjs <built folder>,
 // the folder holding method_schedule_web.js and method_schedule_web_bg.wasm.
 
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const dir = resolve(process.argv[2] || 'target/web/method-schedule-web');
+// Cargo's build folder (CARGO_TARGET_DIR or ./target), as `cargo metadata` says.
+const targetDir = () => JSON.parse(execFileSync('cargo', ['metadata', '--format-version', '1', '--no-deps'], { encoding: 'utf8' })).target_directory;
+const dir = resolve(process.argv[2] || join(targetDir(), 'web', 'method-schedule-web'));
 const m = await import(pathToFileURL(join(dir, 'method_schedule_web.js')).href);
 await m.default({ module_or_path: await readFile(join(dir, 'method_schedule_web_bg.wasm')) });
 

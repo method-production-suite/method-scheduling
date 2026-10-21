@@ -11,7 +11,7 @@
 #   6. `spctl --assess` and `xcrun stapler validate`.
 #
 # Nothing is uploaded anywhere but Apple's notary service. The results are in
-# target/release-mac/: `Method Schedule.app` and `Method-Schedule-<version>-<arch>.dmg`.
+# <cargo's build folder>/release-mac/: `Method Schedule.app` and `Method-Schedule-<version>-<arch>.dmg`.
 #
 # Needs Xcode's command line tools and the Tauri CLI, nothing else:
 #   cargo install tauri-cli --locked --version 2.12.1
@@ -35,7 +35,9 @@ IDENTITY="${METHOD_SIGN_IDENTITY:-XSRB3D643J}"
 PROFILE="${METHOD_NOTARY_PROFILE:-method-schedule-notary}"
 TARGET="${METHOD_MAC_TARGET:-}"
 TAURI_CLI_VERSION="2.12.1"
-OUT="target/release-mac"
+# Cargo's build folder (CARGO_TARGET_DIR or ./target), as cargo metadata says.
+TARGET_DIR="$(cargo metadata --format-version 1 --no-deps | python3 -c 'import json, sys; print(json.load(sys.stdin)["target_directory"])')"
+OUT="$TARGET_DIR/release-mac"
 
 say() { printf 'release-mac: %s\n' "$*"; }
 die() { printf 'release-mac: %s\n' "$*" >&2; exit 1; }
@@ -64,10 +66,10 @@ security find-identity -v -p codesigning | grep -qF "\"$IDENTITY\"" \
 # makes a plain .dmg without driving Finder to arrange its window.
 say "building Method Schedule $VERSION${TARGET:+ for $TARGET}"
 build_args=(tauri build --bundles app dmg)
-bundle_dir="target/release/bundle"
+bundle_dir="$TARGET_DIR/release/bundle"
 if [ -n "$TARGET" ]; then
   build_args+=(--target "$TARGET")
-  bundle_dir="target/$TARGET/release/bundle"
+  bundle_dir="$TARGET_DIR/$TARGET/release/bundle"
 fi
 (
   cd crates/method-schedule-app

@@ -25,7 +25,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'crates/method-schedule-app');
-const DATA = join(ROOT, 'target/screens');
+// Cargo's build folder (CARGO_TARGET_DIR or ./target), as `cargo metadata` says.
+const TARGET = JSON.parse(execFileSync('cargo', ['metadata', '--format-version', '1', '--no-deps'], { cwd: ROOT, encoding: 'utf8' })).target_directory;
+const DATA = join(TARGET, 'screens');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const SIZE = { width: 1280, height: 800, scale: 2 };
 
@@ -41,12 +43,12 @@ function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], ...opts });
 }
 
-/** The engine's answers and the command line's output, into target/screens. */
+/** The engine's answers and the command line's output, into <build folder>/screens. */
 function prepare() {
   mkdirSync(DATA, { recursive: true });
   run('cargo', ['run', '-q', '-p', 'method-schedule-app', '--example', 'screen_answers', '--', join(DATA, 'answers.json')]);
   run('cargo', ['build', '-q', '-p', 'method-schedule-cli']);
-  const cli = join(ROOT, 'target/debug/method-schedule');
+  const cli = join(TARGET, 'debug/method-schedule');
   const fixtures = join(ROOT, 'fixtures');
   const file = 'field-station.mtsc';
   const head = readFileSync(join(fixtures, file), 'utf8').split('\n').slice(0, 14).join('\n') + '\n';
@@ -60,7 +62,7 @@ function prepare() {
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.mtsc': 'application/json' };
 
-/** Serves the app crate at / and target/screens at /screens-data/, never cached. */
+/** Serves the app crate at / and <build folder>/screens at /screens-data/, never cached. */
 function serve() {
   const server = createServer((req, res) => {
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);

@@ -1,10 +1,10 @@
 //! `cargo xtask web [--out <dir>] [--demo] [--smoke]`: the page in a browser
 //! (docs/research/web-session.md, phase 2). Builds `method-schedule-web` for
 //! wasm32-unknown-unknown, runs the `wasm-bindgen` command line on it and puts a folder
-//! ready to serve in `target/web/`:
+//! ready to serve in `web/` in cargo's build folder (`CARGO_TARGET_DIR`, else `target/`):
 //!
 //! ```text
-//! target/web/
+//! <build folder>/web/
 //!   index.html, *.css, js/                      the page (crates/method-schedule-app/ui),
 //!                                               index.html loading the shim first
 //!   method-schedule-web/tauri-shim.js           the page's `invoke` and events over the Host
@@ -174,13 +174,13 @@ pub fn command(root: &Path, args: &[String]) -> Result<String, String> {
     if !status.success() {
         return Err(format!("{CRATE} doesn't build for {TARGET}"));
     }
-    let wasm = root
-        .join("target")
+    let target = target_dir(root)?;
+    let wasm = target
         .join(TARGET)
         .join(PROFILE)
         .join("method_schedule_web.wasm");
 
-    let out = out.unwrap_or_else(|| root.join("target").join("web"));
+    let out = out.unwrap_or_else(|| target.join("web"));
     clear(&out)?;
     copy_dir(&root.join(UI), &out)?;
     let index = out.join("index.html");
@@ -226,6 +226,48 @@ pub fn command(root: &Path, args: &[String]) -> Result<String, String> {
         said.push_str(&run_smoke(root, &dir)?);
     }
     Ok(said)
+}
+
+/// Cargo's build folder: `CARGO_TARGET_DIR` or `./target`, as `cargo metadata` says.
+pub fn target_dir(root: &Path) -> Result<PathBuf, String> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+    let run = Command::new(cargo)
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .current_dir(root)
+        .output()
+        .map_err(|e| format!("couldn't run cargo metadata: {e}"))?;
+    if !run.status.success() {
+        return Err(format!(
+            "cargo metadata failed:\n{}",
+            String::from_utf8_lossy(&run.stderr)
+        ));
+    }
+    metadata_target(&String::from_utf8_lossy(&run.stdout))
+        .map(PathBuf::from)
+        .ok_or_else(|| "cargo metadata gave no target_directory".to_string())
+}
+
+/// `target_directory` from `cargo metadata`'s JSON, unescaped.
+fn metadata_target(json: &str) -> Option<String> {
+    let key = "\"target_directory\":\"";
+    let rest = &json[json.find(key)? + key.len()..];
+    let mut out = String::new();
+    let mut chars = rest.chars();
+    loop {
+        match chars.next()? {
+            '"' => return Some(out),
+            '\\' => match chars.next()? {
+                'u' => {
+                    let hex: String = chars.by_ref().take(4).collect();
+                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
+                }
+                'n' => out.push('\n'),
+                't' => out.push('\t'),
+                c => out.push(c),
+            },
+            c => out.push(c),
+        }
+    }
 }
 
 /// Runs the headless smoke test on the built module in `dir`, and checks the shim parses.
@@ -298,6 +340,17 @@ fn copy_dir(from: &Path, to: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_build_folder_is_read_from_cargo_metadata() {
+        let json =
+            r#"{"packages":[],"target_directory":"/Users/a b/.cache/m\\t\"x\u00e9","version":1}"#;
+        assert_eq!(
+            metadata_target(json).as_deref(),
+            Some("/Users/a b/.cache/m\\t\"x\u{e9}")
+        );
+        assert_eq!(metadata_target("{}"), None);
+    }
 
     #[test]
     fn the_cli_version_comes_from_the_lock_file() {
