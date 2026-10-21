@@ -51,19 +51,13 @@ pub async fn save_template<R: Runtime>(
     window: WebviewWindow<R>,
     state: Doc,
 ) -> CmdResult<SavedDto> {
-    let (text, title) = {
-        let s = state.lock();
-        (template_text(s.schedule()), s.schedule().title.clone())
-    };
+    let d = method_schedule_session::commands::files::template_download(&state.lock());
     let mut dialog = window
         .dialog()
         .file()
         .set_title("Save as template")
         .add_filter("Schedule template", &[EXTENSION])
-        .set_file_name(format!(
-            "{}.{EXTENSION}",
-            crate::app::safe_file_stem(&title)
-        ))
+        .set_file_name(d.name)
         .set_parent(&window);
     if let Some(dir) = folder(&window) {
         dialog = dialog.set_directory(dir);
@@ -83,7 +77,7 @@ pub async fn save_template<R: Runtime>(
     {
         return Err("Choose another file: that is the schedule itself.".into());
     }
-    safety::write_atomically(&path, text.as_bytes(), Access::Document)
+    safety::write_atomically(&path, &d.bytes, Access::Document)
         .map_err(|e| format!("The template couldn't be saved: {e}"))?;
     Ok(SavedDto {
         done: true,

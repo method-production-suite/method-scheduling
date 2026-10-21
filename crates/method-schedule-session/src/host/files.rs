@@ -14,9 +14,9 @@ use method_schedule_core::fountain;
 
 use super::{args, finish, reply, DocState, Error, Host, W};
 use crate::changes::compare;
-use crate::export::{budget_text, file_bytes, workbook, ExportOutcome, Format, Report};
-use crate::layouts::{layouts_file, load_layouts, LAYOUTS_EXTENSION};
-use crate::plan::{call_sheet_bytes, revision_preview, upper, RevisionDto};
+use crate::commands::files;
+use crate::export::ExportOutcome;
+use crate::plan::{revision_preview, upper, RevisionDto};
 use crate::session::{self, Session};
 use crate::{elements, split, templates};
 use method_schedule_core::revise::{revise, revision_text};
@@ -230,12 +230,6 @@ fn file_arg(command: &str, a: &Value) -> Result<FileArg, Error> {
     Ok(f)
 }
 
-fn text(file: &FileIn, what: &str) -> Result<String, Error> {
-    let t = String::from_utf8(file.bytes.clone())
-        .map_err(|_| Error::Refused(format!("That isn't {what} Method Schedule can read.")))?;
-    Ok(t.strip_prefix('\u{feff}').map(str::to_string).unwrap_or(t))
-}
-
 /// The schedule's file name stem, as the desktop's exports start their names.
 fn stem(s: &Session) -> String {
     s.path()
@@ -390,98 +384,56 @@ impl Host {
                 }
                 "save_template" => {
                     let state = need()?;
-                    let s = state.lock();
-                    let name = format!(
-                        "{}.{}",
-                        crate::export::safe_file_stem(&s.schedule().title),
-                        templates::EXTENSION
-                    );
-                    let bytes = templates::template_text(s.schedule()).into_bytes();
-                    reply(Ok(Downloads::one(name, bytes)))
+                    let d = files::template_download(&state.lock());
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "import_script" | "import_script_tags" => {
                     let f = file_arg(command, a)?;
                     let state = need()?;
                     let lines = f.lines_per_page.unwrap_or(self.prefs.fountain_lines);
                     let mut s = state.lock();
-                    let tags = command == "import_script_tags";
-                    let script = script_of(&f.file, tags, lines)?;
-                    let notice = if tags {
-                        tagged(&mut s, &script)?
+                    let notice = if command == "import_script_tags" {
+                        let script = files::tagged_script(&f.file.name, &f.file.bytes)?;
+                        files::import_tagged(&mut s, &script)?
                     } else {
-                        {
-                            let added = s.import_script(&script)?;
-                            session::import_notice_for(&script, added)
-                        }
+                        let script =
+                            session::parse_script(f.file.bytes, Path::new(&f.file.name), lines)?;
+                        files::import_script(&mut s, &script)?
                     };
                     reply(finish(&W, &s, Some(notice)))
                 }
                 "import_layouts" => {
                     let f = file_arg(command, a)?;
-                    let text = text(&f.file, "a layout file")?;
                     let state = need()?;
                     let mut s = state.lock();
-                    let n = s.edit(|x| load_layouts(x, &text))?;
-                    let what = if n == 1 {
-                        "1 layout".to_string()
-                    } else {
-                        format!("{n} layouts")
-                    };
-                    reply(finish(&W, &s, Some(format!("Loaded {what}."))))
+                    let notice = files::load_layouts_bytes(&mut s, &f.file.bytes)?;
+                    reply(finish(&W, &s, Some(notice)))
                 }
                 "export_layouts" => {
                     let i: IdsArg = args(command, a)?;
                     let state = need()?;
-                    let s = state.lock();
-                    let (text, _) = layouts_file(s.schedule(), &i.ids)?;
-                    let name = format!(
-                        "{} - Layouts.{LAYOUTS_EXTENSION}",
-                        crate::export::safe_file_stem(&s.schedule().title)
-                    );
-                    reply(Ok(Downloads::one(name, text.into_bytes())))
+                    let d = files::layouts_download(&state.lock(), &i.ids)?;
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "export_report" => {
                     let r: ReportArgs = args(command, a)?;
-                    let report =
-                        Report::parse(&r.report).ok_or("That report can't be exported.")?;
-                    let format = Format::parse(&r.format)
-                        .ok_or("That export format isn't one the app knows.")?;
                     let state = need()?;
-                    let s = state.lock();
-                    let bytes = file_bytes(&workbook(s.schedule(), r.sub_board, report)?, format)?;
-                    let name = format!(
-                        "{} - {}.{}",
-                        stem(&s),
-                        report.file_label(),
-                        format.extension()
-                    );
-                    reply(Ok(Downloads::one(name, bytes)))
+                    let (d, _) =
+                        files::report_download(&state.lock(), r.sub_board, &r.report, &r.format)?;
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "export_budget" => {
                     let r: SubArg = args(command, a)?;
                     let state = need()?;
-                    let s = state.lock();
-                    let text = budget_text(s.schedule(), r.sub_board, super::today())?;
-                    let name = format!("{} - Budget Days.json", stem(&s));
-                    reply(Ok(Downloads::one(name, text.into_bytes())))
+                    let d = files::budget_download(&state.lock(), r.sub_board)?;
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "export_call_sheet" => {
                     let r: CallSheetArgs = args(command, a)?;
-                    let csv = match r.format.as_str() {
-                        "csv" => true,
-                        "json" => false,
-                        _ => {
-                            return Err("That call sheet format isn't one the app knows."
-                                .to_string()
-                                .into())
-                        }
-                    };
                     let state = need()?;
-                    let s = state.lock();
-                    let bytes = call_sheet_bytes(s.schedule(), r.sub_board, r.day, csv)?;
-                    let ext = if csv { "csv" } else { "json" };
-                    let name = format!("{} - Call Sheet Day {}.{ext}", stem(&s), r.day);
-                    reply(Ok(Downloads::one(name, bytes)))
+                    let d =
+                        files::call_sheet_download(&state.lock(), r.sub_board, r.day, &r.format)?;
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "revise_pick" => {
                     let r: ReviseArgs = args(command, a)?;
@@ -490,7 +442,11 @@ impl Host {
                     }
                     let state = need()?;
                     let lines = r.lines_per_page.unwrap_or(self.prefs.fountain_lines);
-                    let script = script_of(&r.file, r.tags, lines)?;
+                    let script = if r.tags {
+                        files::tagged_script(&r.file.name, &r.file.bytes)?
+                    } else {
+                        session::parse_script(r.file.bytes.clone(), Path::new(&r.file.name), lines)?
+                    };
                     let (matched, changed, added, omitted, lines) =
                         revision_preview(state.lock().schedule(), &script, r.tags)?;
                     self.tokens += 1;
@@ -571,18 +527,9 @@ impl Host {
                 }
                 "export_drift" => {
                     let r: DriftArgs = args(command, a)?;
-                    let format = Format::parse(&r.format)
-                        .ok_or("That export format isn't one the app knows.")?;
                     let state = need()?;
-                    let s = state.lock();
-                    let bytes = crate::export::drift_bytes(s.schedule(), &r.name, format)?;
-                    let name = format!(
-                        "{} - Drift since {}.{}",
-                        stem(&s),
-                        crate::export::safe_file_stem(&r.name),
-                        format.extension()
-                    );
-                    reply(Ok(Downloads::one(name, bytes)))
+                    let (d, _) = files::drift_download(&state.lock(), &r.name, &r.format)?;
+                    reply(Ok(Downloads::one(d.name, d.bytes)))
                 }
                 "add_element_image" | "add_sheet_image" => {
                     let i: ImageArgs = args(command, a)?;
@@ -612,42 +559,6 @@ impl Host {
             }
         })())
     }
-}
-
-/// A picked script, with tags (`.fdx` only) or without; a Fountain one at `lines` a page.
-fn script_of(file: &FileIn, tags: bool, lines: u32) -> Result<fountain::ImportedScript, Error> {
-    if !tags {
-        return Ok(session::parse_script(
-            file.bytes.clone(),
-            Path::new(&file.name),
-            lines,
-        )?);
-    }
-    let fdx_file = Path::new(&file.name)
-        .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
-    if !fdx_file {
-        return Err("Production tags come only from .fdx files.".into());
-    }
-    let text = text(file, "a script")?;
-    Ok(method_schedule_core::fdx::parse_with_tags(&text).map_err(upper)?)
-}
-
-/// Imports a script read with its production tags (decisions.md, IMP-04), as the
-/// desktop's Import Script with Tags; the notice it shows.
-fn tagged(s: &mut Session, script: &fountain::ImportedScript) -> Result<String, Error> {
-    let tags: usize = script.scenes.iter().map(|s| s.tags.len()).sum();
-    let added = s.edit(|x| {
-        let cast = x.cast_or_add();
-        method_schedule_core::revise::import_tagged(x, script, cast)
-            .map(|v| v.len())
-            .map_err(upper)
-    })?;
-    Ok(format!(
-        "Added {added} {} to the Boneyard, with {tags} production {}.",
-        if added == 1 { "scene" } else { "scenes" },
-        if tags == 1 { "tag" } else { "tags" }
-    ))
 }
 
 #[cfg(test)]

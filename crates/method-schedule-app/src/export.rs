@@ -15,19 +15,11 @@ use std::path::{Path, PathBuf};
 use tauri::{Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 
-use method_schedule_core::Date;
-use method_schedule_format::exchange;
-
 pub use method_schedule_session::export::*;
 
 use crate::app::CmdResult;
 use crate::docs::Doc;
 use crate::safety::{same_file, write_atomically, Access};
-
-/// Today's local date, as `method-schedule budget` stamps the file.
-fn today() -> Option<Date> {
-    exchange::local_today()
-}
 
 /// `p`, ending in `ext` (added when it has another or none).
 pub fn with_extension(mut p: PathBuf, ext: &str) -> PathBuf {
@@ -117,28 +109,26 @@ pub async fn export_report<R: Runtime>(
     report: String,
     format: String,
 ) -> CmdResult<ExportOutcome> {
-    let report = Report::parse(&report).ok_or("That report can't be exported.")?;
-    let format = Format::parse(&format).ok_or("That export format isn't one the app knows.")?;
     // The table is made under the lock; the dialog and the writing happen after it is
     // released, so other commands aren't held up.
-    let (bytes, dir, stem, open) = {
+    let (d, format, dir, open) = {
         let s = state.lock();
-        let bytes = file_bytes(&workbook(s.schedule(), sub_board, report)?, format)?;
-        let (dir, stem, open) = place(&s);
-        (bytes, dir, stem, open)
+        let (d, format) = method_schedule_session::commands::files::report_download(
+            &s, sub_board, &report, &format,
+        )?;
+        let (dir, _, open) = place(&s);
+        (d, format, dir, open)
     };
     let (title, filter) = format.dialog_text();
-    let ext = format.extension();
-    let name = format!("{stem} - {}.{ext}", report.file_label());
     save_dialog(
         &window,
         title,
         filter,
-        ext,
-        name,
+        format.extension(),
+        d.name,
         dir,
         open.as_deref(),
-        &bytes,
+        &d.bytes,
     )
 }
 
@@ -150,21 +140,21 @@ pub async fn export_budget<R: Runtime>(
     state: Doc,
     sub_board: u32,
 ) -> CmdResult<ExportOutcome> {
-    let (text, dir, stem, open) = {
+    let (d, dir, open) = {
         let s = state.lock();
-        let text = budget_text(s.schedule(), sub_board, today())?;
-        let (dir, stem, open) = place(&s);
-        (text, dir, stem, open)
+        let d = method_schedule_session::commands::files::budget_download(&s, sub_board)?;
+        let (dir, _, open) = place(&s);
+        (d, dir, open)
     };
     save_dialog(
         &window,
         "Export for budget",
         "Budget exchange file",
         "json",
-        format!("{stem} - Budget Days.json"),
+        d.name,
         dir,
         open.as_deref(),
-        text.as_bytes(),
+        &d.bytes,
     )
 }
 
@@ -175,6 +165,8 @@ mod tests {
     use crate::safety::tests::temp_dir;
     use crate::session::SessionFiles;
     use crate::session::{read_script, Session};
+    use method_schedule_core::Date;
+    use method_schedule_format::exchange;
     use method_schedule_format::export::{self, xlsx, Cell, PAGES};
 
     fn harbor(start: bool) -> Session {
@@ -308,7 +300,7 @@ mod tests {
         )
         .unwrap();
         assert_ne!(other["source_hash"], v["source_hash"]);
-        assert!(today().is_some());
+        assert!(method_schedule_format::exchange::local_today().is_some());
 
         let h = harbor(false);
         let e = budget_text(h.schedule(), crate::view::first_sub(h.schedule()), day).unwrap_err();
