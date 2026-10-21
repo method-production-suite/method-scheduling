@@ -13,9 +13,8 @@ use crate::docs::Doc;
 use crate::export::ExportOutcome;
 use crate::session;
 use crate::view::View;
-use method_schedule_core::fdx;
 use method_schedule_core::fountain::ImportedScript;
-use method_schedule_core::revise::{import_tagged, revise, revision_text};
+use method_schedule_core::revise::{revise, revision_text};
 use std::sync::Mutex;
 use tauri::{Manager, Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
@@ -38,19 +37,11 @@ static NEXT_TOKEN: Mutex<u64> = Mutex::new(1);
 
 /// A script, with tags (`.fdx` only) or without; a Fountain one at `lines` a page.
 fn read_script(path: &std::path::Path, tags: bool, lines: u32) -> Result<ImportedScript, String> {
-    let fdx_file = path
-        .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case("fdx"));
-    if tags && !fdx_file {
-        return Err("Production tags come only from .fdx files.".to_string());
-    }
     if !tags {
         return session::read_script_with(path, lines);
     }
     let bytes = crate::safety::read_limited(path).map_err(|e| e.to_string())?;
-    let text = String::from_utf8(bytes).map_err(|_| "The script is not UTF-8 text.".to_string())?;
-    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
-    fdx::parse_with_tags(text).map_err(upper)
+    method_schedule_session::commands::files::tagged_script(&session::file_name(path), &bytes)
 }
 
 /// The user's Fountain lines per page (Settings, decision 195).
@@ -99,20 +90,11 @@ pub async fn import_script_tags<R: Runtime>(
     let Some(path) = pick_script(&window, true, "Import script with tags") else {
         return Ok(None);
     };
-    let script = read_script(&path, true, fountain_lines(&window))?;
-    let tags: usize = script.scenes.iter().map(|s| s.tags.len()).sum();
+    let bytes = crate::safety::read_limited(&path).map_err(|e| e.to_string())?;
+    let name = session::file_name(&path);
+    let script = method_schedule_session::commands::files::tagged_script(&name, &bytes)?;
     let mut s = state.lock();
-    let added = s.edit(|x| {
-        let cast = x.cast_or_add();
-        import_tagged(x, &script, cast)
-            .map(|v| v.len())
-            .map_err(upper)
-    })?;
-    let notice = format!(
-        "Added {added} {} to the Boneyard, with {tags} production {}.",
-        if added == 1 { "scene" } else { "scenes" },
-        if tags == 1 { "tag" } else { "tags" }
-    );
+    let notice = method_schedule_session::commands::files::import_tagged(&mut s, &script)?;
     finish(&window, &s, Some(notice)).map(Some)
 }
 
@@ -327,28 +309,23 @@ pub async fn export_drift<R: Runtime>(
     name: String,
     format: String,
 ) -> CmdResult<ExportOutcome> {
-    let format = crate::export::Format::parse(&format)
-        .ok_or("That export format isn't one the app knows.")?;
-    let (bytes, dir, stem, open) = {
+    let (d, format, dir, open) = {
         let s = state.lock();
-        let bytes = crate::export::drift_bytes(s.schedule(), &name, format)?;
-        let (dir, stem, open) = crate::export::place(&s);
-        (bytes, dir, stem, open)
+        let (d, format) =
+            method_schedule_session::commands::files::drift_download(&s, &name, &format)?;
+        let (dir, _, open) = crate::export::place(&s);
+        (d, format, dir, open)
     };
     let (title, filter) = format.dialog_text();
-    let ext = format.extension();
     crate::export::save_dialog(
         &window,
         title,
         filter,
-        ext,
-        format!(
-            "{stem} - Drift since {}.{ext}",
-            crate::export::safe_file_stem(&name)
-        ),
+        format.extension(),
+        d.name,
         dir,
         open.as_deref(),
-        &bytes,
+        &d.bytes,
     )
 }
 
@@ -399,28 +376,25 @@ pub async fn export_call_sheet<R: Runtime>(
     day: u32,
     format: String,
 ) -> CmdResult<ExportOutcome> {
-    let csv = match format.as_str() {
-        "csv" => true,
-        "json" => false,
-        _ => return Err("That call sheet format isn't one the app knows.".to_string()),
-    };
     // The Save dialog opens in the schedule's folder, as every export's (decision 171).
-    let (bytes, dir, stem, open) = {
+    let (d, dir, open) = {
         let s = state.lock();
-        let bytes = call_sheet_bytes(s.schedule(), sub_board, day, csv)?;
-        let (dir, stem, open) = crate::export::place(&s);
-        (bytes, dir, stem, open)
+        let d = method_schedule_session::commands::files::call_sheet_download(
+            &s, sub_board, day, &format,
+        )?;
+        let (dir, _, open) = crate::export::place(&s);
+        (d, dir, open)
     };
-    let ext = if csv { "csv" } else { "json" };
+    let csv = format == "csv";
     crate::export::save_dialog(
         &window,
         "Export call sheet data",
         if csv { "CSV file" } else { "JSON file" },
-        ext,
-        format!("{stem} - Call Sheet Day {day}.{ext}"),
+        if csv { "csv" } else { "json" },
+        d.name,
         dir,
         open.as_deref(),
-        &bytes,
+        &d.bytes,
     )
 }
 

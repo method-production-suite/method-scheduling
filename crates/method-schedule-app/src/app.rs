@@ -298,13 +298,8 @@ pub async fn import_script<R: Runtime>(
         .fountain_lines;
     let script = session::read_script_with(&path, lines)?;
     let mut s = state.lock();
-    let added = s.import_script(&script)?;
-    finish(
-        &window,
-        &s,
-        Some(session::import_notice_for(&script, added)),
-    )
-    .map(Some)
+    let notice = method_schedule_session::commands::files::import_script(&mut s, &script)?;
+    finish(&window, &s, Some(notice)).map(Some)
 }
 
 /// Saves the open schedule: to its file, or where a Save dialog says. False when the user

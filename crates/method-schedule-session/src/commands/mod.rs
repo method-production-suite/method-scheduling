@@ -15,6 +15,7 @@ use crate::view::View;
 pub mod app;
 pub mod breakdown;
 pub mod events;
+pub mod files;
 pub mod find;
 pub mod flagcolors;
 pub mod layouts;

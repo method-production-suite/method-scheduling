@@ -127,29 +127,28 @@ pub async fn export_layouts<R: Runtime>(
     state: Doc,
     ids: Vec<u32>,
 ) -> CmdResult<ExportOutcome> {
-    let (text, dir, stem, open) = {
+    let (d, dir, open) = {
         let s = state.lock();
-        let (text, _) = layouts_file(s.schedule(), &ids)?;
+        let d = method_schedule_session::commands::files::layouts_download(&s, &ids)?;
         let path = s.path().map(PathBuf::from);
         let dir = path.as_deref().and_then(Path::parent).map(PathBuf::from);
-        let stem = crate::app::safe_file_stem(&s.schedule().title);
-        (text, dir, stem, path)
+        (d, dir, path)
     };
     let mut dialog = window
         .dialog()
         .file()
         .set_title("Save layouts")
         .add_filter("Method Schedule layouts", &[EXT, "json"])
-        .set_file_name(format!("{stem} - Layouts.{EXT}"))
+        .set_file_name(d.name)
         .set_parent(&window);
-    if let Some(d) = dir {
-        dialog = dialog.set_directory(d);
+    if let Some(dir) = dir {
+        dialog = dialog.set_directory(dir);
     }
     let Some(picked) = dialog.blocking_save_file() else {
         return Ok(ExportOutcome::default());
     };
     let path = crate::export::with_extension(picked.into_path().map_err(|e| e.to_string())?, EXT);
-    let file = crate::export::write_export(open.as_deref(), &path, text.as_bytes())?;
+    let file = crate::export::write_export(open.as_deref(), &path, &d.bytes)?;
     Ok(ExportOutcome {
         done: true,
         file: Some(file),
@@ -183,16 +182,9 @@ pub async fn import_layouts<R: Runtime>(
     let path = picked.into_path().map_err(|e| e.to_string())?;
     let bytes =
         crate::safety::read_limited(&path).map_err(|e| format!("Couldn't read that file: {e}."))?;
-    let text = String::from_utf8(bytes)
-        .map_err(|_| "That isn't a layout file Method Schedule can read.".to_string())?;
     let mut s = state.lock();
-    let n = s.edit(|x| load_layouts(x, &text))?;
-    let what = if n == 1 {
-        "1 layout".to_string()
-    } else {
-        format!("{n} layouts")
-    };
-    finish(&window, &s, Some(format!("Loaded {what}."))).map(Some)
+    let notice = method_schedule_session::commands::files::load_layouts_bytes(&mut s, &bytes)?;
+    finish(&window, &s, Some(notice)).map(Some)
 }
 
 #[cfg(test)]

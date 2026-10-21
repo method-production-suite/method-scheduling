@@ -367,11 +367,6 @@ pub(crate) fn finish(w: &W, s: &Session, notice: Option<String>) -> Result<View,
     crate::commands::Shell::finish(w, s, notice)
 }
 
-/// Today, on the host's clock.
-pub(crate) fn today() -> Option<method_schedule_core::Date> {
-    crate::clock::today()
-}
-
 pub(crate) use reply as to_reply;
 
 #[cfg(test)]
