@@ -15,14 +15,20 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None pending. v0.3.0, the first universal Mac release, was published on 2026-10-20 after
-  its rehearsal; methodschedule.com follows it. The next release is proposed here when
-  there is something people can use.
+- **v0.5.0 on c3adcd4**: the tag request is with MOrg (2026-10-21). Its rehearsal passed on
+  all three systems (notarized and stapled, both chips). It brings the `.mscenes` import,
+  merge against any schedule file, the drift printed, no other product's name anywhere,
+  and the `/try/` demo linked from the site (the website's sync builds it for this
+  release). **Recommended**: tag and publish.
+- v0.4.0 was published on 2026-10-20 (what was shot, the `extensions` slot, the webpki
+  security fix, Tauri 2.12); methodschedule.com follows it.
 
 **Needs the owner's hands or hardware**
-- **v0.3.0's four tests**, about five minutes on the Mac: the in-app update from 0.2.0, both
-  chips in the app, the Intel half opening under Rosetta (the one that needs the screen),
-  and a checksum. Commands in [research/release-0.3.0.md](research/release-0.3.0.md).
+- **The update and both-chips tests**, about five minutes on the Mac, now on the newest
+  release: the in-app update from the version installed, both chips in the app, the Intel
+  half opening under Rosetta (the one that needs the screen), and a checksum. The commands
+  are in [research/release-0.3.0.md](research/release-0.3.0.md); use the newest version
+  number in them.
 - **Screen block 7**, one block on the owner's screen, asked for through MOrg (the suite
   rule since 2026-10-18; everything else here is tested offscreen): a file opened from the Finder opens in its
   own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past
