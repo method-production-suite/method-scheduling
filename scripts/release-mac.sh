@@ -23,7 +23,9 @@
 # Without it the script stops after signing and verifying, before anything is sent.
 #
 # Settings, all optional:
-#   METHOD_SIGN_IDENTITY   the signing identity (default: the suite's Developer ID, by team ID)
+#   METHOD_SIGN_TEAM       the Developer ID's team ID (default XSRB3D643J); the full identity
+#                          is read from the keychain at run time
+#   METHOD_SIGN_IDENTITY   the full signing identity, instead of looking it up by team ID
 #   METHOD_NOTARY_PROFILE  the notarytool keychain profile (default method-schedule-notary)
 #   METHOD_MAC_TARGET      a Rust target, such as universal-apple-darwin (default: this Mac's)
 #   METHOD_SKIP_NOTARIZE=1 sign and verify only
@@ -31,7 +33,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IDENTITY="${METHOD_SIGN_IDENTITY:-XSRB3D643J}"
+TEAM="${METHOD_SIGN_TEAM:-XSRB3D643J}"
+IDENTITY="${METHOD_SIGN_IDENTITY:-}"
 PROFILE="${METHOD_NOTARY_PROFILE:-method-schedule-notary}"
 TARGET="${METHOD_MAC_TARGET:-}"
 TAURI_CLI_VERSION="2.12.1"
@@ -57,8 +60,22 @@ have_cli="$(cargo tauri --version | awk '{print $2}')"
 VERSION="$(awk '/^\[workspace.package\]/{p=1; next} /^\[/{p=0} p && /^version *=/{gsub(/[" ]/, "", $0); sub(/version=/, "", $0); print; exit}' Cargo.toml)"
 [ -n "$VERSION" ] || die "no version under [workspace.package] in Cargo.toml"
 
-security find-identity -v -p codesigning | grep -qF "\"$IDENTITY\"" \
+# The full identity, "Developer ID Application: <name> (<team>)", from the keychain: the
+# name stays out of the repo, and codesign's Authority line is checked against it below.
+identities="$(security find-identity -v -p codesigning)"
+if [ -z "$IDENTITY" ]; then
+  # The first match only, with no pipe for pipefail to trip on when a team has two.
+  IDENTITY="$(sed -n "/\"Developer ID Application: .* ($TEAM)\"\$/{
+s/.*\"\(Developer ID Application: .* ($TEAM)\)\"\$/\1/p
+q
+}" <<<"$identities")"
+  [ -n "$IDENTITY" ] || die "no Developer ID Application identity for team $TEAM in the keychain (security find-identity -v -p codesigning); set METHOD_SIGN_TEAM or METHOD_SIGN_IDENTITY"
+fi
+grep -qF "\"$IDENTITY\"" <<<"$identities" \
   || die "no signing identity \"$IDENTITY\" in the keychain (security find-identity -v -p codesigning); set METHOD_SIGN_IDENTITY"
+# The team of the identity in use, which METHOD_SIGN_IDENTITY may have set.
+signer="${IDENTITY##*(}"
+say "signing as the Developer ID of team ${signer%)}"
 
 # 1 and 2. Build, bundle and sign. The bundler signs with the identity in
 # APPLE_SIGNING_IDENTITY, hardened runtime on. Apple ID and API key variables are cleared

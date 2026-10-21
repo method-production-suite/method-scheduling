@@ -19,6 +19,8 @@ section. Everything else on this page goes ahead without waiting.
   any schedule file, the drift printed, no other product's name anywhere, `/try/` linked
   from the site); methodschedule.com follows it with the demo. v0.4.0 came out on
   2026-10-20. The next release is proposed here when there is something people can use.
+  For its notes: files using per-person call times (D231, `plan.person_calls`) won't open
+  in 0.5.0 or earlier.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
