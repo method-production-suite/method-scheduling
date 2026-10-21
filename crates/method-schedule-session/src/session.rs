@@ -227,6 +227,11 @@ impl Session {
         self.rev != self.saved_rev
     }
 
+    /// Which version of the schedule this is: it changes with every edit, undo and redo.
+    pub fn rev(&self) -> u64 {
+        self.rev
+    }
+
     pub fn can_undo(&self) -> bool {
         !self.undo.is_empty()
     }

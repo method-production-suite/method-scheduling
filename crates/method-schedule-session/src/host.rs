@@ -337,8 +337,19 @@ impl Host {
         }
         let a: DocArg = args(command, args_json)?;
         let state = self.doc(a.doc)?;
-        dispatch::dispatch(command, args_json, &state)
-            .unwrap_or_else(|| Err(Error::UnknownCommand(command.to_string())))
+        let before = state.lock().rev();
+        let r = dispatch::dispatch(command, args_json, &state)
+            .unwrap_or_else(|| Err(Error::UnknownCommand(command.to_string())));
+        // Read-only means no change, whatever a command turns out to do: one listed as a
+        // read by mistake is taken back and refused, so a viewer never edits.
+        if self.read_only {
+            let mut s = state.lock();
+            if s.rev() != before {
+                s.undo();
+                return Err(Error::Refused(READ_ONLY.to_string()));
+            }
+        }
+        r
     }
 }
 
@@ -405,6 +416,54 @@ mod tests {
         "user_guide",
         "whats_new",
     ];
+
+    /// Read-only (a viewer, or the website's demo): every command it lets through changes
+    /// nothing. Each read is run on the sample with the arguments the page sends, and the
+    /// schedule must be byte for byte the same after; the eight that once slipped through
+    /// (Replace and the layout library) are refused.
+    #[test]
+    fn read_only_lets_no_edit_through() {
+        let mut h = Host::new();
+        let v = h.dispatch("open_sample", &Value::Null).unwrap()["view"].clone();
+        let board = v["board"]["id"].as_u64().unwrap();
+        let sub = v["board"]["sub_boards"][0]["id"].as_u64().unwrap();
+        h.set_read_only(true);
+        let before = h.save_mtsc(None).unwrap().text;
+        for c in [
+            "replace_text",
+            "add_layout",
+            "save_layout",
+            "rename_layout",
+            "move_layout",
+            "delete_layout",
+            "use_layout",
+            "use_one_line_layout",
+        ] {
+            assert!(!dispatch::READS.contains(&c), "{c} edits");
+        }
+        // Replace, as the page sends it: refused, nothing replaced.
+        let r = h.dispatch(
+            "replace_text",
+            &json!({ "query": { "text": "RADIO" }, "with": "WIRELESS", "picks": null }),
+        );
+        assert_eq!(r.unwrap_err().message(), READ_ONLY);
+        let r = h.dispatch(
+            "add_layout",
+            &json!({ "name": "Mine", "kind": "strips", "layout": {}, "board": board }),
+        );
+        assert!(r.is_err());
+        // Every read with plausible arguments: whatever it answers, nothing changes.
+        let a = json!({ "board": board, "sub_board": sub, "sheet": 1, "element": 1, "day": 1,
+            "index": 0, "query": { "text": "RADIO" }, "name": "x", "category": null });
+        for c in dispatch::READS {
+            let _ = h.dispatch(c, &a);
+            assert_eq!(
+                h.save_mtsc(None).unwrap().text,
+                before,
+                "{c} changed the schedule"
+            );
+        }
+    }
 
     #[test]
     fn every_desktop_command_is_the_hosts_or_listed_as_desktop_only() {
