@@ -207,7 +207,7 @@ pub fn tools() -> Vec<Tool> {
                         (
                             "daylight_saving",
                             one_of(
-                                "When the clocks go an hour ahead: us_canada (second Sunday of March to first Sunday of November), eu (last Sunday of March to last Sunday of October), australia (Australia's south-east: first Sunday of October to first Sunday of April; Queensland, the Northern Territory and Western Australia have none), new_zealand (last Sunday of September to first Sunday of April), israel (the Friday before the last Sunday of March to the last Sunday of October), egypt (last Friday of April to the end of the last Thursday of October), chile (mainland: first Sunday of September to first Sunday of April) or none. Default: the location's rule, else none.",
+                                "When the clocks go an hour ahead: us_canada (second Sunday of March to first Sunday of November), eu (last Sunday of March to last Sunday of October), australia (Australia's south-east: first Sunday of October to first Sunday of April; Queensland, the Northern Territory and Western Australia have none), new_zealand (last Sunday of September to first Sunday of April), israel (the Friday before the last Sunday of March to the last Sunday of October), egypt (last Friday of April to the end of the last Thursday of October), chile (mainland: the Sunday after the first Saturday of September to the Sunday after the first Saturday of April) or none. Default: the location's rule, else none.",
                                 &[
                                     "none",
                                     "us_canada",
