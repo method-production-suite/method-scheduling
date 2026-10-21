@@ -35,7 +35,7 @@ section. Everything else on this page goes ahead without waiting.
   usual Linux desktops keep for themselves; pressing them is the live check. Also
   double-clicking a `.mtsc` and a `.mtst` (both associated in `tauri.conf.json`).
 
-**Deferred (Sam, 2026-10-20)**: "defer windows tests indefinitely. We can do linux ones
+**Deferred (the owner, 2026-10-20)**: "defer windows tests indefinitely. We can do linux ones
 eventually." Windows is still built and tested automatically (the weekly build and every
 release make and test the Windows app and its installer), and its release notes keep
 saying it hasn't been tested by a person yet. The Windows hand checks (the same list as
