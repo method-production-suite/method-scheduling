@@ -15,13 +15,10 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **v0.5.0 on c3adcd4**: the tag request is with MOrg (2026-10-21). Its rehearsal passed on
-  all three systems (notarized and stapled, both chips). It brings the `.mscenes` import,
-  merge against any schedule file, the drift printed, no other product's name anywhere,
-  and the `/try/` demo linked from the site (the website's sync builds it for this
-  release). **Recommended**: tag and publish.
-- v0.4.0 was published on 2026-10-20 (what was shot, the `extensions` slot, the webpki
-  security fix, Tauri 2.12); methodschedule.com follows it.
+- None pending. v0.5.0 was published on 2026-10-21 (the `.mscenes` import, merge against
+  any schedule file, the drift printed, no other product's name anywhere, `/try/` linked
+  from the site); methodschedule.com follows it with the demo. v0.4.0 came out on
+  2026-10-20. The next release is proposed here when there is something people can use.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
