@@ -208,11 +208,11 @@ docs/features.toml.
 - **Call sheet data.** A shoot day's call sheet data as JSON or CSV, ready for whatever lays out your call sheets.
 - **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set, other elements and notes.
 - **What was shot.** Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan.
+- **Try it in your browser.** The whole app with Field Station, an invented production, running in your browser with nothing to install: nothing is uploaded, and Save downloads the file.
 
 ### On the roadmap
 
 - **Windows and Linux, tested.** Both build from the same code today; printing, keys and file types still need a hands-on check.
-- **Try it in your browser.** The app with an invented schedule, running in the browser with nothing to install.
 - **Daylight saving per location.** Sunrise, sunset and call times that follow each location's clock changes.
 
 <!-- features:end -->
