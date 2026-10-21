@@ -5,7 +5,7 @@
 
 use serde_json::{json, Value};
 
-use method_schedule_core::callsheet::CallSheet;
+use method_schedule_core::callsheet::{CallScene, CallSheet};
 use method_schedule_core::plan::clock_text;
 use method_schedule_core::solar::Sun;
 
@@ -30,6 +30,25 @@ pub fn to_json(c: &CallSheet) -> String {
         Some(Sun::AlwaysUp) => (None, None, "always_up"),
         Some(Sun::AlwaysDown) => (None, None, "always_down"),
         None => (None, None, "unknown"),
+    };
+    let scene = |x: &CallScene| {
+        json!({
+            "sheet": x.sheet.0,
+            "scenes": x.scenes,
+            "int_ext": x.int_ext,
+            "set": x.set,
+            "time_of_day": x.time_of_day,
+            "eighths": x.pages.0,
+            "pages": x.pages.to_string(),
+            "synopsis": x.synopsis,
+            "location": x.location,
+            "cast": x.cast,
+            "shoot_minutes": x.shoot_minutes,
+            "start_minutes": time(x.start),
+            "start": time_text(x.start),
+            "end_minutes": time(x.end),
+            "end": time_text(x.end),
+        })
     };
     let v = json!({
         "format": "method-schedule-callsheet",
@@ -58,23 +77,7 @@ pub fn to_json(c: &CallSheet) -> String {
             "sunset_minutes": time(set),
             "sunset": time_text(set),
         },
-        "scenes": c.scenes.iter().map(|x| json!({
-            "sheet": x.sheet.0,
-            "scenes": x.scenes,
-            "int_ext": x.int_ext,
-            "set": x.set,
-            "time_of_day": x.time_of_day,
-            "eighths": x.pages.0,
-            "pages": x.pages.to_string(),
-            "synopsis": x.synopsis,
-            "location": x.location,
-            "cast": x.cast,
-            "shoot_minutes": x.shoot_minutes,
-            "start_minutes": time(x.start),
-            "start": time_text(x.start),
-            "end_minutes": time(x.end),
-            "end": time_text(x.end),
-        })).collect::<Vec<_>>(),
+        "scenes": c.scenes.iter().map(scene).collect::<Vec<_>>(),
         "cast": c.cast.iter().map(|x| json!({
             "element": x.element.0,
             "board_id": x.board_id,
@@ -101,6 +104,15 @@ pub fn to_json(c: &CallSheet) -> String {
             })).collect::<Vec<_>>(),
         })).collect::<Vec<_>>(),
         "notes": c.notes,
+        "advance": c.advance.iter().map(|d| json!({
+            "day": d.day,
+            "date": d.date.map(|x| x.to_string()),
+            "call_minutes": d.call,
+            "call": time_text(d.call.map(|m| m as i32)),
+            "eighths": d.pages.0,
+            "pages": d.pages.to_string(),
+            "scenes": d.scenes.iter().map(scene).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(),
     });
     let mut text = serde_json::to_string_pretty(&v).expect("json always serializes");
     text.push('\n');
@@ -111,7 +123,8 @@ fn opt(m: Option<i32>) -> Cell {
     m.map_or(Cell::Empty, |m| Cell::text(clock_text(m)))
 }
 
-/// The call sheet as tables: Day (field and value), Scenes, Cast, Elements and Notes.
+/// The call sheet as tables: Day (field and value), Scenes, Cast, Elements, Notes and
+/// Advance (the next days' scenes, decision 232).
 pub fn workbook(c: &CallSheet) -> Workbook {
     let (rise, set) = c.sun_text();
     let row = |k: &str, v: Cell| vec![Cell::text(k), v];
@@ -230,9 +243,45 @@ pub fn workbook(c: &CallSheet) -> Workbook {
             .map(|n| vec![Cell::text(n.clone())])
             .collect(),
     };
+    let advance = Sheet {
+        name: "Advance",
+        columns: [
+            "Day",
+            "Date",
+            "Call",
+            "Scene",
+            "I/E",
+            "Set",
+            "Day/Night",
+            "Pages",
+            "Cast",
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect(),
+        rows: c
+            .advance
+            .iter()
+            .flat_map(|d| {
+                d.scenes.iter().map(|x| {
+                    vec![
+                        Cell::text(d.day.to_string()),
+                        Cell::date(d.date),
+                        opt(d.call.map(|m| m as i32)),
+                        Cell::text(x.scenes.clone()),
+                        Cell::text(x.int_ext.clone()),
+                        Cell::text(x.set.clone()),
+                        Cell::text(x.time_of_day.clone()),
+                        Cell::text(x.pages.to_string()),
+                        Cell::text(x.cast.join(", ")),
+                    ]
+                })
+            })
+            .collect(),
+    };
     Workbook {
         title: c.title.clone(),
-        sheets: vec![day, scenes, cast, elements, notes],
+        sheets: vec![day, scenes, cast, elements, notes, advance],
     }
 }
 
@@ -298,6 +347,19 @@ mod tests {
         .unwrap();
         let d = s.insert_strip(b, StripKind::DayBreak, at(2)).unwrap();
         set_call_time(&mut s, d, Some(7 * 60)).unwrap();
+        // Day 2, for the advance schedule (decision 232).
+        let next = s.add_sheet(Header {
+            scenes: "13".into(),
+            int_ext: "INT".into(),
+            set: "SHED".into(),
+            time_of_day: "NIGHT".into(),
+            pages: method_schedule_core::Eighths(3),
+            ..Header::default()
+        });
+        s.tag(next, ann).unwrap();
+        let st = s.boards[0].boneyard[0].id;
+        s.move_strips(b, &[st], at(3)).unwrap();
+        s.insert_strip(b, StripKind::DayBreak, at(4)).unwrap();
         s.plan
             .set_location(GeoLocation {
                 name: "pier".into(),
@@ -340,6 +402,13 @@ mod tests {
         assert_eq!(j["cast"][0]["wrap_minutes"], 540);
         assert_eq!(j["cast"][0]["own_call"], false);
         assert!(csv.contains("\r\n\r\nNote\r\n08:30 Lunch (0:30)\r\n"));
+        // The next day in brief (decision 232): day 2's scenes, last in the file.
+        assert_eq!(j["advance"].as_array().unwrap().len(), 1, "{j}");
+        assert_eq!(j["advance"][0]["day"], 2);
+        assert!(
+            csv.contains("\r\n\r\nDay,Date,Call,Scene,I/E,Set,Day/Night,Pages,Cast\r\n2,2024-06-21,,13,INT,SHED,NIGHT,3/8,1\r\n"),
+            "{csv}"
+        );
     }
 
     /// The JSON has exactly the keys CALLSHEET.md's table lists, and inside `sun`,
@@ -367,7 +436,7 @@ mod tests {
             let cells: Vec<&str> = row.split('|').collect();
             let keys = ticks(cells[1]);
             if let [one] = keys.as_slice() {
-                if ["sun", "scenes", "cast", "elements"].contains(&one.as_str()) {
+                if ["sun", "scenes", "cast", "elements", "advance"].contains(&one.as_str()) {
                     // The object's own keys: for elements, those before `(each`.
                     let notes = cells[3].split("(each").next().unwrap();
                     let mut k = ticks(notes);
@@ -383,7 +452,7 @@ mod tests {
         let j: Value = serde_json::from_str(&text).unwrap();
         let keys = |v: &Value| -> Vec<String> { v.as_object().unwrap().keys().cloned().collect() };
         assert_eq!(keys(&j), top, "top level");
-        for part in ["sun", "scenes", "cast", "elements"] {
+        for part in ["sun", "scenes", "cast", "elements", "advance"] {
             let v = if part == "sun" { &j[part] } else { &j[part][0] };
             assert_eq!(keys(v), inner[part], "{part}");
         }

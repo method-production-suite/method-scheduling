@@ -478,6 +478,9 @@ export function planFakes(ctx) {
         ],
         elements: [{ category: 5, name: 'Hand props', elements: [{ element: 9, board_id: '', name: 'Logbook', scenes: ['5'] }] }],
         notes: ['Company move to Gull Point, 09:20, 30 minutes.', 'Scene 9 is exterior dusk: shoot before sunset at 18:19.'],
+        advance: day < sb.days.length
+          ? [{ day: day + 1, date: '2026-10-21', call: '07:00', call_minutes: 420, eighths: 11, pages: '1 3/8', scenes: [sc('3A', 'INT/EXT', "KIT'S TRUCK", 'DAY', '1/8', ['1'], null, null, ''), sc('7', 'INT', 'NET LOFT', 'NIGHT', '1 2/8', ['1', '4'], null, null, '')] }]
+          : [],
       };
     },
     shoot_day_count: ({ sub_board }) => {

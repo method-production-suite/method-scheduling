@@ -245,7 +245,7 @@ kept or offered as a pick, in tests and in a live run.
 
 | Item | Size | Refs |
 |---|---|---|
-| Call sheets beyond the printed sheet (decision 207): crew calls, an advance schedule for the next days, a map; distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
+| Call sheets beyond the printed sheet (decision 207): crew calls and a map (the advance schedule came in D232); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (D230, 2026-10-21): the ones that move with a lunar calendar or by decree (others keep a typed offset today) | S | D72, D193, D220, D230, BYD-08 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
 | Script revision workflow: revision colors and dates, a report of what each draft changed | M | D69, BYD-01 |
@@ -253,7 +253,8 @@ kept or offered as a pick, in tests and in a live run.
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |
 
 Done: per-person call times (D231, 2026-10-21). The Day Timeline sets each person's own
-call and wrap; the rest checks and the call sheet use them.
+call and wrap; the rest checks and the call sheet use them. The call sheet's advance
+schedule, the next two shoot days in brief (D232, 2026-10-21).
 
 **Exit**: each item ships behind its own menu entry or option, documented, with the
 exchange at version 1 read by Method Budget.
