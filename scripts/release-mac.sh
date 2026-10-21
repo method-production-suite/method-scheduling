@@ -64,12 +64,18 @@ VERSION="$(awk '/^\[workspace.package\]/{p=1; next} /^\[/{p=0} p && /^version *=
 # name stays out of the repo, and codesign's Authority line is checked against it below.
 identities="$(security find-identity -v -p codesigning)"
 if [ -z "$IDENTITY" ]; then
-  IDENTITY="$(sed -n "s/.*\"\(Developer ID Application: .* ($TEAM)\)\"\$/\1/p" <<<"$identities" | head -1)"
+  # The first match only, with no pipe for pipefail to trip on when a team has two.
+  IDENTITY="$(sed -n "/\"Developer ID Application: .* ($TEAM)\"\$/{
+s/.*\"\(Developer ID Application: .* ($TEAM)\)\"\$/\1/p
+q
+}" <<<"$identities")"
   [ -n "$IDENTITY" ] || die "no Developer ID Application identity for team $TEAM in the keychain (security find-identity -v -p codesigning); set METHOD_SIGN_TEAM or METHOD_SIGN_IDENTITY"
 fi
 grep -qF "\"$IDENTITY\"" <<<"$identities" \
   || die "no signing identity \"$IDENTITY\" in the keychain (security find-identity -v -p codesigning); set METHOD_SIGN_IDENTITY"
-say "signing as the Developer ID of team $TEAM"
+# The team of the identity in use, which METHOD_SIGN_IDENTITY may have set.
+signer="${IDENTITY##*(}"
+say "signing as the Developer ID of team ${signer%)}"
 
 # 1 and 2. Build, bundle and sign. The bundler signs with the identity in
 # APPLE_SIGNING_IDENTITY, hardened runtime on. Apple ID and API key variables are cleared
