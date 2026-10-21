@@ -916,6 +916,10 @@ fn remap(s: &mut Schedule, map: &BTreeMap<u32, u32>) {
     let p = &mut s.plan;
     p.call_times.iter_mut().for_each(|c| m(&mut c.day.0));
     p.days_shot.iter_mut().for_each(|d| m(&mut d.day.0));
+    for x in &mut p.person_calls {
+        m(&mut x.day.0);
+        m(&mut x.element.0);
+    }
     for x in &mut p.scenes_shot {
         m(&mut x.day.0);
         m(&mut x.sheet.0);
@@ -1476,6 +1480,30 @@ impl M<'_> {
                     let date = d.date.map_or("no date".to_string(), |x| x.to_string());
                     let time = |m: Option<u32>| m.map_or("?".to_string(), |m| clock_text(m as i32));
                     format!("{date}, call {}, wrap {}", time(d.call), time(d.wrap))
+                },
+            ),
+            person_calls: merge_keyed(
+                cx,
+                "plan:person_call",
+                &b.person_calls,
+                &o.person_calls,
+                &t.person_calls,
+                |x| format!("{}:{}", x.element.0, x.day.0),
+                |x| {
+                    format!(
+                        "The call of {} on the day closed by {}",
+                        [self.o, self.t, self.b]
+                            .iter()
+                            .find_map(|s| s.element(x.element))
+                            .map_or("an element that is gone".to_string(), |e| e.name.clone()),
+                        self.strip_name_by_id(x.day)
+                    )
+                },
+                |x| {
+                    let time = |m: Option<u32>| {
+                        m.map_or("the company's".to_string(), |m| clock_text(m as i32))
+                    };
+                    format!("call {}, wrap {}", time(x.call), time(x.wrap))
                 },
             ),
             scenes_shot: merge_keyed(

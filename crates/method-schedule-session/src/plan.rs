@@ -12,7 +12,7 @@ use crate::view::sub_ref;
 use method_schedule_core::callsheet::call_sheet;
 use method_schedule_core::drift::{drift, WorkDay};
 use method_schedule_core::fountain::ImportedScript;
-use method_schedule_core::model::{BoardId, CategoryId, StripId, SubBoardId};
+use method_schedule_core::model::{BoardId, CategoryId, ElementId, StripId, SubBoardId};
 use method_schedule_core::optimize::{apply as apply_order_to, suggest, Score};
 use method_schedule_core::plan::{
     self as p, clock_text, degrees_text, hours_text, offset_text, parse_clock,
@@ -114,6 +114,59 @@ pub struct DayDto {
     pub push: Vec<u32>,
     /// The day they would move to.
     pub next: Option<u32>,
+    /// Who works the day (cast, and any category with a turnaround), with their own call
+    /// and wrap where they have one (decision 231).
+    pub people: Vec<PersonDto>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersonDto {
+    pub element: u32,
+    pub name: String,
+    /// Their own call and wrap as clock times; empty when they keep the company's.
+    pub call: String,
+    pub wrap: String,
+}
+
+/// The day's people in scene order: cast and any element whose category has a turnaround,
+/// then anyone with a call of their own whose scenes have since moved.
+fn people(s: &Schedule, t: &method_schedule_core::timeline::DayTimeline) -> Vec<PersonDto> {
+    let cast = s.cast();
+    let mut els: Vec<ElementId> = Vec::new();
+    for e in &t.entries {
+        let EntryKind::Scene(id) = e.kind else {
+            continue;
+        };
+        for el in s.sheet(id).map_or(&[][..], |h| &h.elements[..]) {
+            let shown = s.element(*el).is_some_and(|x| {
+                Some(x.category) == cast || s.plan.turnaround(x.category).is_some()
+            });
+            if shown && !els.contains(el) {
+                els.push(*el);
+            }
+        }
+    }
+    for x in s.plan.person_calls.iter().filter(|x| x.day == t.day) {
+        if !els.contains(&x.element) {
+            els.push(x.element);
+        }
+    }
+    els.into_iter()
+        .filter_map(|el| {
+            let name = s.element(el)?.name.clone();
+            let own = s.plan.person_call(t.day, el);
+            Some(PersonDto {
+                element: el.0,
+                name,
+                call: own
+                    .and_then(|x| x.call)
+                    .map_or(String::new(), |c| clock_text(c as i32)),
+                wrap: own
+                    .and_then(|x| x.wrap)
+                    .map_or(String::new(), |w| t.time_text(w as i32)),
+            })
+        })
+        .collect()
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -208,6 +261,7 @@ pub fn timeline_view(s: &Schedule, sub: u32, strip: Option<u32>) -> Result<Timel
             },
             push,
             next: past.next,
+            people: people(s, t),
         });
     }
     Ok(TimelineDto {
@@ -236,6 +290,32 @@ pub fn set_call(s: &mut Schedule, day: u32, call: &str) -> Result<(), String> {
         Some(parse_clock(call).map_err(upper)?)
     };
     p::set_call_time(s, StripId(day), minutes).map_err(upper)
+}
+
+/// Sets `element`'s own call and wrap on the day `day` closes (decision 231), as typed;
+/// empty keeps the company's. A wrap at or before the call is read as after midnight.
+pub fn set_own_call(
+    s: &mut Schedule,
+    day: u32,
+    element: u32,
+    call: &str,
+    wrap: &str,
+) -> Result<(), String> {
+    let clock = |x: &str| {
+        let x = x.trim();
+        if x.is_empty() {
+            Ok(None)
+        } else {
+            parse_clock(x).map(Some).map_err(upper)
+        }
+    };
+    let call = clock(call)?;
+    let day = StripId(day);
+    let wrap = clock(wrap)?.map(|w| match call.or(s.plan.call_time(day)) {
+        Some(c) if w <= c => w + 24 * 60,
+        _ => w,
+    });
+    p::set_person_call(s, day, ElementId(element), call, wrap).map_err(upper)
 }
 
 /// Records what was shot of `sheet` on the day `day` closes (M5): `eighths` as typed

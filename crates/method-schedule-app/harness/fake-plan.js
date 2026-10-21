@@ -232,6 +232,14 @@ export function planFakes(ctx) {
         past_wrap: pastWrap,
         push: next === null ? [] : moving.map((e) => e.strip),
         next,
+        // As plan.rs people (decision 231): fixed cast, with their own times where set.
+        people: [
+          [1, 'KIT'],
+          [4, 'HARBORMASTER LUND'],
+        ].map(([element, name]) => {
+          const own = (plan.own || {})[`${element}:${id}`] || {};
+          return { element, name, call: own.call ?? '', wrap: own.wrap ?? '' };
+        }),
       };
     });
     return { sub_board: sub, sub_board_name: sb.name, long_day: hoursText(limit), days, focus };
@@ -287,6 +295,19 @@ export function planFakes(ctx) {
       return planEdit((m, plan) => {
         if (minutes === null) delete plan.calls[day];
         else plan.calls[day] = minutes;
+      });
+    },
+    // As plan.rs set_own_call (decision 231): kept as typed once read.
+    set_person_call: ({ day, element, call, wrap }) => {
+      if (typeof day !== 'number' || typeof element !== 'number') throw 'fake: set_person_call needs day and element';
+      const c = String(call).trim();
+      const w = String(wrap).trim();
+      if (c) read(() => parseClock(c));
+      if (w) read(() => parseClock(w));
+      return planEdit((m, plan) => {
+        plan.own = plan.own || {};
+        if (!c && !w) delete plan.own[`${element}:${day}`];
+        else plan.own[`${element}:${day}`] = { call: c && clockText(parseClock(c)), wrap: w && clockText(parseClock(w)) };
       });
     },
     // As plan::record_shot (M5): kept for the page only; the fake's board doesn't mark it.
@@ -452,8 +473,8 @@ export function planFakes(ctx) {
           sc('9', 'EXT', 'HARBOR WALL', 'DUSK', '3/8', ['1'], '08:50', '09:20', 'Kit alone as the light goes.'),
         ],
         cast: [
-          { element: 1, board_id: '1', name: 'KIT', scenes: ['3', '5', '9'], first: '07:00', last: '09:20' },
-          { element: 4, board_id: '4', name: 'HARBORMASTER LUND', scenes: ['3', '5'], first: '07:00', last: '08:50' },
+          { element: 1, board_id: '1', name: 'KIT', scenes: ['3', '5', '9'], first: '07:00', last: '09:20', call: '06:30', wrap: '15:40', own_call: true },
+          { element: 4, board_id: '4', name: 'HARBORMASTER LUND', scenes: ['3', '5'], first: '07:00', last: '08:50', call: '07:00', wrap: '15:40', own_call: false },
         ],
         elements: [{ category: 5, name: 'Hand props', elements: [{ element: 9, board_id: '', name: 'Logbook', scenes: ['5'] }] }],
         notes: ['Company move to Gull Point, 09:20, 30 minutes.', 'Scene 9 is exterior dusk: shoot before sunset at 18:19.'],

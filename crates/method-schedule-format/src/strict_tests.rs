@@ -338,6 +338,15 @@ pub(crate) fn everything() -> Schedule {
             eighths: method_schedule_core::Eighths(4),
             complete: true,
         });
+    // A call and wrap of one's own (decision 231).
+    s.plan
+        .person_calls
+        .push(method_schedule_core::plan::PersonCall {
+            day: brk,
+            element: walkers,
+            call: Some(300),
+            wrap: Some(1560),
+        });
     // Additions from another app on every object that keeps them (decision 224).
     let x = &mut s.extensions;
     x.file = Some(r#"{"org.example.sync":{"rev":7}}"#.to_string());

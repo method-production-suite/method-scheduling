@@ -155,6 +155,7 @@ const COMMANDS: &[&str] = &[
     "revise_apply",
     "timeline_data",
     "set_call_time",
+    "set_person_call",
     "set_shot",
     "set_long_day",
     "push_past_wrap",
