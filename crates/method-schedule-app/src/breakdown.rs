@@ -1,7 +1,7 @@
 //! The Breakdown tab's header field order (decisions.md, entry 81) and the breakdown
 //! designer's hidden fields, widths (entry 101) and row lengths (entry 186): kept in the schedule
 //! (`Schedule::sheet_fields`, `Schedule::sheet_looks`), one undo step.
-use crate::app::{finish, CmdResult};
+use crate::app::CmdResult;
 use crate::docs::Doc;
 use tauri::{Runtime, WebviewWindow};
 
@@ -19,15 +19,12 @@ pub fn set_sheet_field_order<R: Runtime>(
     widths: Option<std::collections::BTreeMap<String, String>>,
     rows: Option<Vec<u8>>,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| {
-        set_design(
-            x,
-            &fields,
-            hidden.as_deref(),
-            widths.as_ref(),
-            rows.as_deref(),
-        )
-    })?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::breakdown::set_sheet_field_order(
+        &crate::app::Win(&window),
+        &*state,
+        fields,
+        hidden,
+        widths,
+        rows,
+    )
 }

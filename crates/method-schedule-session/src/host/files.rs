@@ -674,7 +674,10 @@ mod tests {
     #[test]
     fn the_file_commands_are_their_own() {
         for c in super::COMMANDS {
-            assert!(!super::super::COMMANDS.contains(c), "{c} is generated too");
+            assert!(
+                !super::super::COMMANDS.contains(c),
+                "{c} is in the dispatch too"
+            );
         }
         for c in super::READS {
             assert!(super::COMMANDS.contains(c), "{c}");

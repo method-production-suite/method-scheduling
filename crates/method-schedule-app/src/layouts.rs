@@ -3,26 +3,14 @@
 //! and loaded as layout files. The edits are plain functions on a [`Schedule`] (one undo
 //! step each through `Session::edit`); the two file commands show their dialogs from
 //! Rust, so the page never names a path.
-use crate::app::{finish, AppState, CmdResult};
-use crate::board::EditResult;
+use crate::app::{finish, CmdResult};
 use crate::docs::Doc;
 use crate::export::ExportOutcome;
-use method_schedule_core::Schedule;
 use std::path::{Path, PathBuf};
 use tauri::{Runtime, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 
 pub use method_schedule_session::layouts::*;
-
-fn edit_with<R: Runtime>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut Schedule) -> EditResult,
-) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(f)?;
-    finish(window, &s, None)
-}
 
 /// Adds a named layout (from the Strip Layout or Day Breaks dialog), and with `board` picks
 /// it there, as one undo step.
@@ -35,9 +23,14 @@ pub fn add_layout<R: Runtime>(
     layout: LayoutInput,
     board: Option<u32>,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| {
-        add_named(s, &name, &kind, &layout, board).map(|_| ())
-    })
+    method_schedule_session::commands::layouts::add_layout(
+        &crate::app::Win(&window),
+        &*state,
+        name,
+        kind,
+        layout,
+        board,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -47,7 +40,12 @@ pub fn save_layout<R: Runtime>(
     id: u32,
     layout: LayoutInput,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| save_named(s, id, &layout))
+    method_schedule_session::commands::layouts::save_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+        layout,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -57,7 +55,12 @@ pub fn rename_layout<R: Runtime>(
     id: u32,
     name: String,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| rename_named(s, id, &name))
+    method_schedule_session::commands::layouts::rename_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+        name,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -67,12 +70,21 @@ pub fn move_layout<R: Runtime>(
     id: u32,
     to: usize,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| move_named(s, id, to))
+    method_schedule_session::commands::layouts::move_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+        to,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn delete_layout<R: Runtime>(window: WebviewWindow<R>, state: Doc, id: u32) -> CmdResult {
-    edit_with(&window, &state, |s| delete_named(s, id))
+    method_schedule_session::commands::layouts::delete_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -83,7 +95,13 @@ pub fn use_layout<R: Runtime>(
     kind: String,
     id: Option<u32>,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| pick_layout(s, board, &kind, id))
+    method_schedule_session::commands::layouts::use_layout(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        kind,
+        id,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -92,7 +110,11 @@ pub fn use_one_line_layout<R: Runtime>(
     state: Doc,
     id: Option<u32>,
 ) -> CmdResult {
-    edit_with(&window, &state, |s| pick_one_line(s, id))
+    method_schedule_session::commands::layouts::use_one_line_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+    )
 }
 
 const EXT: &str = LAYOUTS_EXTENSION;

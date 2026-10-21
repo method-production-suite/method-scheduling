@@ -1,6 +1,6 @@
 //! A color per red flag type (decisions.md, entry 84): its marks on the board, the
 //! calendar, the Breakdown tab, the Red flags tab and an element's flags are drawn in it.
-use crate::app::{finish, CmdResult};
+use crate::app::CmdResult;
 use crate::docs::Doc;
 use tauri::{Runtime, WebviewWindow};
 
@@ -14,7 +14,10 @@ pub fn set_red_flag_type_color<R: Runtime>(
     red_flag_type: u32,
     color: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| set_color(x, red_flag_type, &color))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::flagcolors::set_red_flag_type_color(
+        &crate::app::Win(&window),
+        &*state,
+        red_flag_type,
+        color,
+    )
 }

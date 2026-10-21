@@ -39,12 +39,7 @@ pub fn report_data(
     index: usize,
     week_start: Option<String>,
 ) -> CmdResult<ReportDto> {
-    build_report(
-        state.lock().schedule(),
-        sub_board,
-        index,
-        week_start.as_deref().unwrap_or("sun"),
-    )
+    method_schedule_session::commands::reports::report_data(&*state, sub_board, index, week_start)
 }
 
 // ---------------------------------------------------------------------------

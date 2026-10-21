@@ -8,7 +8,7 @@
 //! parsed and checked here, and the engine refuses a pick that no longer matches.
 //! Method Budget's `src/find.rs` is the model (at most 1,000 results listed, text cut
 //! short), scaled down to the engine's typed search.
-use crate::app::{finish, CmdResult};
+use crate::app::CmdResult;
 use crate::docs::Doc;
 use crate::view::View;
 use tauri::{Runtime, WebviewWindow};
@@ -18,7 +18,7 @@ pub use method_schedule_session::find::*;
 /// Every place `query` matches, in board order.
 #[tauri::command]
 pub fn find_text(state: Doc, query: QueryArg) -> CmdResult<FoundDto> {
-    find(state.lock().schedule(), &query)
+    method_schedule_session::commands::find::find_text(&*state, query)
 }
 
 /// Replaces `query`'s matches by `with` in the checked results `picks` (their keys), as
@@ -31,7 +31,11 @@ pub fn replace_text<R: Runtime>(
     with: String,
     picks: Vec<String>,
 ) -> CmdResult<View> {
-    let mut s = state.lock();
-    let notice = replace(&mut s, &query, &with, &picks)?;
-    finish(&window, &s, Some(notice))
+    method_schedule_session::commands::find::replace_text(
+        &crate::app::Win(&window),
+        &*state,
+        query,
+        with,
+        picks,
+    )
 }

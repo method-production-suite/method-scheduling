@@ -16,7 +16,7 @@ use tauri_plugin_dialog::{
 };
 
 use crate::board;
-use crate::calendar::{self, EventInput};
+use crate::calendar::EventInput;
 use crate::clipboard;
 use crate::docs::Doc;
 use crate::elements;
@@ -27,7 +27,6 @@ use crate::safety_app::{self, Safety};
 use crate::session::{self, Session};
 use crate::sheet;
 use crate::view::{self, CalendarDto, DoodGridDto, ElementDaysDto, ElementsDto, SheetDto, View};
-use method_schedule_core::model::{BoardId, SheetId};
 
 /// The product's working name (decisions.md, entry 4). It changes with the name.
 pub(crate) const APP_NAME: &str = "Method Schedule";
@@ -145,15 +144,21 @@ pub(crate) fn finish<R: Runtime>(
     Ok(v)
 }
 
-/// Runs one edit as one undo step and returns the new view.
-fn edit<R: Runtime, T>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> board::EditResult<T>,
-) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(f)?;
-    finish(window, &s, None)
+/// The window, as the shared commands see it (method_schedule_session::commands): each
+/// desktop command passes `&Win(&window)`.
+pub(crate) struct Win<'a, R: Runtime>(pub &'a WebviewWindow<R>);
+
+impl<R: Runtime> method_schedule_session::commands::Shell for Win<'_, R> {
+    fn finish(&self, s: &Session, notice: Option<String>) -> CmdResult {
+        finish(self.0, s, notice)
+    }
+}
+
+/// The window's schedule, as the shared commands see it.
+impl method_schedule_session::commands::DocLock for AppState {
+    fn lock(&self) -> MutexGuard<'_, Session> {
+        AppState::lock(self)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +166,7 @@ fn edit<R: Runtime, T>(
 
 #[tauri::command]
 pub fn get_view<R: Runtime>(window: WebviewWindow<R>, state: Doc) -> CmdResult {
-    finish(&window, &state.lock(), None)
+    method_schedule_session::commands::app::get_view(&crate::app::Win(&window), &*state)
 }
 
 /// The day out of days grid for a sub-board, for `category` (Cast when it is gone or not
@@ -176,18 +181,8 @@ pub fn dood_grid(
     sort: Option<Vec<String>>,
     no_holds: Option<bool>,
 ) -> CmdResult<DoodGridDto> {
-    // The sort and the without-holds view are the session's (decision 59).
-    let opts = view::GridOpts {
-        no_holds: no_holds.unwrap_or(false),
-        sort: crate::reports::parse_sort(sort.as_deref().unwrap_or(&[]))?,
-        ..view::GridOpts::default()
-    };
-    view::dood_grid_for(
-        state.lock().schedule(),
-        sub_board,
-        category,
-        header.as_deref(),
-        &opts,
+    method_schedule_session::commands::app::dood_grid(
+        &*state, sub_board, category, header, sort, no_holds,
     )
 }
 
@@ -195,13 +190,13 @@ pub fn dood_grid(
 /// (src/explain.rs).
 #[tauri::command(rename_all = "snake_case")]
 pub fn explain_count(state: Doc, sub_board: u32, element: u32) -> CmdResult<ExplainDto> {
-    crate::explain::explain_count(state.lock().schedule(), sub_board, element)
+    method_schedule_session::commands::app::explain_count(&*state, sub_board, element)
 }
 
 /// The Conflicts tab for `board` (src/conflicts.rs).
 #[tauri::command]
 pub fn conflicts_view(state: Doc, board: u32) -> CmdResult<crate::conflicts::ConflictsDto> {
-    crate::conflicts::conflicts_view(state.lock().schedule(), board)
+    method_schedule_session::commands::app::conflicts_view(&*state, board)
 }
 
 // ---------------------------------------------------------------------------
@@ -516,16 +511,12 @@ pub(crate) use method_schedule_session::export::safe_file_stem;
 
 #[tauri::command]
 pub fn undo<R: Runtime>(window: WebviewWindow<R>, state: Doc) -> CmdResult {
-    let mut s = state.lock();
-    s.undo();
-    finish(&window, &s, None)
+    method_schedule_session::commands::app::undo(&crate::app::Win(&window), &*state)
 }
 
 #[tauri::command]
 pub fn redo<R: Runtime>(window: WebviewWindow<R>, state: Doc) -> CmdResult {
-    let mut s = state.lock();
-    s.redo();
-    finish(&window, &s, None)
+    method_schedule_session::commands::app::redo(&crate::app::Win(&window), &*state)
 }
 
 // ---------------------------------------------------------------------------
@@ -541,23 +532,14 @@ pub fn move_strips<R: Runtime>(
     sub_board: Option<u32>,
     index: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::move_strips(s, board, &strips, sub_board, index)
-    })
-}
-
-/// Runs one edit that makes a strip as one undo step; the view names the new strip, so
-/// the board selects it.
-fn strip_edit<R: Runtime>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> board::EditResult<u32>,
-) -> CmdResult {
-    let mut s = state.lock();
-    let id = s.edit(f)?;
-    let mut v = finish(window, &s, None)?;
-    v.strip = Some(id);
-    Ok(v)
+    method_schedule_session::commands::app::move_strips(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        strips,
+        sub_board,
+        index,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -567,9 +549,12 @@ pub fn insert_day_break<R: Runtime>(
     sub_board: u32,
     index: usize,
 ) -> CmdResult {
-    strip_edit(&window, &state, |s| {
-        board::insert_day_break(s, sub_board, index)
-    })
+    method_schedule_session::commands::app::insert_day_break(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        index,
+    )
 }
 
 /// Deletes day breaks and banners (the page asks first about banners).
@@ -580,7 +565,12 @@ pub fn delete_strips<R: Runtime>(
     board: u32,
     strips: Vec<u32>,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::delete_strips(s, board, &strips))
+    method_schedule_session::commands::app::delete_strips(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        strips,
+    )
 }
 
 /// Inserts a banner with its text and duration (`h:mm`).
@@ -594,9 +584,15 @@ pub fn insert_banner<R: Runtime>(
     duration: String,
     style: Option<board::BannerStyleInput>,
 ) -> CmdResult {
-    strip_edit(&window, &state, |s| {
-        board::insert_banner_styled(s, sub_board, index, &text, &duration, style.as_ref())
-    })
+    method_schedule_session::commands::app::insert_banner(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        index,
+        text,
+        duration,
+        style,
+    )
 }
 
 /// Changes a banner's text and duration.
@@ -610,9 +606,15 @@ pub fn set_banner<R: Runtime>(
     duration: String,
     style: Option<board::BannerStyleInput>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::set_banner_styled(s, board, strip, &text, &duration, style.as_ref())
-    })
+    method_schedule_session::commands::app::set_banner(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        strip,
+        text,
+        duration,
+        style,
+    )
 }
 
 /// Sorts a sub-board (or the Boneyard, `sub_board` null) by up to four header fields.
@@ -624,9 +626,13 @@ pub fn sort_strips<R: Runtime>(
     sub_board: Option<u32>,
     keys: Vec<board::SortKeyInput>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::sort_strips(s, board, sub_board, &keys)
-    })
+    method_schedule_session::commands::app::sort_strips(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        sub_board,
+        keys,
+    )
 }
 
 /// Sets `board`'s strip layout (Board > Strip Layout) as one undo step.
@@ -639,15 +645,14 @@ pub fn set_strip_layout<R: Runtime>(
     size: Option<String>,
     marks: Option<board::MarksInput>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::set_strip_layout_with(
-            s,
-            board,
-            &columns,
-            size.as_deref().unwrap_or(""),
-            marks.unwrap_or_default(),
-        )
-    })
+    method_schedule_session::commands::app::set_strip_layout(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        columns,
+        size,
+        marks,
+    )
 }
 
 /// Continue Scene on Next Day: a part of the scene below the next day break, as one undo
@@ -659,7 +664,12 @@ pub fn continue_scene<R: Runtime>(
     board: u32,
     strip: u32,
 ) -> CmdResult {
-    strip_edit(&window, &state, |s| board::continue_scene(s, board, strip))
+    method_schedule_session::commands::app::continue_scene(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        strip,
+    )
 }
 
 /// Sets what `board`'s day breaks show (Board > Day Breaks) as one undo step.
@@ -670,7 +680,12 @@ pub fn set_day_look<R: Runtime>(
     board: u32,
     look: board::DayLookInput,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::set_day_look(s, board, &look))
+    method_schedule_session::commands::app::set_day_look(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        look,
+    )
 }
 
 /// Sets the schedule's strip colors (Board > Strip Colors) as one undo step.
@@ -683,15 +698,14 @@ pub fn set_strip_colors<R: Runtime>(
     banner_text: Option<String>,
     break_text: Option<String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::set_strip_colors(
-            s,
-            &rules,
-            scene_text.as_deref(),
-            banner_text.as_deref(),
-            break_text.as_deref(),
-        )
-    })
+    method_schedule_session::commands::app::set_strip_colors(
+        &crate::app::Win(&window),
+        &*state,
+        rules,
+        scene_text,
+        banner_text,
+        break_text,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -700,29 +714,12 @@ pub fn set_strip_colors<R: Runtime>(
 /// Shows another board. Not an edit: nothing to undo, nothing unsaved.
 #[tauri::command]
 pub fn show_board<R: Runtime>(window: WebviewWindow<R>, state: Doc, board: u32) -> CmdResult {
-    let mut s = state.lock();
-    s.show_board(method_schedule_core::model::BoardId(board))?;
-    finish(&window, &s, None)
-}
-
-/// Runs an edit that makes a board, as one undo step, and shows the new board.
-fn board_edit<R: Runtime>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> board::EditResult<u32>,
-) -> CmdResult {
-    let mut s = state.lock();
-    let id = s.edit(f)?;
-    s.show_board(method_schedule_core::model::BoardId(id))?;
-    finish(window, &s, None)
+    method_schedule_session::commands::app::show_board(&crate::app::Win(&window), &*state, board)
 }
 
 #[tauri::command]
 pub fn add_board<R: Runtime>(window: WebviewWindow<R>, state: Doc, name: String) -> CmdResult {
-    // A new board's sub-board starts today, as a new sub-board does (behavior note 27;
-    // decisions 123 and 153).
-    let today = method_schedule_format::exchange::local_today();
-    board_edit(&window, &state, |s| board::add_board(s, &name, today))
+    method_schedule_session::commands::app::add_board(&crate::app::Win(&window), &*state, name)
 }
 
 #[tauri::command]
@@ -732,7 +729,12 @@ pub fn duplicate_board<R: Runtime>(
     board: u32,
     name: String,
 ) -> CmdResult {
-    board_edit(&window, &state, |s| board::duplicate_board(s, board, &name))
+    method_schedule_session::commands::app::duplicate_board(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        name,
+    )
 }
 
 #[tauri::command]
@@ -742,7 +744,12 @@ pub fn rename_board<R: Runtime>(
     board: u32,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::rename_board(s, board, &name))
+    method_schedule_session::commands::app::rename_board(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        name,
+    )
 }
 
 /// Moves a board to place `to` among the boards.
@@ -753,13 +760,18 @@ pub fn move_board<R: Runtime>(
     board: u32,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::move_board(s, board, to))
+    method_schedule_session::commands::app::move_board(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        to,
+    )
 }
 
 /// Deletes a board (the page has asked first); the first board shows when it was shown.
 #[tauri::command]
 pub fn delete_board<R: Runtime>(window: WebviewWindow<R>, state: Doc, board: u32) -> CmdResult {
-    edit(&window, &state, |s| board::delete_board(s, board))
+    method_schedule_session::commands::app::delete_board(&crate::app::Win(&window), &*state, board)
 }
 
 /// Adds a sub-board to `board`; the view names it, so the page shows it.
@@ -770,13 +782,12 @@ pub fn add_sub_board<R: Runtime>(
     board: u32,
     name: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    // A new sub-board starts today (behavior note 24; decision 123).
-    let today = method_schedule_format::exchange::local_today();
-    let id = s.edit(|x| board::add_sub_board(x, board, &name, today))?;
-    let mut v = finish(&window, &s, None)?;
-    v.sub_board = Some(id);
-    Ok(v)
+    method_schedule_session::commands::app::add_sub_board(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        name,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -786,9 +797,12 @@ pub fn rename_sub_board<R: Runtime>(
     sub_board: u32,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::rename_sub_board(s, sub_board, &name)
-    })
+    method_schedule_session::commands::app::rename_sub_board(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        name,
+    )
 }
 
 /// Moves a sub-board to place `to` on its board.
@@ -799,7 +813,12 @@ pub fn move_sub_board<R: Runtime>(
     sub_board: u32,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::move_sub_board(s, sub_board, to))
+    method_schedule_session::commands::app::move_sub_board(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        to,
+    )
 }
 
 /// Deletes a sub-board (the page has asked first): its scenes go to the Boneyard.
@@ -809,7 +828,11 @@ pub fn delete_sub_board<R: Runtime>(
     state: Doc,
     sub_board: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| board::delete_sub_board(s, sub_board))
+    method_schedule_session::commands::app::delete_sub_board(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+    )
 }
 
 /// Automatic day breaks on a sub-board, `by` `pages`, `time` or `screen_time`, every
@@ -822,14 +845,13 @@ pub fn auto_day_breaks<R: Runtime>(
     by: String,
     limit: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let n = s.edit(|x| board::auto_day_breaks_by(x, sub_board, &by, &limit))?;
-    let days = if n == 1 {
-        "1 shoot day".to_string()
-    } else {
-        format!("{n} shoot days")
-    };
-    finish(&window, &s, Some(format!("Day breaks set: {days}.")))
+    method_schedule_session::commands::app::auto_day_breaks(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        by,
+        limit,
+    )
 }
 
 /// Remove All Day Breaks on a sub-board, as one undo step.
@@ -839,17 +861,10 @@ pub fn remove_day_breaks<R: Runtime>(
     state: Doc,
     sub_board: u32,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let n = s.edit(|x| board::remove_day_breaks(x, sub_board))?;
-    let what = if n == 1 {
-        "1 day break".to_string()
-    } else {
-        format!("{n} day breaks")
-    };
-    finish(
-        &window,
-        &s,
-        Some(format!("Removed {what}. Undo puts them back.")),
+    method_schedule_session::commands::app::remove_day_breaks(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
     )
 }
 
@@ -860,27 +875,16 @@ pub fn set_start_date<R: Runtime>(
     sub_board: u32,
     date: Option<String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        board::set_start_date(s, sub_board, date.as_deref())
-    })
+    method_schedule_session::commands::app::set_start_date(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        date,
+    )
 }
 
 // ---------------------------------------------------------------------------
 // Breakdown sheets (src/sheet.rs)
-
-/// Runs one sheet edit as one undo step and returns the view, naming the sheet the
-/// Breakdown tab should show next when the edit says.
-fn sheet_edit<R: Runtime>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> board::EditResult<Option<u32>>,
-) -> CmdResult {
-    let mut s = state.lock();
-    let show = s.edit(f)?;
-    let mut v = finish(window, &s, None)?;
-    v.sheet = show;
-    Ok(v)
-}
 
 /// The Breakdown tab's sheet: `sheet` while it exists, else the one now at `index` in
 /// `board`'s order. `None` when the schedule has no sheets.
@@ -892,10 +896,7 @@ pub fn get_sheet(
     index: Option<usize>,
     order: Option<String>,
 ) -> CmdResult<Option<SheetDto>> {
-    // Previous and Next by board order, sheet number or scene number (decisions.md,
-    // entry 81).
-    let by = sheet_order(order.as_deref())?;
-    view::sheet_view_in(state.lock().schedule(), board, sheet, index, by)
+    method_schedule_session::commands::app::get_sheet(&*state, board, sheet, index, order)
 }
 
 /// Sets one header field (src/sheet.rs reads times and text strictly).
@@ -907,9 +908,13 @@ pub fn set_sheet_field<R: Runtime>(
     field: String,
     value: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        sheet::set_field(s, sheet, &field, &value)
-    })
+    method_schedule_session::commands::app::set_sheet_field(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        field,
+        value,
+    )
 }
 
 /// Sets the page length from whole pages and eighths.
@@ -921,9 +926,13 @@ pub fn set_sheet_pages<R: Runtime>(
     pages: String,
     eighths: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        sheet::set_pages(s, sheet, &pages, &eighths)
-    })
+    method_schedule_session::commands::app::set_sheet_pages(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        pages,
+        eighths,
+    )
 }
 
 /// Puts an existing element on a sheet.
@@ -934,7 +943,12 @@ pub fn tag_element<R: Runtime>(
     sheet: u32,
     element: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| sheet::tag_element(s, sheet, element))
+    method_schedule_session::commands::app::tag_element(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        element,
+    )
 }
 
 /// Sets how many of an element a sheet needs and whether it counts daily.
@@ -947,9 +961,14 @@ pub fn set_quantity<R: Runtime>(
     count: String,
     daily: bool,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        sheet::set_quantity(s, sheet, element, &count, daily)
-    })
+    method_schedule_session::commands::app::set_quantity(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        element,
+        count,
+        daily,
+    )
 }
 
 /// Puts the element `name` of `category` on a sheet, adding it (and the category) when
@@ -962,9 +981,13 @@ pub fn create_element<R: Runtime>(
     category: String,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        sheet::create_element(s, sheet, &category, &name)
-    })
+    method_schedule_session::commands::app::create_element(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        category,
+        name,
+    )
 }
 
 /// Takes an element off a sheet.
@@ -975,7 +998,12 @@ pub fn untag_element<R: Runtime>(
     sheet: u32,
     element: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| sheet::untag_element(s, sheet, element))
+    method_schedule_session::commands::app::untag_element(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        element,
+    )
 }
 
 /// Adds an empty sheet after sheet `after` on its sub-board of `board`, or at the end of
@@ -987,9 +1015,12 @@ pub fn new_sheet<R: Runtime>(
     board: u32,
     after: Option<u32>,
 ) -> CmdResult {
-    sheet_edit(&window, &state, |s| {
-        sheet::new_sheet(s, board, after).map(Some)
-    })
+    method_schedule_session::commands::app::new_sheet(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        after,
+    )
 }
 
 /// Deletes a sheet (the page has asked first). The view names the sheet to show next in
@@ -1002,19 +1033,13 @@ pub fn delete_sheet<R: Runtime>(
     sheet: u32,
     order: Option<String>,
 ) -> CmdResult {
-    let by = sheet_order(order.as_deref())?;
-    sheet_edit(&window, &state, |s| {
-        sheet::delete_sheet(s, board, sheet, by)
-    })
-}
-
-/// The order the Breakdown tab steps through sheets, by its key (decisions.md, entry 81).
-fn sheet_order(key: Option<&str>) -> CmdResult<method_schedule_core::model::SheetOrder> {
-    match key {
-        None | Some("") => Ok(method_schedule_core::model::SheetOrder::Board),
-        Some(k) => method_schedule_core::model::SheetOrder::parse(k)
-            .ok_or_else(|| "Step by board order, sheet number or scene number.".into()),
-    }
+    method_schedule_session::commands::app::delete_sheet(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        sheet,
+        order,
+    )
 }
 
 /// What Board > Merge Strips would do with `sheets` on `board`: the engine's report on a
@@ -1025,7 +1050,7 @@ pub fn merge_sheets_preview(
     board: u32,
     sheets: Vec<u32>,
 ) -> CmdResult<sheet::SheetMergeDto> {
-    sheet::merge_preview(state.lock().schedule(), board, &sheets)
+    method_schedule_session::commands::app::merge_sheets_preview(&*state, board, sheets)
 }
 
 /// Merges `sheets`, in the order they were selected, into the first of them as one undo
@@ -1038,23 +1063,12 @@ pub fn merge_sheets<R: Runtime>(
     board: u32,
     sheets: Vec<u32>,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let survivor = s.edit(|x| sheet::merge_sheets(x, board, &sheets))?;
-    let shown = BoardId(board);
-    let title = s
-        .schedule()
-        .sheet(SheetId(survivor))
-        .map(sheet::sheet_title)
-        .unwrap_or_default();
-    let n = sheets.len();
-    let mut v = finish(
-        &window,
-        &s,
-        Some(format!("Merged {n} strips into one sheet: {title}.")),
-    )?;
-    v.sheet = Some(survivor);
-    v.strip = sheet::strip_of(s.schedule(), shown, survivor);
-    Ok(v)
+    method_schedule_session::commands::app::merge_sheets(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        sheets,
+    )
 }
 
 /// Duplicates `sheets` as one undo step (Board > Duplicate Strip, Breakdown > Duplicate
@@ -1066,19 +1080,12 @@ pub fn duplicate_sheets<R: Runtime>(
     board: u32,
     sheets: Vec<u32>,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let copies = s.edit(|x| sheet::duplicate_sheets(x, board, &sheets))?;
-    let notice = match copies.len() {
-        1 => "Duplicated the scene. The copy is selected.".to_string(),
-        n => format!("Duplicated {n} scenes. The copies are selected."),
-    };
-    let mut v = finish(&window, &s, Some(notice))?;
-    v.strips = copies
-        .iter()
-        .filter_map(|c| sheet::strip_of(s.schedule(), BoardId(board), *c))
-        .collect();
-    v.sheet = copies.last().copied();
-    Ok(v)
+    method_schedule_session::commands::app::duplicate_sheets(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        sheets,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1120,47 +1127,13 @@ pub fn paste_strips<R: Runtime>(
     sub_board: Option<u32>,
     index: usize,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let clip = s
-        .clipboard()
-        .cloned()
-        .ok_or("Nothing has been cut or copied yet.")?;
-    let from = match &clip {
-        clipboard::Clip::Strips { board, .. } => s
-            .schedule()
-            .board(*board)
-            .map(|b| b.name.clone())
-            .unwrap_or_default(),
-        clipboard::Clip::Carried { from, .. } => from.clone(),
-        clipboard::Clip::Elements { .. } => String::new(),
-    };
-    let carried = matches!(clip, clipboard::Clip::Carried { .. });
-    let pasted = s.edit(|x| clipboard::paste_strips(x, &clip, board, sub_board, index))?;
-    let n = clipboard::count_text(pasted.strips.len(), "strip", "strips");
-    let notice = if pasted.moved {
-        format!("Moved {n}.")
-    } else if carried && pasted.from_other_board {
-        format!(
-            "Pasted copies of {n} from {from}. A cut moves strips only within its own schedule, so the originals stay there."
-        )
-    } else if carried {
-        format!("Pasted {n} from {from}.")
-    } else if pasted.from_other_board {
-        format!(
-            "Pasted copies of {n}. A cut moves strips only on its own board, so the originals stay on {from}."
-        )
-    } else {
-        format!("Pasted {n}.")
-    };
-    if matches!(
-        clip,
-        clipboard::Clip::Strips { cut: true, .. } | clipboard::Clip::Carried { cut: true, .. }
-    ) {
-        s.set_clipboard(None);
-    }
-    let mut v = finish(&window, &s, Some(notice))?;
-    v.strips = pasted.strips;
-    Ok(v)
+    method_schedule_session::commands::app::paste_strips(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        sub_board,
+        index,
+    )
 }
 
 /// Copies (or, with `cut`, cuts) elements of sheet `sheet` to the app's clipboard. Not an
@@ -1191,19 +1164,11 @@ pub fn copy_elements<R: Runtime>(
 /// Pastes the clipboard's elements on sheet `sheet` as one undo step.
 #[tauri::command]
 pub fn paste_elements<R: Runtime>(window: WebviewWindow<R>, state: Doc, sheet: u32) -> CmdResult {
-    let mut s = state.lock();
-    let clip = s
-        .clipboard()
-        .cloned()
-        .ok_or("Nothing has been cut or copied yet.")?;
-    let pasted = s.edit(|x| clipboard::paste_elements(x, &clip, sheet))?;
-    let notice = clipboard::elements_notice(s.schedule(), &clip, sheet, &pasted);
-    if matches!(clip, clipboard::Clip::Elements { cut: true, .. })
-        && pasted.moved + pasted.added > 0
-    {
-        s.set_clipboard(None);
-    }
-    finish(&window, &s, Some(notice))
+    method_schedule_session::commands::app::paste_elements(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1219,22 +1184,13 @@ pub fn elements_view(
     category: Option<u32>,
     header: Option<String>,
 ) -> CmdResult<ElementsDto> {
-    view::elements_view(
-        state.lock().schedule(),
-        sub_board,
-        category,
-        header.as_deref(),
-    )
+    method_schedule_session::commands::app::elements_view(&*state, sub_board, category, header)
 }
 
 /// Adds a category. The view names it, so the tab shows it.
 #[tauri::command]
 pub fn add_category<R: Runtime>(window: WebviewWindow<R>, state: Doc, name: String) -> CmdResult {
-    let mut s = state.lock();
-    let id = s.edit(|x| elements::add_category(x, &name))?;
-    let mut v = finish(&window, &s, None)?;
-    v.category = Some(id);
-    Ok(v)
+    method_schedule_session::commands::app::add_category(&crate::app::Win(&window), &*state, name)
 }
 
 /// Sets a category's name, automatic board IDs or default hold and drop rules.
@@ -1246,9 +1202,13 @@ pub fn set_category_field<R: Runtime>(
     field: String,
     value: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::set_category_field(s, category, &field, &value)
-    })
+    method_schedule_session::commands::app::set_category_field(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        field,
+        value,
+    )
 }
 
 /// Moves a user category to place `to` among the user categories.
@@ -1259,9 +1219,12 @@ pub fn move_category<R: Runtime>(
     category: u32,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::move_category(s, category, to)
-    })
+    method_schedule_session::commands::app::move_category(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        to,
+    )
 }
 
 /// Deletes an empty user category.
@@ -1271,7 +1234,11 @@ pub fn delete_category<R: Runtime>(
     state: Doc,
     category: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| elements::delete_category(s, category))
+    method_schedule_session::commands::app::delete_category(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+    )
 }
 
 /// Gives every element of a category its default hold and drop rules (the page asks
@@ -1282,14 +1249,11 @@ pub fn apply_category_defaults<R: Runtime>(
     state: Doc,
     category: u32,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let n = s.edit(|x| elements::apply_category_defaults(x, category))?;
-    let notice = match n {
-        0 => "Every element already had these rules.".to_string(),
-        1 => "Gave 1 element the category's rules.".to_string(),
-        n => format!("Gave {n} elements the category's rules."),
-    };
-    finish(&window, &s, Some(notice))
+    method_schedule_session::commands::app::apply_category_defaults(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+    )
 }
 
 /// Sets an element's name, board ID, lock, or hold and drop rules.
@@ -1301,15 +1265,19 @@ pub fn set_element_field<R: Runtime>(
     field: String,
     value: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::set_element_field(s, element, &field, &value)
-    })
+    method_schedule_session::commands::app::set_element_field(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        field,
+        value,
+    )
 }
 
 /// One element's days and dates on `sub_board`: every date of its day out of days row.
 #[tauri::command(rename_all = "snake_case")]
 pub fn element_days(state: Doc, sub_board: u32, element: u32) -> CmdResult<ElementDaysDto> {
-    view::element_days(state.lock().schedule(), sub_board, element)
+    method_schedule_session::commands::app::element_days(&*state, sub_board, element)
 }
 
 /// Adds a custom property to a category.
@@ -1320,9 +1288,12 @@ pub fn add_property<R: Runtime>(
     category: u32,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::add_property(s, category, &name)
-    })
+    method_schedule_session::commands::app::add_property(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        name,
+    )
 }
 
 /// Renames property `at` of a category.
@@ -1334,9 +1305,13 @@ pub fn rename_property<R: Runtime>(
     at: usize,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::rename_property(s, category, at, &name)
-    })
+    method_schedule_session::commands::app::rename_property(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        at,
+        name,
+    )
 }
 
 /// Moves property `at` of a category to place `to`.
@@ -1348,9 +1323,13 @@ pub fn move_property<R: Runtime>(
     at: usize,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::move_property(s, category, at, to)
-    })
+    method_schedule_session::commands::app::move_property(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        at,
+        to,
+    )
 }
 
 /// Deletes property `at` of a category and its values (the page asks first).
@@ -1361,9 +1340,12 @@ pub fn delete_property<R: Runtime>(
     category: u32,
     at: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::delete_property(s, category, at)
-    })
+    method_schedule_session::commands::app::delete_property(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        at,
+    )
 }
 
 /// Whether property `at` of a category takes several lines (decision 119).
@@ -1375,9 +1357,13 @@ pub fn set_property_multi_line<R: Runtime>(
     at: usize,
     multi_line: bool,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::set_property_multi_line(s, category, at, multi_line)
-    })
+    method_schedule_session::commands::app::set_property_multi_line(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        at,
+        multi_line,
+    )
 }
 
 /// Sets an element's value of one of its category's properties.
@@ -1389,9 +1375,13 @@ pub fn set_property_value<R: Runtime>(
     name: String,
     value: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::set_property_value(s, element, &name, &value)
-    })
+    method_schedule_session::commands::app::set_property_value(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        name,
+        value,
+    )
 }
 
 /// Sets the elements `element` links to; with `retroactive`, sheets that already hold it
@@ -1404,15 +1394,13 @@ pub fn set_links<R: Runtime>(
     links: Vec<u32>,
     retroactive: bool,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let n = s.edit(|x| elements::set_links(x, element, &links, retroactive))?;
-    let notice = match (retroactive, n) {
-        (false, _) => None,
-        (true, 0) => Some("Every sheet with it already had its linked elements.".to_string()),
-        (true, 1) => Some("Added its linked elements to 1 sheet.".to_string()),
-        (true, n) => Some(format!("Added its linked elements to {n} sheets.")),
-    };
-    finish(&window, &s, notice)
+    method_schedule_session::commands::app::set_links(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        links,
+        retroactive,
+    )
 }
 
 /// Shows an Open dialog for an image and adds its path to an element (decision 62: the
@@ -1441,7 +1429,12 @@ pub fn remove_element_image<R: Runtime>(
     element: u32,
     at: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| elements::remove_image(s, element, at))
+    method_schedule_session::commands::app::remove_element_image(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        at,
+    )
 }
 
 /// Image `at` of an element as a `data:` URL for its thumbnail, or `None` when the file
@@ -1466,9 +1459,12 @@ pub fn merge_elements<R: Runtime>(
     survivor: u32,
     others: Vec<u32>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::merge_elements(s, survivor, &others)
-    })
+    method_schedule_session::commands::app::merge_elements(
+        &crate::app::Win(&window),
+        &*state,
+        survivor,
+        others,
+    )
 }
 
 /// Moves an element to another category.
@@ -1479,9 +1475,12 @@ pub fn move_element<R: Runtime>(
     element: u32,
     category: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::move_element(s, element, category)
-    })
+    method_schedule_session::commands::app::move_element(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        category,
+    )
 }
 
 /// Renumbers a category's unlocked elements from `start`, in the tab's order: `order`
@@ -1494,9 +1493,13 @@ pub fn renumber_elements<R: Runtime>(
     start: String,
     order: Option<Vec<u32>>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::renumber(s, category, &start, order.as_deref())
-    })
+    method_schedule_session::commands::app::renumber_elements(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        start,
+        order,
+    )
 }
 
 /// Deletes an element (the page has asked first; `unlink` after a second question when
@@ -1508,9 +1511,12 @@ pub fn delete_element<R: Runtime>(
     element: u32,
     unlink: bool,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        elements::delete_element(s, element, unlink)
-    })
+    method_schedule_session::commands::app::delete_element(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        unlink,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1519,7 +1525,7 @@ pub fn delete_element<R: Runtime>(
 /// The Red flags tab: every clash on `sub_board`, in date order.
 #[tauri::command(rename_all = "snake_case")]
 pub fn red_flags_view(state: Doc, sub_board: u32) -> CmdResult<redflags::RedFlagsDto> {
-    redflags::red_flags_view(state.lock().schedule(), sub_board)
+    method_schedule_session::commands::app::red_flags_view(&*state, sub_board)
 }
 
 /// Adds a red flag to `element` (`flag.id` null) or changes one of its flags.
@@ -1530,15 +1536,22 @@ pub fn set_red_flag<R: Runtime>(
     element: u32,
     flag: redflags::RedFlagInput,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::set_red_flag(s, element, &flag)
-    })
+    method_schedule_session::commands::app::set_red_flag(
+        &crate::app::Win(&window),
+        &*state,
+        element,
+        flag,
+    )
 }
 
 /// Deletes a red flag (the page has asked first).
 #[tauri::command(rename_all = "snake_case")]
 pub fn delete_red_flag<R: Runtime>(window: WebviewWindow<R>, state: Doc, flag: u32) -> CmdResult {
-    edit(&window, &state, |s| redflags::delete_red_flag(s, flag))
+    method_schedule_session::commands::app::delete_red_flag(
+        &crate::app::Win(&window),
+        &*state,
+        flag,
+    )
 }
 
 /// Adds a red flag type at the end of the list.
@@ -1548,7 +1561,11 @@ pub fn add_red_flag_type<R: Runtime>(
     state: Doc,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| redflags::add_red_flag_type(s, &name))
+    method_schedule_session::commands::app::add_red_flag_type(
+        &crate::app::Win(&window),
+        &*state,
+        name,
+    )
 }
 
 /// Renames a red flag type.
@@ -1559,9 +1576,12 @@ pub fn rename_red_flag_type<R: Runtime>(
     red_flag_type: u32,
     name: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::rename_red_flag_type(s, red_flag_type, &name)
-    })
+    method_schedule_session::commands::app::rename_red_flag_type(
+        &crate::app::Win(&window),
+        &*state,
+        red_flag_type,
+        name,
+    )
 }
 
 /// Moves a red flag type to place `to` in the list.
@@ -1572,9 +1592,12 @@ pub fn move_red_flag_type<R: Runtime>(
     red_flag_type: u32,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::move_red_flag_type(s, red_flag_type, to)
-    })
+    method_schedule_session::commands::app::move_red_flag_type(
+        &crate::app::Win(&window),
+        &*state,
+        red_flag_type,
+        to,
+    )
 }
 
 /// Deletes a red flag type no flag uses.
@@ -1584,17 +1607,20 @@ pub fn delete_red_flag_type<R: Runtime>(
     state: Doc,
     red_flag_type: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::delete_red_flag_type(s, red_flag_type)
-    })
+    method_schedule_session::commands::app::delete_red_flag_type(
+        &crate::app::Win(&window),
+        &*state,
+        red_flag_type,
+    )
 }
 
 /// Red Flag Types > Add the Standard Types: the built-in types an older schedule lacks.
 #[tauri::command(rename_all = "snake_case")]
 pub fn add_standard_red_flag_types<R: Runtime>(window: WebviewWindow<R>, state: Doc) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::add_standard_types(s).map(|_| ())
-    })
+    method_schedule_session::commands::app::add_standard_red_flag_types(
+        &crate::app::Win(&window),
+        &*state,
+    )
 }
 
 /// The Red flags tab's Add: flags for several elements and dates, one undo step.
@@ -1604,9 +1630,7 @@ pub fn add_red_flags<R: Runtime>(
     state: Doc,
     flags: redflags::AddFlagsInput,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        redflags::add_red_flags(s, &flags).map(|_| ())
-    })
+    method_schedule_session::commands::app::add_red_flags(&crate::app::Win(&window), &*state, flags)
 }
 
 /// The Red flags tab's Delete for the checked rows (the page has asked first).
@@ -1616,7 +1640,11 @@ pub fn delete_red_flags<R: Runtime>(
     state: Doc,
     flags: Vec<u32>,
 ) -> CmdResult {
-    edit(&window, &state, |s| redflags::delete_red_flags(s, &flags))
+    method_schedule_session::commands::app::delete_red_flags(
+        &crate::app::Win(&window),
+        &*state,
+        flags,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1634,29 +1662,9 @@ pub fn calendar_view(
     fields: Option<Vec<String>>,
     span: Option<bool>,
 ) -> CmdResult<CalendarDto> {
-    // The user's week start (decision 59); the strip fields are the schedule's
-    // (decision 102), or, while it has none, the user's older per-user pick when it was
-    // ever changed from that preference's default.
-    let doc = state.lock();
-    let sch = doc.schedule();
-    let mut opts = view::CalOpts {
-        monday: week_start.as_deref() == Some("mon"),
-        fields: sch.calendar_strip_fields(),
-        span: span.unwrap_or(false),
-    };
-    if let (true, Some(f)) = (sch.calendar_fields.is_empty(), fields) {
-        let old: Vec<_> = f
-            .iter()
-            .take(13)
-            .filter_map(|x| {
-                method_schedule_core::model::StripField::from_name(x).filter(|f| f.of_sheet())
-            })
-            .collect();
-        if crate::reportsetup::old_calendar_pick(&old) {
-            opts.fields = old;
-        }
-    }
-    view::calendar_view_with(sch, sub_board, year, month, &opts)
+    method_schedule_session::commands::app::calendar_view(
+        &*state, sub_board, year, month, week_start, fields, span,
+    )
 }
 
 /// Makes a date of a sub-board's calendar working, a day off, a holiday or a company
@@ -1669,9 +1677,13 @@ pub fn set_day_kind<R: Runtime>(
     date: String,
     kind: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        calendar::set_day_kind(s, sub_board, &date, &kind)
-    })
+    method_schedule_session::commands::app::set_day_kind(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        date,
+        kind,
+    )
 }
 
 /// Sets a sub-board's weekly days off (`mon` to `sun`).
@@ -1682,9 +1694,12 @@ pub fn set_weekly_off<R: Runtime>(
     sub_board: u32,
     days: Vec<String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        calendar::set_weekly_off(s, sub_board, &days)
-    })
+    method_schedule_session::commands::app::set_weekly_off(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        days,
+    )
 }
 
 /// Adds an event to a sub-board's calendar (`index` null) or replaces event `index`.
@@ -1696,9 +1711,13 @@ pub fn save_event<R: Runtime>(
     index: Option<usize>,
     event: EventInput,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        calendar::save_event(s, sub_board, index, &event)
-    })
+    method_schedule_session::commands::app::save_event(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        index,
+        event,
+    )
 }
 
 /// The Calendar's View menu: what it hides, by key (decision 111), as one undo step.
@@ -1708,9 +1727,11 @@ pub fn set_calendar_hidden<R: Runtime>(
     state: Doc,
     hidden: Vec<String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        calendar::set_calendar_hidden(s, &hidden)
-    })
+    method_schedule_session::commands::app::set_calendar_hidden(
+        &crate::app::Win(&window),
+        &*state,
+        hidden,
+    )
 }
 
 /// Deletes event `index` of a sub-board's calendar (the page has asked first).
@@ -1721,9 +1742,12 @@ pub fn delete_event<R: Runtime>(
     sub_board: u32,
     index: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        calendar::delete_event(s, sub_board, index)
-    })
+    method_schedule_session::commands::app::delete_event(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        index,
+    )
 }
 
 // ---------------------------------------------------------------------------

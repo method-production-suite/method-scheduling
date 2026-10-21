@@ -6,8 +6,7 @@
 use crate::app::{finish, CmdResult};
 use crate::docs::Doc;
 use crate::elements::{pick_image, read_image, stored_image_path};
-use crate::view::{self, BoardDto, View};
-use method_schedule_core::model::BoardId;
+use crate::view::{BoardDto, View};
 use std::path::PathBuf;
 use tauri::{Runtime, WebviewWindow};
 
@@ -17,9 +16,7 @@ pub use method_schedule_session::split::*;
 /// edit, and the board shown stays as it is).
 #[tauri::command]
 pub fn board_view(state: Doc, board: u32) -> CmdResult<BoardDto> {
-    let s = state.lock();
-    view::board_ref(s.schedule(), board)?;
-    view::board(s.schedule(), BoardId(board))
+    method_schedule_session::commands::split::board_view(&*state, board)
 }
 
 /// Shows an Open dialog for an image and adds its path to a sheet, as an element's
@@ -48,9 +45,12 @@ pub fn remove_sheet_image<R: Runtime>(
     sheet: u32,
     at: usize,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| remove_image(x, sheet, at))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::split::remove_sheet_image(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        at,
+    )
 }
 
 /// Image `at` of a sheet as a `data:` URL for its thumbnail, or `None` when the file is

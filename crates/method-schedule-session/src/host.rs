@@ -23,8 +23,8 @@ use crate::session::Session;
 use crate::view::{self, View};
 
 mod b64;
+mod dispatch;
 mod files;
-mod generated;
 mod local;
 
 pub use b64::{decode as b64_decode, encode as b64_encode};
@@ -33,7 +33,7 @@ pub use files::{Downloads, FileIn, FileOut};
 /// The command contract's version (see the module's notes).
 pub const COMMANDS_VERSION: u32 = 1;
 
-/// The host's own commands, beside the desktop's ([`generated::COMMANDS`]).
+/// The host's own commands, beside the desktop's ([`dispatch::COMMANDS`]).
 const OWN: &[&str] = &[
     "open_mtsc",
     "save_mtsc",
@@ -46,7 +46,7 @@ const OWN: &[&str] = &[
 /// Every command [`Host::dispatch`] runs: the desktop's that need only the schedule, then
 /// the host's own.
 pub fn commands() -> Vec<&'static str> {
-    generated::COMMANDS
+    dispatch::COMMANDS
         .iter()
         .chain(files::COMMANDS)
         .chain(local::COMMANDS)
@@ -57,7 +57,7 @@ pub fn commands() -> Vec<&'static str> {
 
 /// The desktop commands [`Host::dispatch`] runs that need only the schedule, by name
 /// ([`commands`] adds those that take or give files, and the host's own).
-pub const COMMANDS: &[&str] = generated::COMMANDS;
+pub const COMMANDS: &[&str] = dispatch::COMMANDS;
 
 /// What an edit is told while the host shows schedules read-only ([`Host::set_read_only`]).
 pub const READ_ONLY: &str = "This schedule is open read-only here, so it can't be changed.";
@@ -329,107 +329,47 @@ impl Host {
                 return r;
             }
         }
-        if !generated::COMMANDS.contains(&command) {
+        if !dispatch::COMMANDS.contains(&command) {
             return Err(Error::UnknownCommand(command.to_string()));
         }
-        if self.read_only && !generated::READS.contains(&command) {
+        if self.read_only && !dispatch::READS.contains(&command) {
             return Err(Error::Refused(READ_ONLY.to_string()));
         }
         let a: DocArg = args(command, args_json)?;
         let state = self.doc(a.doc)?;
-        generated::dispatch(command, args_json, &state)
+        dispatch::dispatch(command, args_json, &state)
             .unwrap_or_else(|| Err(Error::UnknownCommand(command.to_string())))
     }
 }
 
-// ---- What the desktop's command bodies call, with the desktop's signatures, so the
-// generated arms read exactly like the commands they mirror. `W` stands in for the window.
+// ---- The host as the commands see it (crate::commands)
 
-/// A desktop command's reply: its value or the message the page shows.
-pub(crate) type CmdResult<T = View> = Result<T, String>;
+/// The window a command runs for; the host has none.
+pub(crate) struct W;
 
-/// The Breakdown tab's stepping order from the page's key, as the desktop reads it.
-pub(crate) fn sheet_order(key: Option<&str>) -> CmdResult<method_schedule_core::model::SheetOrder> {
-    match key {
-        None | Some("") => Ok(method_schedule_core::model::SheetOrder::Board),
-        Some(k) => method_schedule_core::model::SheetOrder::parse(k)
-            .ok_or_else(|| "Step by board order, sheet number or scene number.".into()),
+impl crate::commands::Shell for W {
+    /// The view, with no window to retitle and no autosave switch.
+    fn finish(&self, s: &Session, notice: Option<String>) -> Result<View, String> {
+        let mut v = view::view(s, notice)?;
+        v.autosave = false;
+        Ok(v)
     }
 }
 
-/// The window a desktop command body names; the host has none.
-pub(crate) struct W;
-
-/// The view after a command, as the desktop's `finish` gives it (no window to retitle, no
-/// autosave switch).
-pub(crate) fn finish(_: &W, s: &Session, notice: Option<String>) -> Result<View, String> {
-    let mut v = view::view(s, notice)?;
-    v.autosave = false;
-    Ok(v)
+impl crate::commands::DocLock for DocState {
+    fn lock(&self) -> MutexGuard<'_, Session> {
+        DocState::lock(self)
+    }
 }
 
-/// One edit as one undo step, then the view.
-pub(crate) fn edit<T>(
-    w: &W,
-    state: &DocState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> crate::board::EditResult<T>,
-) -> Result<View, String> {
-    let mut s = state.lock();
-    s.edit(f)?;
-    finish(w, &s, None)
+/// The view after a command (the host's own commands' name for it).
+pub(crate) fn finish(w: &W, s: &Session, notice: Option<String>) -> Result<View, String> {
+    crate::commands::Shell::finish(w, s, notice)
 }
 
-/// An edit that makes a strip, which the view names.
-pub(crate) fn strip_edit(
-    w: &W,
-    state: &DocState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> crate::board::EditResult<u32>,
-) -> Result<View, String> {
-    let mut s = state.lock();
-    let id = s.edit(f)?;
-    let mut v = finish(w, &s, None)?;
-    v.strip = Some(id);
-    Ok(v)
-}
-
-/// An edit that makes a board, which is then shown.
-pub(crate) fn board_edit(
-    w: &W,
-    state: &DocState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> crate::board::EditResult<u32>,
-) -> Result<View, String> {
-    let mut s = state.lock();
-    let id = s.edit(f)?;
-    s.show_board(method_schedule_core::model::BoardId(id))?;
-    finish(w, &s, None)
-}
-
-/// An edit that picks the Breakdown tab's sheet.
-pub(crate) fn sheet_edit(
-    w: &W,
-    state: &DocState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> crate::board::EditResult<Option<u32>>,
-) -> Result<View, String> {
-    let mut s = state.lock();
-    let show = s.edit(f)?;
-    let mut v = finish(w, &s, None)?;
-    v.sheet = show;
-    Ok(v)
-}
-
-/// The layouts module's name for [`edit`].
-pub(crate) fn edit_with(
-    w: &W,
-    state: &DocState,
-    f: impl FnOnce(&mut method_schedule_core::Schedule) -> crate::board::EditResult,
-) -> Result<View, String> {
-    edit(w, state, f)
-}
-
-/// Today, on the host's clock (src/clock.rs), where the desktop reads the system's.
+/// Today, on the host's clock.
 pub(crate) fn today() -> Option<method_schedule_core::Date> {
-    let ms = crate::clock::wall_ms();
-    (ms > 0).then_some(method_schedule_core::Date((ms / 86_400_000) as i32))
+    crate::clock::today()
 }
 
 pub(crate) use reply as to_reply;
@@ -438,6 +378,65 @@ pub(crate) use reply as to_reply;
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// The desktop commands the browser host doesn't run: windows, files on disk, backups,
+    /// recovery, autosave, printing to a file, the updater and the texts built into the
+    /// app. Every other desktop command must be the host's too (they share their bodies,
+    /// crate::commands), so a new desktop command that needs only the schedule can't be
+    /// forgotten here.
+    const DESKTOP_ONLY: &[&str] = &[
+        "backup_list",
+        "close_window",
+        "discard_recovered",
+        "merge_apply",
+        "merge_pick_file",
+        "merge_preview",
+        "new_window",
+        "notices",
+        "open_in_new_window",
+        "open_link",
+        "open_pending",
+        "open_recent",
+        "open_recovered",
+        "outside_check",
+        "outside_resolve",
+        "print_report",
+        "recovery_list",
+        "revert_to_backup",
+        "set_autosave",
+        "update_restart",
+        "update_status",
+        "update_whats_new",
+        "user_guide",
+        "whats_new",
+    ];
+
+    #[test]
+    fn every_desktop_command_is_the_hosts_or_listed_as_desktop_only() {
+        let app = include_str!("../../method-schedule-app/src/app.rs");
+        let list = app
+            .split("generate_handler![")
+            .nth(1)
+            .and_then(|t| t.split("])").next())
+            .expect("the desktop's handler list");
+        let desktop: Vec<&str> = list
+            .lines()
+            .map(|l| l.trim().trim_end_matches(','))
+            .filter(|l| !l.is_empty() && !l.starts_with("//"))
+            .map(|l| l.rsplit("::").next().unwrap())
+            .collect();
+        assert!(desktop.len() > 150, "{}", desktop.len());
+        let host = commands();
+        for c in &desktop {
+            assert!(
+                host.contains(c) != DESKTOP_ONLY.contains(c),
+                "{c}: run it in the host (src/host/dispatch.rs) or list it as desktop-only"
+            );
+        }
+        for c in DESKTOP_ONLY {
+            assert!(desktop.contains(c), "{c} is no desktop command");
+        }
+    }
 
     fn field_station() -> String {
         method_schedule_format::to_string(&method_schedule_core::sample::field_station())
@@ -533,8 +532,8 @@ mod tests {
         ] {
             assert!(all.contains(&c), "{c}");
         }
-        for r in generated::READS {
-            assert!(generated::COMMANDS.contains(r), "{r}");
+        for r in dispatch::READS {
+            assert!(dispatch::COMMANDS.contains(r), "{r}");
         }
         assert_eq!(COMMANDS_VERSION, 1);
         assert_eq!(Host::new().host_info().kind, "web");
