@@ -45,7 +45,8 @@ beyond the reference app (decisions.md, IMP-04 and BYD-01 to BYD-09):
   location FILE NAME LAT LON [UTC_OFFSET] [--dst RULE] | location FILE NAME --remove
                                   place a sheet location on the map (34.0522 -118.2437
                                   -7) for sunrise and sunset; RULE is a daylight saving
-                                  rule (us_canada, eu, australia, new_zealand or none;
+                                  rule (us_canada, eu, australia, new_zealand, israel,
+                                  egypt, chile or none;
                                   left out, kept), and with
                                   one UTC_OFFSET is the standard (winter) offset
   sun FILE [--sub-board ID]       sunrise and sunset for each dated shoot day

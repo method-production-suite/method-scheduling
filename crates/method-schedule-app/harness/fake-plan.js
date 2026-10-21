@@ -112,8 +112,8 @@ const DEFAULT_LONG_DAY = 12 * 60;
 export function parseDaylightSaving(text) {
   const t = String(text ?? '').trim();
   if (!t || t.toLowerCase() === 'none') return null;
-  const name = ['us_canada', 'eu', 'australia', 'new_zealand'].find((r) => r === t.toLowerCase());
-  if (!name) throw `${q(t)} is not a daylight saving rule: none, us_canada, eu, australia or new_zealand`;
+  const name = ['us_canada', 'eu', 'australia', 'new_zealand', 'israel', 'egypt', 'chile'].find((r) => r === t.toLowerCase());
+  if (!name) throw `${q(t)} is not a daylight saving rule: none, us_canada, eu, australia, new_zealand, israel, egypt or chile`;
   return name;
 }
 

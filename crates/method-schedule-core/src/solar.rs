@@ -57,14 +57,27 @@ pub enum DaylightSaving {
     /// New Zealand: from the last Sunday of September to the first Sunday of April,
     /// switching at 2:00 local standard time.
     NewZealand,
+    /// Israel: from the Friday before the last Sunday of March to the last Sunday of
+    /// October, switching at 2:00 local time.
+    Israel,
+    /// Egypt (since 2023): from the last Friday of April to the last Thursday of October,
+    /// switching at midnight local time, so the clocks go back as that Thursday ends.
+    Egypt,
+    /// Chile, mainland (since 2023): from the first Saturday of September at midnight to
+    /// the first Saturday of April at midnight, so the Sundays after them are the first
+    /// and the last days changed. The Magallanes region keeps one offset all year: no rule.
+    Chile,
 }
 
 impl DaylightSaving {
-    pub const ALL: [DaylightSaving; 4] = [
+    pub const ALL: [DaylightSaving; 7] = [
         DaylightSaving::UsCanada,
         DaylightSaving::Eu,
         DaylightSaving::Australia,
         DaylightSaving::NewZealand,
+        DaylightSaving::Israel,
+        DaylightSaving::Egypt,
+        DaylightSaving::Chile,
     ];
 
     /// The name the file and the tools use.
@@ -74,6 +87,9 @@ impl DaylightSaving {
             DaylightSaving::Eu => "eu",
             DaylightSaving::Australia => "australia",
             DaylightSaving::NewZealand => "new_zealand",
+            DaylightSaving::Israel => "israel",
+            DaylightSaving::Egypt => "egypt",
+            DaylightSaving::Chile => "chile",
         }
     }
 
@@ -84,6 +100,9 @@ impl DaylightSaving {
             DaylightSaving::Eu => "EU",
             DaylightSaving::Australia => "Australia (south-east)",
             DaylightSaving::NewZealand => "New Zealand",
+            DaylightSaving::Israel => "Israel",
+            DaylightSaving::Egypt => "Egypt",
+            DaylightSaving::Chile => "Chile (mainland)",
         }
     }
 
@@ -103,6 +122,16 @@ impl DaylightSaving {
             // across the new year: on from October (September in New Zealand) to April.
             DaylightSaving::Australia => (nth_sunday(year, 10, 1), nth_sunday(year, 4, 1)),
             DaylightSaving::NewZealand => (last_sunday(year, 9), nth_sunday(year, 4, 1)),
+            DaylightSaving::Israel => (last_sunday(year, 3).add_days(-2), last_sunday(year, 10)),
+            // Back as the last Thursday of October ends: the Friday is standard time.
+            DaylightSaving::Egypt => (
+                last_weekday(year, 4, FRIDAY),
+                last_weekday(year, 10, THURSDAY).add_days(1),
+            ),
+            DaylightSaving::Chile => (
+                first_saturday(year, 9).add_days(1),
+                first_saturday(year, 4).add_days(1),
+            ),
         }
     }
 
@@ -128,6 +157,31 @@ fn nth_sunday(year: i32, month: u32, n: i32) -> Date {
     // Days from Monday: 1970-01-01 was a Thursday.
     let from_monday = (first.0 + 3).rem_euclid(7);
     first.add_days((6 - from_monday).rem_euclid(7) + 7 * (n - 1))
+}
+
+/// Days from Monday, for [`last_weekday`].
+const THURSDAY: i32 = 3;
+const FRIDAY: i32 = 4;
+
+/// The first Saturday of a month.
+fn first_saturday(year: i32, month: u32) -> Date {
+    let first = Date::from_ymd(year, month, 1).expect("a real month");
+    let from_monday = (first.0 + 3).rem_euclid(7);
+    first.add_days((5 - from_monday).rem_euclid(7))
+}
+
+/// The last given weekday (days from Monday) of a month.
+fn last_weekday(year: i32, month: u32, weekday: i32) -> Date {
+    let sunday = last_sunday(year, month);
+    // Back from the last Sunday to the weekday, unless that lands in the next month's
+    // reach: the last Sunday is at most six days before the month ends.
+    let back = sunday.add_days(weekday - 6);
+    let ahead = back.add_days(7);
+    if ahead.ymd().1 == month {
+        ahead
+    } else {
+        back
+    }
 }
 
 /// The last Sunday of a month.
@@ -379,6 +433,77 @@ mod tests {
         assert_eq!(DaylightSaving::from_name(" EU "), Some(eu));
         assert_eq!(DaylightSaving::from_name("us_canada"), Some(us));
         assert_eq!(DaylightSaving::from_name("none"), None);
+    }
+
+    /// BYD-08: Israel, Egypt and mainland Chile, from published calendars.
+    #[test]
+    fn more_daylight_saving_rules() {
+        let (il, eg, cl) = (
+            DaylightSaving::Israel,
+            DaylightSaving::Egypt,
+            DaylightSaving::Chile,
+        );
+        for (year, il_on, il_off, eg_on, eg_off, cl_on, cl_off) in [
+            (
+                2024,
+                "2024-03-29",
+                "2024-10-27",
+                "2024-04-26",
+                "2024-11-01",
+                "2024-09-08",
+                "2024-04-07",
+            ),
+            (
+                2025,
+                "2025-03-28",
+                "2025-10-26",
+                "2025-04-25",
+                "2025-10-31",
+                "2025-09-07",
+                "2025-04-06",
+            ),
+            (
+                2026,
+                "2026-03-27",
+                "2026-10-25",
+                "2026-04-24",
+                "2026-10-30",
+                "2026-09-06",
+                "2026-04-05",
+            ),
+            (
+                2027,
+                "2027-03-26",
+                "2027-10-31",
+                "2027-04-30",
+                "2027-10-29",
+                "2027-09-05",
+                "2027-04-04",
+            ),
+        ] {
+            assert_eq!(
+                il.switch_dates(year),
+                (d(il_on), d(il_off)),
+                "Israel {year}"
+            );
+            assert_eq!(eg.switch_dates(year), (d(eg_on), d(eg_off)), "Egypt {year}");
+            assert_eq!(cl.switch_dates(year), (d(cl_on), d(cl_off)), "Chile {year}");
+        }
+        assert!(il.in_effect(d("2026-03-27")) && !il.in_effect(d("2026-03-26")));
+        assert!(!il.in_effect(d("2026-10-25")));
+        // Egypt: the last Thursday of October is still summer time, the Friday isn't.
+        assert!(eg.in_effect(d("2026-10-29")) && !eg.in_effect(d("2026-10-30")));
+        assert!(eg.in_effect(d("2026-04-24")) && !eg.in_effect(d("2026-04-23")));
+        // Chile is southern: ahead over its summer, across the new year.
+        assert!(cl.in_effect(d("2026-01-15")) && cl.in_effect(d("2026-09-06")));
+        assert!(!cl.in_effect(d("2026-04-05")) && !cl.in_effect(d("2026-07-15")));
+        for r in DaylightSaving::ALL {
+            assert_eq!(DaylightSaving::from_name(r.name()), Some(r));
+        }
+        // The last weekday falls on the month's last days too.
+        assert_eq!(last_weekday(2026, 4, FRIDAY), d("2026-04-24"));
+        assert_eq!(last_weekday(2027, 4, FRIDAY), d("2027-04-30"));
+        assert_eq!(last_weekday(2025, 10, THURSDAY), d("2025-10-30"));
     }
 
     /// Decision 193: sunrise jumps an hour (less the day's two minutes or so) across the
