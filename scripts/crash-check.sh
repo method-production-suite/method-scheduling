@@ -21,8 +21,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 cargo build -q -p method-schedule-app -p method-schedule-cli
-app="target/debug/method-schedule-app"
-cli="target/debug/method-schedule"
+# Cargo's build folder (CARGO_TARGET_DIR or ./target), as cargo metadata says.
+target="$(cargo metadata --format-version 1 --no-deps | python3 -c 'import json, sys; print(json.load(sys.stdin)["target_directory"])')"
+app="$target/debug/method-schedule-app"
+cli="$target/debug/method-schedule"
 work="$(mktemp -d)"
 file="$work/Saltmarsh Road.mtsc"
 pid=""

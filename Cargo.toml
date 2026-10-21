@@ -17,6 +17,14 @@ edition = "2021"
 version = "0.5.0"
 license = "MIT OR Apache-2.0"
 
+# Smaller dev builds (suite disk rules, 2026-10-21): line tables for our own crates' panics
+# and backtraces, no debug info for dependencies.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 # The browser build (`cargo xtask web`): small over fast.
 [profile.web-release]
 inherits = "release"

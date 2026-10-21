@@ -1360,7 +1360,7 @@ the Developer ID in `METHOD_SIGN_IDENTITY` (default the suite's Developer ID, by
 secure timestamp, signs the `.dmg`, checks both with `codesign --verify --strict --deep`,
 then notarizes the `.dmg` with the notarytool keychain profile in `METHOD_NOTARY_PROFILE`
 (default `method-schedule-notary`), staples it and the app, and checks them with `spctl
---assess` and `xcrun stapler validate`. The results are in `target/release-mac/`; nothing
+--assess` and `xcrun stapler validate`. The results are in `release-mac/` in cargo's build folder (`CARGO_TARGET_DIR`, else `target/`); nothing
 is uploaded but to Apple's notary service. `METHOD_SKIP_NOTARIZE=1` stops after signing;
 `METHOD_MAC_TARGET=universal-apple-darwin` builds for Intel and Apple silicon (with both
 Rust targets installed). No entitlements file: the app needs none under the hardened
