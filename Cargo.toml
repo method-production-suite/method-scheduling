@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 edition = "2021"
 # The one place the version lives: every crate inherits it.
-version = "0.4.0"
+version = "0.5.0"
 license = "MIT OR Apache-2.0"
 
 # The browser build (`cargo xtask web`): small over fast.
