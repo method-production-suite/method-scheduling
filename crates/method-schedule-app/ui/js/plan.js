@@ -523,7 +523,7 @@ export function planCommands(ctx) {
       box(
         'Print Call Sheet',
         'pl-pcs',
-        el('p', { class: 'modal-message', text: 'The day, its call and wrap, sunrise and sunset, the scenes with their times, the cast with when they are on set, the other elements and the notes.' }),
+        el('p', { class: 'modal-message', text: 'The day, its call and wrap, sunrise and sunset, the scenes with their times, the cast with their calls and when they are on set, the other elements, the notes and the next two days in brief.' }),
         el('div', { class: 'pl-bar' }, field('Day', pick)),
         el(
           'div',

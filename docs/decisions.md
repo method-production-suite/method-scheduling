@@ -5581,3 +5581,15 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   for a deleted day break or element are dropped by the next plan edit.
 - **Not yet**: crew calls by department (decision 207's crew calls), and a person's call
   printed on the strip board.
+
+## 232. The call sheet's advance schedule (2026-10-21)
+
+- **Decision 207's next part**: a call sheet now ends with the next two shoot days of the
+  same sub-board, each with its number, date, call and pages and its scenes in brief (scene,
+  I/E, set, day or night, pages, cast IDs). None on the last day. Two because a printed
+  sheet usually looks a day or two ahead and the page stays short.
+- **Everywhere the call sheet goes**: the printed sheet (a last section, "Advance schedule",
+  a bold line per day over its scenes), the JSON (`advance`, each day's scenes in the same
+  shape as the day's own), the CSV (a sixth table, last so the first five keep their
+  places) and so the command line and the MCP `call_sheet` tool.
+- **Not yet**: crew calls and a map, the rest of 207's list; a choice of how many days ahead.

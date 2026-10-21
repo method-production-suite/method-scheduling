@@ -25,7 +25,9 @@ Plan > Print Call Sheet... picks a shoot day (the selected strip's, at first), t
 - the cast: ID, name, scenes, their call and wrap (their own where the Day Timeline gives
   one) and when they are on set (first start to last end);
 - the other elements, a line per category, each element with its scenes;
-- the notes.
+- the notes;
+- the advance schedule: the next two shoot days, each with its date and call and its
+  scenes in brief (scene, I/E, set, day or night, pages, cast IDs).
 
 A long day runs onto more pages with the column headings repeated and "Page X of Y" in the
 footer. It prints exactly the data below, nothing more (decisions.md, entry 207).
@@ -50,6 +52,8 @@ footer. It prints exactly the data below, nothing more (decisions.md, entry 207)
 - **Notes**: each banner with its time and duration, the events on the date (with the
   elements they list), and the timeline's warnings (a long day, exterior day scenes after
   sunset, scenes with no shoot time).
+- **Advance**: the next shoot days of the same sub-board, up to two (none on the last
+  day), each with its number, date, call and pages and its scenes as above (decision 232).
 
 Times are 24-hour local clock times. A time of 1440 minutes or more runs past midnight.
 Without a call time, the start, end, call and wrap fields are empty.
@@ -77,11 +81,12 @@ in minutes after midnight (with the same time as `HH:MM` text in a key without
 | `cast` | array | Each: `element` (id), `board_id`, `name`, `scenes` (array of scene numbers), `first`, `first_minutes`, `last`, `last_minutes`, `call`, `call_minutes`, `wrap`, `wrap_minutes` (their own where set, else the day's; null without a call time), `own_call` (whether either is their own, decision 231). |
 | `elements` | array | Each category: `category` (id), `name`, `elements` (each `element`, `board_id`, `name`, `scenes`). |
 | `notes` | array of strings | |
+| `advance` | array | The next shoot days of the sub-board, up to two, empty on the last day (decision 232). Each: `day`, `date`, `call`, `call_minutes`, `eighths`, `pages`, `scenes` (each as in the top-level list). |
 
 ## CSV
 
 One file, UTF-8 with a byte order mark (so Excel reads accented letters), records ending
-in CRLF. It holds five tables in turn, each with its own header row and a blank line
+in CRLF. It holds six tables in turn, each with its own header row and a blank line
 between them:
 
 1. `Field,Value`: Title, Company, Director, Producer, Board, Sub-board, Day (`3 of 20`),
@@ -91,6 +96,8 @@ between them:
 3. `ID,Name,Scenes,First,Last,Call,Wrap`: the cast, with each one's call and wrap.
 4. `Category,ID,Name,Scenes`: every other element.
 5. `Note`: one note per row.
+6. `Day,Date,Call,Scene,I/E,Set,Day/Night,Pages,Cast`: the advance schedule, a row per
+   scene of the next shoot days (up to two).
 
 Fields are quoted only when they hold a comma, a quote or a line break. Text that a
 spreadsheet would run as a formula gets a leading `'` (as every export of ours does).

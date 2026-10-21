@@ -629,6 +629,9 @@
 .method-report col.cs-c-dn { width: 8%; }
 .method-report col.cs-c-pg { width: 7%; }
 .method-report col.cs-c-cast { width: 17%; }
+.method-report col.cs-c-adv-ie { width: 10%; }
+.method-report col.cs-c-adv-set { width: 51%; }
+.method-report td.cs-adv-day { font-weight: 700; padding-top: 4pt; }
 .method-report col.cs-c-id { width: 7%; }
 .method-report col.cs-c-name { width: 33%; }
 .method-report col.cs-c-scenes { width: 20%; }

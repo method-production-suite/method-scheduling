@@ -61,6 +61,19 @@ pub struct CallCategory {
     pub elements: Vec<CallElement>,
 }
 
+/// A later shoot day in brief, for the advance schedule (decision 232).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AdvanceDay {
+    pub day: u32,
+    pub date: Option<Date>,
+    pub call: Option<u32>,
+    pub pages: Eighths,
+    pub scenes: Vec<CallScene>,
+}
+
+/// How many shoot days after the call sheet's the advance schedule covers.
+pub const ADVANCE_DAYS: usize = 2;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CallSheet {
     pub title: String,
@@ -87,6 +100,8 @@ pub struct CallSheet {
     pub elements: Vec<CallCategory>,
     /// Banners (with their times), events on the date, and the timeline's warnings.
     pub notes: Vec<String>,
+    /// The next shoot days of the sub-board, up to `ADVANCE_DAYS`; none on the last day.
+    pub advance: Vec<AdvanceDay>,
 }
 
 impl CallSheet {
@@ -102,6 +117,63 @@ impl CallSheet {
 /// An element on the day: its scene numbers, first start and last end.
 type Seen = (ElementId, Vec<String>, Option<i32>, Option<i32>);
 
+/// A scene's row on a day: its own heading, the cast by board ID, its clock times.
+fn call_scene(
+    s: &Schedule,
+    h: &crate::model::Sheet,
+    e: &crate::timeline::Entry,
+    timed: bool,
+) -> CallScene {
+    let cast_cat = s.cast();
+    let mut ids: Vec<(Option<String>, String)> = h
+        .elements
+        .iter()
+        .filter_map(|el| s.element(*el))
+        .filter(|x| Some(x.category) == cast_cat)
+        .map(|x| (x.board_id.clone(), x.name.clone()))
+        .collect();
+    ids.sort_by(|a, b| id_order(a.0.as_deref(), b.0.as_deref()).then(a.1.cmp(&b.1)));
+    CallScene {
+        sheet: h.id,
+        scenes: h.scenes.clone(),
+        int_ext: h.int_ext.clone(),
+        set: h.set.clone(),
+        time_of_day: h.time_of_day.clone(),
+        // A later part of a scene spanning days counts no pages (decision 76).
+        pages: if e.later { Eighths::ZERO } else { h.pages },
+        synopsis: h.synopsis.clone(),
+        location: h.location.clone(),
+        cast: ids.into_iter().map(|(id, n)| id.unwrap_or(n)).collect(),
+        start: timed.then_some(e.start),
+        end: timed.then_some(e.end),
+        shoot_minutes: if e.later {
+            None
+        } else {
+            h.shoot_time.map(|m| m.0)
+        },
+    }
+}
+
+/// A later day's scenes in brief (decision 232).
+fn advance_day(s: &Schedule, t: &crate::timeline::DayTimeline) -> AdvanceDay {
+    let sheets = s.sheet_index();
+    let scenes: Vec<CallScene> = t
+        .entries
+        .iter()
+        .filter_map(|e| match e.kind {
+            EntryKind::Scene(id) => Some(call_scene(s, sheets.get(&id)?, e, t.call.is_some())),
+            EntryKind::Banner(_) => None,
+        })
+        .collect();
+    AdvanceDay {
+        day: t.number,
+        date: t.date,
+        call: t.call,
+        pages: scenes.iter().map(|x| x.pages).sum(),
+        scenes,
+    }
+}
+
 /// The call sheet data for shoot day `day` (from 1) of a sub-board.
 pub fn call_sheet(
     s: &Schedule,
@@ -115,14 +187,20 @@ pub fn call_sheet(
         .iter()
         .find(|x| x.id == sub)
         .ok_or(Error::NoSuchSubBoard(sub))?;
-    let all = timelines(s, board, sub)?;
+    let mut all = timelines(s, board, sub)?;
     let days = all.len() as u32;
-    let t = all.into_iter().find(|t| t.number == day).ok_or_else(|| {
+    let at = all.iter().position(|t| t.number == day).ok_or_else(|| {
         Error::Broken(format!(
             "{} has {} shoot days; there is no day {day}",
             sb.name, days
         ))
     })?;
+    let advance = all[at + 1..]
+        .iter()
+        .take(ADVANCE_DAYS)
+        .map(|t| advance_day(s, t))
+        .collect();
+    let t = all.swap_remove(at);
     let cast_cat = s.cast();
     let mut scenes = Vec::new();
     let mut notes = Vec::new();
@@ -149,12 +227,12 @@ pub fn call_sheet(
             }
             EntryKind::Scene(id) => {
                 let Some(h) = sheets.get(id) else { continue };
-                // A later part of a scene spanning days counts no pages (decision 76).
-                let here = if e.later { Eighths::ZERO } else { h.pages };
-                pages += here;
-                let mut ids: Vec<(Option<String>, String)> = Vec::new();
+                let row = call_scene(s, h, e, timed);
+                pages += row.pages;
                 for el in &h.elements {
-                    let Some(x) = elements.get(el) else { continue };
+                    if !elements.contains_key(el) {
+                        continue;
+                    }
                     let number = if h.scenes.trim().is_empty() {
                         crate::timeline::scene_name(h)
                     } else {
@@ -174,29 +252,8 @@ pub fn call_sheet(
                             timed.then_some(e.end),
                         )),
                     }
-                    if Some(x.category) == cast_cat {
-                        ids.push((x.board_id.clone(), x.name.clone()));
-                    }
                 }
-                ids.sort_by(|a, b| id_order(a.0.as_deref(), b.0.as_deref()).then(a.1.cmp(&b.1)));
-                scenes.push(CallScene {
-                    sheet: h.id,
-                    scenes: h.scenes.clone(),
-                    int_ext: h.int_ext.clone(),
-                    set: h.set.clone(),
-                    time_of_day: h.time_of_day.clone(),
-                    pages: here,
-                    synopsis: h.synopsis.clone(),
-                    location: h.location.clone(),
-                    cast: ids.into_iter().map(|(id, n)| id.unwrap_or(n)).collect(),
-                    start: timed.then_some(e.start),
-                    end: timed.then_some(e.end),
-                    shoot_minutes: if e.later {
-                        None
-                    } else {
-                        h.shoot_time.map(|m| m.0)
-                    },
-                });
+                scenes.push(row);
             }
         }
     }
@@ -297,6 +354,7 @@ pub fn call_sheet(
         cast,
         elements: by_cat,
         notes,
+        advance,
     })
 }
 

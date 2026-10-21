@@ -84,6 +84,7 @@ export function callSheetFlows(d) {
   const cast = d.cast || [];
   const cats = (d.elements || []).filter((c) => (c.elements || []).length);
   const notes = d.notes || [];
+  const advance = (d.advance || []).filter((a) => (a.scenes || []).length);
   const flows = [
     {
       // The page header's center: "Call sheet" where the sheet starts, the section after.
@@ -142,6 +143,20 @@ export function callSheetFlows(d) {
       head: null,
       intro: title('Notes'),
       rows: notes.map((n) => row(el('tr', {}, td(n)))),
+    });
+  }
+  // The next shoot days in brief (entry 232): a line per day, then its scenes.
+  if (advance.length) {
+    flows.push({
+      name: 'Advance',
+      cls: 'cs-advance',
+      cols: ['cs-c-sc', 'cs-c-adv-ie', 'cs-c-adv-set', 'cs-c-dn', 'cs-c-pg', 'cs-c-cast'],
+      head: el('tr', {}, th('Scene'), th('I/E'), th('Set'), th('D/N'), th('Pages', 'num'), th('Cast')),
+      intro: title('Advance schedule'),
+      rows: advance.flatMap((a) => [
+        row(el('tr', {}, td([`Day ${a.day}`, callSheetDate(a.date), a.call ? `Call ${a.call}` : '', `${a.pages} pages`].filter(Boolean).join(' · '), 'cs-adv-day', 6))),
+        ...a.scenes.map((s) => row(el('tr', {}, td(s.scenes, 'fb'), td(s.int_ext), td(s.set), td(s.time_of_day), td(s.pages, 'num'), td((s.cast || []).join(', '))))),
+      ]),
     });
   }
   return flows;
