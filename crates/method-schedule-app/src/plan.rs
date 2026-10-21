@@ -198,6 +198,26 @@ pub fn set_call_time<R: Runtime>(
     )
 }
 
+/// One person's own call and wrap on a shoot day (decision 231).
+#[tauri::command]
+pub fn set_person_call<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    day: u32,
+    element: u32,
+    call: String,
+    wrap: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::set_person_call(
+        &crate::app::Win(&window),
+        &*state,
+        day,
+        element,
+        call,
+        wrap,
+    )
+}
+
 /// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
 /// finished it.
 #[tauri::command]

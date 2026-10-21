@@ -168,11 +168,33 @@ export function planCommands(ctx) {
         const past = d.past_wrap
           ? el('p', { class: 'pl-head' }, d.past_wrap, ...(d.push.length ? [' ', button(`Move to Day ${d.next}`, () => push(d), 'btn btn-mini')] : []))
           : '';
+        // Each person's own call and wrap, empty for the company's (entry 231). Enter or
+        // leaving a field sets both.
+        const people = (d.people || []).map((p) => {
+          const own = [textInput(p.call), textInput(p.wrap)];
+          own[0].placeholder = d.call;
+          own[1].placeholder = d.wrap.replace(' (+1)', '');
+          own[0].setAttribute('aria-label', `${p.name}'s own call`);
+          own[1].setAttribute('aria-label', `${p.name}'s own wrap`);
+          let sent = `${p.call}|${p.wrap}`;
+          const set = async () => {
+            const now = `${own[0].value.trim()}|${own[1].value.trim()}`;
+            if (now === sent) return;
+            sent = now;
+            if (await edit(invoke('set_person_call', { day: d.day, element: p.element, call: own[0].value, wrap: own[1].value }), error)) await reload();
+          };
+          for (const i of own) {
+            i.addEventListener('keydown', (e) => e.key === 'Enter' && set());
+            i.addEventListener('change', set);
+          }
+          return el('tr', {}, el('td', { text: p.name }), el('td', {}, own[0]), el('td', {}, own[1]));
+        });
         body.replaceChildren(
           el('p', { class: 'pl-head', text: head }),
           table(['Start', 'End', 'Strip', 'Note'], rows),
           d.warnings.length ? el('ul', { class: 'pl-lines pl-warnings' }, ...d.warnings.map((w) => el('li', { text: w }))) : '',
           past,
+          people.length ? table(['Called', 'Own call', 'Own wrap'], people) : '',
         );
       }
       pick.addEventListener('change', () => {

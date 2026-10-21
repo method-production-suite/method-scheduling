@@ -67,6 +67,21 @@ pub fn set_call_time<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, None)
 }
 
+/// Sets one person's own call and wrap on a shoot day (decision 231); empty keeps the
+/// company's.
+pub fn set_person_call<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    day: u32,
+    element: u32,
+    call: String,
+    wrap: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_own_call(x, day, element, &call, &wrap))?;
+    finish(&window, &s, None)
+}
+
 /// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
 /// finished it.
 pub fn set_shot<W: Shell + ?Sized, D: DocLock + ?Sized>(

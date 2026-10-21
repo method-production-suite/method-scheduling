@@ -236,6 +236,7 @@ by the next plan edit; they are never an error.
 | `omitted` | array of integers | empty | Sheet ids a script revision no longer has (kept, not deleted). |
 | `days_shot` | array of [day shot](#day-shot) | empty | Each shoot day as it was shot, written back by a production report (decisions.md, entry 224). One per day break. |
 | `scenes_shot` | array of [scene shot](#scene-shot) | empty | What was shot of each scene on each day (entry 224). One per scene and day. |
+| `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
 
 #### Location
 
@@ -271,6 +272,19 @@ An entry with no eighths that doesn't finish its scene is refused: leave it out.
 shot over two days has two entries, the second with `complete`. A file without these keys
 reads and writes back byte for byte; a reader that doesn't know them (Method Schedule 0.1.0)
 refuses the file, as it refuses any unknown key.
+
+#### Person call
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `day` | integer | | The day break strip that closes the day, as in `call_times`. |
+| `element` | integer | | The element called, usually cast. |
+| `call` | integer | the day's call | Their own call, minutes after midnight (0 to 1439). |
+| `wrap` | integer | the company wrap | Their own wrap, minutes after the call day's midnight (1 to 2880), after their call when both are given. |
+
+An entry with neither `call` nor `wrap` is refused: leave it out. The rest check
+(turnarounds) measures from each element's own wrap to its own next call. Entries for an
+element or day break that no longer exists are dropped like the other plan keys.
 
 #### Lock
 

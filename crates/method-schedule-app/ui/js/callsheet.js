@@ -101,10 +101,11 @@ export function callSheetFlows(d) {
     flows.push({
       name: 'Cast',
       cls: 'cs-cast',
-      cols: ['cs-c-id', 'cs-c-name', 'cs-c-scenes', 'cs-c-on'],
-      head: el('tr', {}, th('ID'), th('Name'), th('Scenes'), th('On set')),
+      cols: ['cs-c-id', 'cs-c-name', 'cs-c-scenes', 'cs-c-call', 'cs-c-on'],
+      head: el('tr', {}, th('ID'), th('Name'), th('Scenes'), th('Call'), th('On set')),
       intro: title('Cast'),
-      rows: cast.map((c) => row(el('tr', {}, td(c.board_id, 'fb'), td(c.name), td((c.scenes || []).join(', '), 'muted'), td(spanText(c.first, c.last))))),
+      // Their call and wrap, bold when their own (entry 231).
+      rows: cast.map((c) => row(el('tr', {}, td(c.board_id, 'fb'), td(c.name), td((c.scenes || []).join(', '), 'muted'), td(spanText(c.call, c.wrap), c.own_call ? 'fb' : ''), td(spanText(c.first, c.last))))),
     });
   }
   if (cats.length) {

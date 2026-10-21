@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, DayShot, GeoLocation, Lock, LockedScene, Plan, SceneShot, Turnaround,
+    CallTime, DayShot, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot, Turnaround,
     DEFAULT_LONG_DAY, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
@@ -39,6 +39,20 @@ pub(crate) struct FilePlan {
     days_shot: Vec<FileDayShot>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     scenes_shot: Vec<FileSceneShot>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    person_calls: Vec<FilePersonCall>,
+}
+
+/// One element's own call and wrap on one day (decision 231).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FilePersonCall {
+    day: u32,
+    element: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    call: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wrap: Option<u32>,
 }
 
 /// A shoot day as shot (decision 224): what a production report wrote back.
@@ -125,6 +139,16 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
         return None;
     }
     Some(FilePlan {
+        person_calls: p
+            .person_calls
+            .iter()
+            .map(|x| FilePersonCall {
+                day: x.day.0,
+                element: x.element.0,
+                call: x.call,
+                wrap: x.wrap,
+            })
+            .collect(),
         days_shot: p
             .days_shot
             .iter()
@@ -327,6 +351,36 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             date: d.date.as_deref().map(date).transpose()?,
             call: d.call,
             wrap: d.wrap,
+        });
+    }
+    for x in f.person_calls {
+        let who = format!("element {} on day {}", x.element, x.day);
+        if p.person_calls
+            .iter()
+            .any(|o| o.day.0 == x.day && o.element.0 == x.element)
+        {
+            return Err(bad(format!("{who} has two calls of its own")));
+        }
+        if x.call.is_none() && x.wrap.is_none() {
+            return Err(bad(format!(
+                "{who} has a call of its own with no call or wrap: leave it out"
+            )));
+        }
+        if x.call.is_some_and(|m| m >= 24 * 60) {
+            return Err(bad(format!("{who}: call is past 23:59")));
+        }
+        if x.wrap.is_some_and(|m| m == 0 || m > MAX_WRAP)
+            || matches!((x.call, x.wrap), (Some(c), Some(w)) if w <= c)
+        {
+            return Err(bad(format!(
+                "{who}: wrap is out of range (1 to {MAX_WRAP}) or not after the call"
+            )));
+        }
+        p.person_calls.push(PersonCall {
+            day: StripId(x.day),
+            element: ElementId(x.element),
+            call: x.call,
+            wrap: x.wrap,
         });
     }
     for x in f.scenes_shot {

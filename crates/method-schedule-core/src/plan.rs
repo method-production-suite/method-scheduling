@@ -44,6 +44,23 @@ pub struct Plan {
     pub days_shot: Vec<DayShot>,
     /// What was shot of each scene on each day: eighths, and whether that finished it.
     pub scenes_shot: Vec<SceneShot>,
+    /// Calls and wraps of their own for single elements (a cast member called later than
+    /// the company, say) on a shoot day; the rest checks use them (decision 231).
+    pub person_calls: Vec<PersonCall>,
+}
+
+/// One element's own call and wrap on a shoot day (decision 231). Each part is left out
+/// (`None`) to follow the company's.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PersonCall {
+    /// The day break that closes the day, as in [`CallTime`].
+    pub day: StripId,
+    pub element: ElementId,
+    /// Their call, minutes after midnight, 0 to 1439.
+    pub call: Option<u32>,
+    /// Their wrap, minutes after the call day's midnight, up to [`MAX_WRAP`]; after their
+    /// call when both are known.
+    pub wrap: Option<u32>,
 }
 
 /// A shoot day as shot. Each part is left unknown (`None`) until reported.
@@ -218,6 +235,13 @@ impl Plan {
         self.omitted.contains(&sheet)
     }
 
+    /// Element `element`'s own call and wrap on the day closed by `day`, if set.
+    pub fn person_call(&self, day: StripId, element: ElementId) -> Option<&PersonCall> {
+        self.person_calls
+            .iter()
+            .find(|x| x.day == day && x.element == element)
+    }
+
     /// The day closed by `day` as shot, if reported.
     pub fn day_shot(&self, day: StripId) -> Option<&DayShot> {
         self.days_shot.iter().find(|d| d.day == day)
@@ -292,6 +316,32 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
             return broken(format!(
                 "day {}'s actual wrap is out of range or not after its call",
                 d.day.0
+            ));
+        }
+    }
+    let mut people = HashSet::new();
+    for x in &p.person_calls {
+        if !people.insert((x.day, x.element)) {
+            return broken(format!(
+                "element {} has two calls of its own on day {}",
+                x.element.0, x.day.0
+            ));
+        }
+        if x.call.is_none() && x.wrap.is_none() {
+            return broken(format!(
+                "element {}'s call of its own on day {} is empty",
+                x.element.0, x.day.0
+            ));
+        }
+        if x.call.is_some_and(|m| m >= 24 * 60) {
+            return broken(format!("element {}'s call is past 23:59", x.element.0));
+        }
+        if x.wrap.is_some_and(|m| m == 0 || m > MAX_WRAP)
+            || matches!((x.call, x.wrap), (Some(c), Some(w)) if w <= c)
+        {
+            return broken(format!(
+                "element {}'s wrap is out of range or not after its call",
+                x.element.0
             ));
         }
     }
@@ -401,11 +451,14 @@ pub fn tidy(s: &mut Schedule) {
         .map(|st| st.id)
         .collect();
     let sheets: HashSet<SheetId> = s.sheets.iter().map(|h| h.id).collect();
+    let elements: HashSet<ElementId> = s.elements.iter().map(|e| e.id).collect();
     let cats: HashSet<CategoryId> = s.categories.iter().map(|c| c.id).collect();
     let boards: HashSet<BoardId> = s.boards.iter().map(|b| b.id).collect();
     let p = &mut s.plan;
     p.call_times.retain(|c| breaks.contains(&c.day));
     p.days_shot.retain(|d| breaks.contains(&d.day));
+    p.person_calls
+        .retain(|x| breaks.contains(&x.day) && elements.contains(&x.element));
     p.scenes_shot
         .retain(|x| breaks.contains(&x.day) && sheets.contains(&x.sheet));
     p.turnarounds.retain(|t| cats.contains(&t.category));
@@ -497,6 +550,46 @@ pub fn record_shot(
             day,
             eighths,
             complete,
+        });
+    }
+    tidy(s);
+    Ok(())
+}
+
+/// Sets element `element`'s own call and wrap on the day closed by `day` (decision 231):
+/// minutes after midnight, the wrap up to [`MAX_WRAP`]; both `None` follows the company's
+/// again.
+pub fn set_person_call(
+    s: &mut Schedule,
+    day: StripId,
+    element: ElementId,
+    call: Option<u32>,
+    wrap: Option<u32>,
+) -> Result<(), Error> {
+    if !day_breaks(s).contains(&day) {
+        return Err(refuse("a call belongs to a shoot day: name its day break"));
+    }
+    if s.element(element).is_none() {
+        return Err(Error::NoSuchElement(element));
+    }
+    if call.is_some_and(|m| m >= 24 * 60) {
+        return Err(refuse("a call time is 23:59 at the latest"));
+    }
+    if wrap.is_some_and(|m| m == 0 || m > MAX_WRAP) {
+        return Err(refuse("a wrap is by the end of the next day at the latest"));
+    }
+    if matches!((call, wrap), (Some(c), Some(w)) if w <= c) {
+        return Err(refuse("a wrap comes after the call"));
+    }
+    let p = &mut s.plan;
+    p.person_calls
+        .retain(|x| !(x.day == day && x.element == element));
+    if call.is_some() || wrap.is_some() {
+        p.person_calls.push(PersonCall {
+            day,
+            element,
+            call,
+            wrap,
         });
     }
     tidy(s);
@@ -751,6 +844,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     if a.days_shot != b.days_shot {
         out.push("days as shot changed".to_string());
     }
+    if a.person_calls != b.person_calls {
+        out.push("calls of their own changed".to_string());
+    }
     if a.scenes_shot != b.scenes_shot {
         out.push("scenes shot changed".to_string());
     }
@@ -988,6 +1084,44 @@ mod tests {
         );
         remove_day_breaks(&mut s, board, sub).unwrap();
         assert!(s.plan.call_times.is_empty(), "removed with their breaks");
+    }
+
+    #[test]
+    fn a_persons_own_call_is_checked_and_dropped_with_its_day_or_element() {
+        use crate::days::remove_day_breaks;
+        let (mut s, board, sub, _) = crate::timeline::tests::split_two_days();
+        let d1 = breaks(&s)[0];
+        let cast = s.cast().unwrap();
+        let el = s.add_element(cast, "ANN").unwrap();
+        set_person_call(&mut s, d1, el, Some(7 * 60), Some(18 * 60)).unwrap();
+        assert_eq!(s.plan.person_call(d1, el).unwrap().call, Some(7 * 60));
+        s.check().unwrap();
+        // Refused: not a day break, a wrap before the call, a call past midnight.
+        let not_a_break = s.boards[0].sub_boards[0].strips[0].id;
+        assert!(set_person_call(&mut s, not_a_break, el, Some(60), None).is_err());
+        assert!(set_person_call(&mut s, d1, el, Some(600), Some(500)).is_err());
+        assert!(set_person_call(&mut s, d1, el, Some(1440), None).is_err());
+        // Setting again replaces it; both empty takes it away.
+        set_person_call(&mut s, d1, el, Some(8 * 60), None).unwrap();
+        assert_eq!(s.plan.person_calls.len(), 1);
+        set_person_call(&mut s, d1, el, None, None).unwrap();
+        assert!(s.plan.person_calls.is_empty());
+        // Two for one element and day, or an empty one, don't pass check.
+        let mut bad = s.clone();
+        let x = PersonCall {
+            day: d1,
+            element: el,
+            call: Some(60),
+            wrap: None,
+        };
+        bad.plan.person_calls = vec![x, x];
+        assert!(bad.check().is_err());
+        bad.plan.person_calls = vec![PersonCall { call: None, ..x }];
+        assert!(bad.check().is_err());
+        // Its day gone: it goes too.
+        set_person_call(&mut s, d1, el, Some(60), None).unwrap();
+        remove_day_breaks(&mut s, board, sub).unwrap();
+        assert!(s.plan.person_calls.is_empty());
     }
 
     #[test]

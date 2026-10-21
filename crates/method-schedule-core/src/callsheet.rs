@@ -38,6 +38,12 @@ pub struct CallCast {
     /// When their first scene starts and last ends (with a call time).
     pub first: Option<i32>,
     pub last: Option<i32>,
+    /// Their call and wrap: their own where they have one (decision 231), else the
+    /// company's. Minutes after midnight; none without a call time.
+    pub call: Option<i32>,
+    pub wrap: Option<i32>,
+    /// Whether either is their own.
+    pub own: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -224,6 +230,12 @@ pub fn call_sheet(
             continue;
         };
         if Some(x.category) == cast_cat {
+            let mine = s.plan.person_call(t.day, el);
+            let call = mine.and_then(|m| m.call).or(t.call).map(|c| c as i32);
+            let wrap = mine
+                .and_then(|m| m.wrap)
+                .map(|w| w as i32)
+                .or(t.call.map(|_| t.wrap));
             cast.push(CallCast {
                 element: el,
                 board_id: x.board_id.clone(),
@@ -231,6 +243,9 @@ pub fn call_sheet(
                 scenes: numbers,
                 first,
                 last,
+                call,
+                wrap,
+                own: mine.is_some(),
             });
             continue;
         }
@@ -313,6 +328,19 @@ mod tests {
         assert_eq!(c.cast[0].scenes, vec!["1".to_string(), "2".to_string()]);
         assert_eq!(c.cast[0].first, Some(420));
         assert_eq!(c.cast[0].last, Some(1200));
+        assert_eq!(
+            (c.cast[0].call, c.cast[0].wrap, c.cast[0].own),
+            (Some(420), Some(1200), false)
+        );
+        // Her own call (decision 231) replaces the company's; the wrap stays the day's.
+        let day = s.plan.call_times[0].day;
+        let ann = c.cast[0].element;
+        crate::plan::set_person_call(&mut s, day, ann, Some(6 * 60), None).unwrap();
+        let c = call_sheet(&s, b, sb, 1).unwrap();
+        assert_eq!(
+            (c.cast[0].call, c.cast[0].wrap, c.cast[0].own),
+            (Some(360), Some(1200), true)
+        );
         assert_eq!(c.elements.len(), 1);
         assert_eq!(c.elements[0].name, "Props");
         assert_eq!(c.elements[0].elements[0].name, "NET");

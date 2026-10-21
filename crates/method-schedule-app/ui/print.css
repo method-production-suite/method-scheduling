@@ -630,8 +630,9 @@
 .method-report col.cs-c-pg { width: 7%; }
 .method-report col.cs-c-cast { width: 17%; }
 .method-report col.cs-c-id { width: 7%; }
-.method-report col.cs-c-name { width: 38%; }
-.method-report col.cs-c-scenes { width: 35%; }
+.method-report col.cs-c-name { width: 33%; }
+.method-report col.cs-c-scenes { width: 20%; }
+.method-report col.cs-c-call { width: 20%; }
 .method-report col.cs-c-on { width: 20%; }
 .method-report col.cs-c-cat { width: 22%; }
 .method-report col.cs-c-els { width: 78%; }

@@ -22,7 +22,8 @@ Plan > Print Call Sheet... picks a shoot day (the selected strip's, at first), t
   length, pages, scene count, sunrise and sunset and where the sun is for;
 - the scenes in shooting order: clock times, scene, I/E, the set with the synopsis and
   location under it, day or night, pages and cast IDs;
-- the cast: ID, name, scenes and when they are on set (first start to last end);
+- the cast: ID, name, scenes, their call and wrap (their own where the Day Timeline gives
+  one) and when they are on set (first start to last end);
 - the other elements, a line per category, each element with its scenes;
 - the notes.
 
@@ -73,7 +74,7 @@ in minutes after midnight (with the same time as `HH:MM` text in a key without
 | `eighths`, `pages` | integer, string | The day's total. |
 | `sun` | object | `state` (`times`, `always_up`, `always_down` or `unknown`), `location`, `sunrise`, `sunrise_minutes`, `sunset`, `sunset_minutes`. |
 | `scenes` | array | Each: `sheet` (id), `scenes`, `int_ext`, `set`, `time_of_day`, `eighths`, `pages`, `synopsis`, `location`, `cast` (array of strings), `shoot_minutes`, `start`, `start_minutes`, `end`, `end_minutes`. |
-| `cast` | array | Each: `element` (id), `board_id`, `name`, `scenes` (array of scene numbers), `first`, `first_minutes`, `last`, `last_minutes`. |
+| `cast` | array | Each: `element` (id), `board_id`, `name`, `scenes` (array of scene numbers), `first`, `first_minutes`, `last`, `last_minutes`, `call`, `call_minutes`, `wrap`, `wrap_minutes` (their own where set, else the day's; null without a call time), `own_call` (whether either is their own, decision 231). |
 | `elements` | array | Each category: `category` (id), `name`, `elements` (each `element`, `board_id`, `name`, `scenes`). |
 | `notes` | array of strings | |
 
@@ -87,7 +88,7 @@ between them:
    Date, Call, Wrap, Length, Pages, Sun at, Sunrise, Sunset.
 2. `Start,End,Scene,I/E,Set,Day/Night,Pages,Cast,Location,Synopsis`: one row per scene;
    cast board IDs joined by `, `.
-3. `ID,Name,Scenes,First,Last`: the cast.
+3. `ID,Name,Scenes,First,Last,Call,Wrap`: the cast, with each one's call and wrap.
 4. `Category,ID,Name,Scenes`: every other element.
 5. `Note`: one note per row.
 

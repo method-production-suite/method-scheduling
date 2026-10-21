@@ -84,6 +84,11 @@ pub fn to_json(c: &CallSheet) -> String {
             "first": time_text(x.first),
             "last_minutes": time(x.last),
             "last": time_text(x.last),
+            "call_minutes": time(x.call),
+            "call": time_text(x.call),
+            "wrap_minutes": time(x.wrap),
+            "wrap": time_text(x.wrap),
+            "own_call": x.own,
         })).collect::<Vec<_>>(),
         "elements": c.elements.iter().map(|cat| json!({
             "category": cat.category.0,
@@ -175,7 +180,7 @@ pub fn workbook(c: &CallSheet) -> Workbook {
     };
     let cast = Sheet {
         name: "Cast",
-        columns: ["ID", "Name", "Scenes", "First", "Last"]
+        columns: ["ID", "Name", "Scenes", "First", "Last", "Call", "Wrap"]
             .iter()
             .map(|x| x.to_string())
             .collect(),
@@ -189,6 +194,8 @@ pub fn workbook(c: &CallSheet) -> Workbook {
                     Cell::text(x.scenes.join(", ")),
                     opt(x.first),
                     opt(x.last),
+                    opt(x.call),
+                    opt(x.wrap),
                 ]
             })
             .collect(),
@@ -326,7 +333,12 @@ mod tests {
         assert!(
             csv.contains("07:00,08:30,12,EXT,PIER,DAY,2/8,1,Pier,\"'=She waits, then runs\"\r\n")
         );
-        assert!(csv.contains("\r\n\r\nID,Name,Scenes,First,Last\r\n1,ANN,12,07:00,08:30\r\n"));
+        assert!(csv.contains(
+            "\r\n\r\nID,Name,Scenes,First,Last,Call,Wrap\r\n1,ANN,12,07:00,08:30,07:00,09:00\r\n"
+        ));
+        assert_eq!(j["cast"][0]["call"], "07:00");
+        assert_eq!(j["cast"][0]["wrap_minutes"], 540);
+        assert_eq!(j["cast"][0]["own_call"], false);
         assert!(csv.contains("\r\n\r\nNote\r\n08:30 Lunch (0:30)\r\n"));
     }
 

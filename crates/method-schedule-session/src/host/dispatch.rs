@@ -104,6 +104,7 @@ pub const COMMANDS: &[&str] = &[
     "timeline_data",
     "push_past_wrap",
     "set_call_time",
+    "set_person_call",
     "set_shot",
     "set_long_day",
     "locations_data",
@@ -1841,6 +1842,28 @@ mod plan_cmds {
                 };
                 to_reply(crate::commands::plan::set_call_time(
                     &window, state, day, call,
+                ))
+            }
+            "set_person_call" => {
+                #[derive(Deserialize)]
+                #[serde(rename_all = "camelCase")]
+                struct A {
+                    day: u32,
+                    element: u32,
+                    call: String,
+                    wrap: String,
+                }
+                let A {
+                    day,
+                    element,
+                    call,
+                    wrap,
+                } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::set_person_call(
+                    &window, state, day, element, call, wrap,
                 ))
             }
             "set_shot" => {

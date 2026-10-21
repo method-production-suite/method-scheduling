@@ -135,6 +135,7 @@
     "allow-revise-apply",
     "allow-timeline-data",
     "allow-set-call-time",
+    "allow-set-person-call",
     "allow-set-shot",
     "allow-set-long-day",
     "allow-push-past-wrap",

@@ -2,9 +2,10 @@
 //! shortest rest between one day's wrap and the next working day's call for its
 //! elements. Each element of such a category is checked across every sub-board of a
 //! board, from the timelines ([`crate::timeline`]): for each two dates it works in a row,
-//! the rest is the time from the earlier day's company wrap to the later day's company
-//! call. Company times are used because the schedule keeps no per-person call; they can
-//! only make a rest look shorter than it is, so the check errs on the side of a warning.
+//! the rest is the time from the earlier day's wrap to the later day's call: an element's
+//! own call and wrap where the plan has them (decision 231), else the company's. Company
+//! times can only make a rest look shorter than it is, so the check errs on the side of a
+//! warning.
 //!
 //! Warnings only, like conflicts: nothing is blocked. A pair is skipped when a day has no
 //! date or no call time; `unchecked` counts those days. Two bookings on one date are a
@@ -78,14 +79,23 @@ pub fn rest_report(s: &Schedule, board: BoardId) -> Result<RestReport, Error> {
                 }
             }
             for el in els {
-                match (day.date, day.call) {
-                    (Some(date), Some(call)) => work.entry(el).or_default().push(Shift {
-                        sub_board: sb.id,
-                        day: day.number,
-                        date,
-                        call: call as i32,
-                        wrap: day.wrap,
-                    }),
+                // Their own call and wrap where set (decision 231), else the company's.
+                let own = s.plan.person_call(day.day, el);
+                let call = own.and_then(|x| x.call).or(day.call);
+                let wrap = own
+                    .and_then(|x| x.wrap)
+                    .map(|w| w as i32)
+                    .or(day.call.map(|_| day.wrap));
+                match (day.date, call, wrap) {
+                    (Some(date), Some(call), Some(wrap)) => {
+                        work.entry(el).or_default().push(Shift {
+                            sub_board: sb.id,
+                            day: day.number,
+                            date,
+                            call: call as i32,
+                            wrap,
+                        })
+                    }
                     _ => out.unchecked += 1,
                 }
             }
@@ -192,5 +202,38 @@ mod tests {
         let r = rest_report(&s, b).unwrap();
         assert!(r.short.is_empty());
         assert_eq!(r.unchecked, 1);
+    }
+
+    /// Decision 231: an element's own call and wrap replace the company's in its rest.
+    #[test]
+    fn a_persons_own_call_and_wrap_count() {
+        use crate::plan::set_person_call;
+        let (mut s, b, _) = la();
+        let cast = s.cast().unwrap();
+        set_turnaround(&mut s, cast, Some(12 * 60)).unwrap();
+        let ann = s.element_named(cast, "ANN").unwrap();
+        let (d1, d2) = (s.plan.call_times[0].day, s.plan.call_times[1].day);
+        // ANN is released at 17:00 on day 1: 13 hours to the 6:00 call, no warning.
+        set_person_call(&mut s, d1, ann, None, Some(17 * 60)).unwrap();
+        assert!(rest_report(&s, b).unwrap().short.is_empty());
+        // Called at 5:00 on day 2 too: 12 hours, the minimum, still fine.
+        set_person_call(&mut s, d2, ann, Some(5 * 60), None).unwrap();
+        assert!(rest_report(&s, b).unwrap().short.is_empty());
+        // Back to the company's wrap on day 1: 9 hours to her 5:00 call.
+        set_person_call(&mut s, d1, ann, None, None).unwrap();
+        let r = rest_report(&s, b).unwrap();
+        assert_eq!(r.short.len(), 1);
+        assert_eq!(r.short[0].rest, 9 * 60);
+        assert!(
+            r.short[0].text.contains("(call 05:00)"),
+            "{}",
+            r.short[0].text
+        );
+        // A day with no company call is checked when she has a call of her own.
+        crate::plan::set_call_time(&mut s, d1, None).unwrap();
+        set_person_call(&mut s, d1, ann, Some(7 * 60), Some(19 * 60)).unwrap();
+        let r = rest_report(&s, b).unwrap();
+        assert_eq!(r.short.len(), 1, "{r:?}");
+        assert_eq!(r.short[0].rest, 10 * 60);
     }
 }

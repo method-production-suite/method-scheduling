@@ -5564,3 +5564,20 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Not yet**: rules that move with a lunar calendar (Morocco's, around Ramadan) or that
   change by decree from year to year; a location there keeps a typed offset.
 
+## 231. A call and wrap of one's own (2026-10-21)
+
+- **BYD-09's next step**: a day's call time was the whole company's, so the rest check
+  measured everyone from the same wrap to the same call. Now any element can have its own
+  call, its own wrap, or both on a shoot day (`plan.person_calls`, one per element and day,
+  kept by the day break as call times are). What is left empty stays the company's.
+- **Where it is set**: Plan > Day Timeline lists who works the day (cast, and any category
+  with a turnaround) with an own call and own wrap field each, the company's times shown
+  greyed. A wrap typed at or before the call reads as after midnight, as the day's wrap does.
+- **Where it counts**: the rest check measures from each person's own wrap to their own next
+  call, and a day with no company call is checked for anyone with both of their own. The call
+  sheet's cast table, JSON and CSV gain each person's call and wrap (bold when their own).
+- **Additive in the file**: a file without the key reads and writes back byte for byte; a
+  file using it won't open in 0.5.0 or earlier, as with `days_shot` (decision 224). Entries
+  for a deleted day break or element are dropped by the next plan edit.
+- **Not yet**: crew calls by department (decision 207's crew calls), and a person's call
+  printed on the strip board.
