@@ -671,7 +671,8 @@ pub fn offset_text(minutes: i32) -> String {
 }
 
 /// A daylight saving rule as typed or stored: `none` (or nothing) for none, else a
-/// rule's name (`us_canada`, `eu`, `australia`, `new_zealand`), ignoring case.
+/// rule's name (`us_canada`, `eu`, `australia`, `new_zealand`, `israel`, `egypt`,
+/// `chile`), ignoring case.
 pub fn parse_daylight_saving(text: &str) -> Result<Option<DaylightSaving>, String> {
     let t = text.trim();
     if t.is_empty() || t.eq_ignore_ascii_case("none") {
@@ -679,7 +680,7 @@ pub fn parse_daylight_saving(text: &str) -> Result<Option<DaylightSaving>, Strin
     }
     DaylightSaving::from_name(t).map(Some).ok_or_else(|| {
         format!(
-            "{t:?} is not a daylight saving rule: none, us_canada, eu, australia or new_zealand"
+            "{t:?} is not a daylight saving rule: none, us_canada, eu, australia, new_zealand, israel, egypt or chile"
         )
     })
 }

@@ -5549,3 +5549,18 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Frozen** when Storyteller first ships the writer. The reader is built (2026-10-20):
   Import Script, Revise, the command line and the browser host read `.mscenes`.
 
+## 230. Daylight saving for Israel, Egypt and mainland Chile (2026-10-21)
+
+- **BYD-08's next rules**, each regular and in force today, from published calendars:
+  Israel (the Friday before the last Sunday of March to the last Sunday of October, at
+  2:00), Egypt (since 2023: the last Friday of April to the end of the last Thursday of
+  October, at midnight) and mainland Chile (since 2023: the first Saturday of September at
+  midnight to the first Saturday of April at midnight, so the Sundays after them; the
+  Magallanes region keeps one offset, no rule). Each switch is in the small hours, so a
+  whole date is one or the other, as for the first four (decision 193).
+- **Additive in the file**: `daylight_saving` takes `israel`, `egypt` and `chile` too; every
+  existing file reads as before, and a file using a new one won't open in 0.5.0 or earlier,
+  as with any newer value.
+- **Not yet**: rules that move with a lunar calendar (Morocco's, around Ramadan) or that
+  change by decree from year to year; a location there keeps a typed offset.
+

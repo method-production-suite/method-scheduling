@@ -238,6 +238,9 @@ export function planCommands(ctx) {
           el('option', { text: 'EU', attrs: { value: 'eu' } }),
           el('option', { text: 'Australia (south-east)', attrs: { value: 'australia' } }),
           el('option', { text: 'New Zealand', attrs: { value: 'new_zealand' } }),
+          el('option', { text: 'Israel', attrs: { value: 'israel' } }),
+          el('option', { text: 'Egypt', attrs: { value: 'egypt' } }),
+          el('option', { text: 'Chile (mainland)', attrs: { value: 'chile' } }),
         );
         dst.value = l.daylight_saving;
         lat.setAttribute('aria-label', `Latitude of ${l.name}`);
