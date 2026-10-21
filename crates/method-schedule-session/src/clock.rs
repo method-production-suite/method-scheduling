@@ -26,6 +26,12 @@ pub trait Clock: Send + Sync {
     /// A short name no other call, in this or any other running copy of
     /// the app, gives out: lowercase letters, digits and `-` only.
     fn unique(&self) -> String;
+    /// Today's date where the user is. By default the UTC date of [`Clock::wall_ms`]
+    /// (`None` before the epoch); the desktop's clock reads the local date.
+    fn today(&self) -> Option<method_schedule_core::Date> {
+        let ms = self.wall_ms();
+        (ms > 0).then_some(method_schedule_core::Date((ms / 86_400_000) as i32))
+    }
 }
 
 static CLOCK: OnceLock<Box<dyn Clock>> = OnceLock::new();
@@ -49,6 +55,11 @@ pub fn wall_ms() -> u64 {
 /// Now, in milliseconds on the clock that never goes back.
 pub fn mono_ms() -> u64 {
     clock().mono_ms()
+}
+
+/// Today's date where the user is (see [`Clock::today`]).
+pub fn today() -> Option<method_schedule_core::Date> {
+    clock().today()
 }
 
 /// A name nobody else gets (see [`Clock::unique`]).
@@ -115,6 +126,11 @@ impl Clock for SystemClock {
             std::process::id(),
             COUNTER.fetch_add(1, Ordering::Relaxed)
         )
+    }
+    /// The local date, as the budget exchange file stamps it.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn today(&self) -> Option<method_schedule_core::Date> {
+        method_schedule_format::exchange::local_today()
     }
 }
 

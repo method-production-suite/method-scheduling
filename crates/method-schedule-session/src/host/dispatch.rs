@@ -1,13 +1,14 @@
-//! Generated from the desktop's commands (crates/method-schedule-app/src) by
-//! scripts/host-dispatch.py: each arm is the desktop command's body, run on the host.
-//! Regenerate after a command changes; don't edit by hand.
+//! The browser host's dispatch: each desktop command the host runs, its arguments read
+//! as the page sends them (snake_case for `rename_all = "snake_case"` commands, camelCase
+//! otherwise), then the same function the desktop command calls
+//! (`crate::commands`). A new desktop command that needs only the schedule goes here
+//! too; a test keeps the two lists in step.
 
-#![allow(unused_imports, clippy::all)]
-
-use super::{DocState, Error};
 use serde_json::Value;
 
-/// The desktop commands the host runs, in source order.
+use super::{DocState, Error};
+
+/// The desktop commands the host runs, in the desktop's source order.
 pub const COMMANDS: &[&str] = &[
     "get_view",
     "dood_grid",
@@ -205,11 +206,9 @@ pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Val
     None
 }
 
+#[allow(unused_imports)]
 mod app_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::board;
     use crate::calendar::{self, EventInput};
     use crate::clipboard;
@@ -232,10 +231,7 @@ mod app_cmds {
         let window = W;
         let _ = &window;
         Some(match command {
-            "get_view" => {
-                let r: CmdResult = (|| finish(&window, &state.lock(), None))();
-                to_reply(r)
-            }
+            "get_view" => to_reply(crate::commands::app::get_view(&window, state)),
             "dood_grid" => {
                 #[derive(Deserialize)]
                 struct A {
@@ -259,22 +255,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<DoodGridDto> = (|| {
-                    // The sort and the without-holds view are the session's (decision 59).
-                    let opts = view::GridOpts {
-                        no_holds: no_holds.unwrap_or(false),
-                        sort: crate::reports::parse_sort(sort.as_deref().unwrap_or(&[]))?,
-                        ..view::GridOpts::default()
-                    };
-                    view::dood_grid_for(
-                        state.lock().schedule(),
-                        sub_board,
-                        category,
-                        header.as_deref(),
-                        &opts,
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::dood_grid(
+                    state, sub_board, category, header, sort, no_holds,
+                ))
             }
             "explain_count" => {
                 #[derive(Deserialize)]
@@ -286,10 +269,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<ExplainDto> = (|| {
-                    crate::explain::explain_count(state.lock().schedule(), sub_board, element)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::explain_count(
+                    state, sub_board, element,
+                ))
             }
             "conflicts_view" => {
                 #[derive(Deserialize)]
@@ -301,26 +283,10 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<crate::conflicts::ConflictsDto> =
-                    (|| crate::conflicts::conflicts_view(state.lock().schedule(), board))();
-                to_reply(r)
+                to_reply(crate::commands::app::conflicts_view(state, board))
             }
-            "undo" => {
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.undo();
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
-            }
-            "redo" => {
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.redo();
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
-            }
+            "undo" => to_reply(crate::commands::app::undo(&window, state)),
+            "redo" => to_reply(crate::commands::app::redo(&window, state)),
             "move_strips" => {
                 #[derive(Deserialize)]
                 struct A {
@@ -339,12 +305,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::move_strips(s, board, &strips, sub_board, index)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::move_strips(
+                    &window, state, board, strips, sub_board, index,
+                ))
             }
             "insert_day_break" => {
                 #[derive(Deserialize)]
@@ -356,12 +319,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    strip_edit(&window, &state, |s| {
-                        board::insert_day_break(s, sub_board, index)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::insert_day_break(
+                    &window, state, sub_board, index,
+                ))
             }
             "delete_strips" => {
                 #[derive(Deserialize)]
@@ -374,9 +334,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::delete_strips(s, board, &strips)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_strips(
+                    &window, state, board, strips,
+                ))
             }
             "insert_banner" => {
                 #[derive(Deserialize)]
@@ -398,19 +358,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    strip_edit(&window, &state, |s| {
-                        board::insert_banner_styled(
-                            s,
-                            sub_board,
-                            index,
-                            &text,
-                            &duration,
-                            style.as_ref(),
-                        )
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::insert_banner(
+                    &window, state, sub_board, index, text, duration, style,
+                ))
             }
             "set_banner" => {
                 #[derive(Deserialize)]
@@ -433,12 +383,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::set_banner_styled(s, board, strip, &text, &duration, style.as_ref())
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_banner(
+                    &window, state, board, strip, text, duration, style,
+                ))
             }
             "sort_strips" => {
                 #[derive(Deserialize)]
@@ -456,12 +403,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::sort_strips(s, board, sub_board, &keys)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::sort_strips(
+                    &window, state, board, sub_board, keys,
+                ))
             }
             "set_strip_layout" => {
                 #[derive(Deserialize)]
@@ -483,18 +427,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::set_strip_layout_with(
-                            s,
-                            board,
-                            &columns,
-                            size.as_deref().unwrap_or(""),
-                            marks.unwrap_or_default(),
-                        )
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_strip_layout(
+                    &window, state, board, columns, size, marks,
+                ))
             }
             "continue_scene" => {
                 #[derive(Deserialize)]
@@ -507,9 +442,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| strip_edit(&window, &state, |s| board::continue_scene(s, board, strip)))();
-                to_reply(r)
+                to_reply(crate::commands::app::continue_scene(
+                    &window, state, board, strip,
+                ))
             }
             "set_day_look" => {
                 #[derive(Deserialize)]
@@ -521,9 +456,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::set_day_look(s, board, &look)))();
-                to_reply(r)
+                to_reply(crate::commands::app::set_day_look(
+                    &window, state, board, look,
+                ))
             }
             "set_strip_colors" => {
                 #[derive(Deserialize)]
@@ -545,18 +480,14 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::set_strip_colors(
-                            s,
-                            &rules,
-                            scene_text.as_deref(),
-                            banner_text.as_deref(),
-                            break_text.as_deref(),
-                        )
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_strip_colors(
+                    &window,
+                    state,
+                    rules,
+                    scene_text,
+                    banner_text,
+                    break_text,
+                ))
             }
             "show_board" => {
                 #[derive(Deserialize)]
@@ -568,12 +499,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.show_board(method_schedule_core::model::BoardId(board))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::show_board(&window, state, board))
             }
             "add_board" => {
                 #[derive(Deserialize)]
@@ -585,13 +511,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    // A new board's sub-board starts today, as a new sub-board does (behavior note 27;
-                    // decisions 123 and 153).
-                    let today = super::super::today();
-                    board_edit(&window, &state, |s| board::add_board(s, &name, today))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::add_board(&window, state, name))
             }
             "duplicate_board" => {
                 #[derive(Deserialize)]
@@ -604,9 +524,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| board_edit(&window, &state, |s| board::duplicate_board(s, board, &name)))();
-                to_reply(r)
+                to_reply(crate::commands::app::duplicate_board(
+                    &window, state, board, name,
+                ))
             }
             "rename_board" => {
                 #[derive(Deserialize)]
@@ -619,9 +539,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::rename_board(s, board, &name)))();
-                to_reply(r)
+                to_reply(crate::commands::app::rename_board(
+                    &window, state, board, name,
+                ))
             }
             "move_board" => {
                 #[derive(Deserialize)]
@@ -634,9 +554,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::move_board(s, board, to)))();
-                to_reply(r)
+                to_reply(crate::commands::app::move_board(&window, state, board, to))
             }
             "delete_board" => {
                 #[derive(Deserialize)]
@@ -648,8 +566,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| edit(&window, &state, |s| board::delete_board(s, board)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_board(&window, state, board))
             }
             "add_sub_board" => {
                 #[derive(Deserialize)]
@@ -662,16 +579,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    // A new sub-board starts today (behavior note 24; decision 123).
-                    let today = super::super::today();
-                    let id = s.edit(|x| board::add_sub_board(x, board, &name, today))?;
-                    let mut v = finish(&window, &s, None)?;
-                    v.sub_board = Some(id);
-                    Ok(v)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::add_sub_board(
+                    &window, state, board, name,
+                ))
             }
             "rename_sub_board" => {
                 #[derive(Deserialize)]
@@ -683,12 +593,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::rename_sub_board(s, sub_board, &name)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::rename_sub_board(
+                    &window, state, sub_board, name,
+                ))
             }
             "move_sub_board" => {
                 #[derive(Deserialize)]
@@ -700,9 +607,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::move_sub_board(s, sub_board, to)))();
-                to_reply(r)
+                to_reply(crate::commands::app::move_sub_board(
+                    &window, state, sub_board, to,
+                ))
             }
             "delete_sub_board" => {
                 #[derive(Deserialize)]
@@ -713,9 +620,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| board::delete_sub_board(s, sub_board)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_sub_board(
+                    &window, state, sub_board,
+                ))
             }
             "auto_day_breaks" => {
                 #[derive(Deserialize)]
@@ -732,17 +639,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let n = s.edit(|x| board::auto_day_breaks_by(x, sub_board, &by, &limit))?;
-                    let days = if n == 1 {
-                        "1 shoot day".to_string()
-                    } else {
-                        format!("{n} shoot days")
-                    };
-                    finish(&window, &s, Some(format!("Day breaks set: {days}.")))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::auto_day_breaks(
+                    &window, state, sub_board, by, limit,
+                ))
             }
             "remove_day_breaks" => {
                 #[derive(Deserialize)]
@@ -753,21 +652,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let n = s.edit(|x| board::remove_day_breaks(x, sub_board))?;
-                    let what = if n == 1 {
-                        "1 day break".to_string()
-                    } else {
-                        format!("{n} day breaks")
-                    };
-                    finish(
-                        &window,
-                        &s,
-                        Some(format!("Removed {what}. Undo puts them back.")),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::remove_day_breaks(
+                    &window, state, sub_board,
+                ))
             }
             "set_start_date" => {
                 #[derive(Deserialize)]
@@ -780,12 +667,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        board::set_start_date(s, sub_board, date.as_deref())
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_start_date(
+                    &window, state, sub_board, date,
+                ))
             }
             "get_sheet" => {
                 #[derive(Deserialize)]
@@ -808,13 +692,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<Option<SheetDto>> = (|| {
-                    // Previous and Next by board order, sheet number or scene number (decisions.md,
-                    // entry 81).
-                    let by = sheet_order(order.as_deref())?;
-                    view::sheet_view_in(state.lock().schedule(), board, sheet, index, by)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::get_sheet(
+                    state, board, sheet, index, order,
+                ))
             }
             "set_sheet_field" => {
                 #[derive(Deserialize)]
@@ -832,12 +712,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        sheet::set_field(s, sheet, &field, &value)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_sheet_field(
+                    &window, state, sheet, field, value,
+                ))
             }
             "set_sheet_pages" => {
                 #[derive(Deserialize)]
@@ -855,12 +732,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        sheet::set_pages(s, sheet, &pages, &eighths)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_sheet_pages(
+                    &window, state, sheet, pages, eighths,
+                ))
             }
             "tag_element" => {
                 #[derive(Deserialize)]
@@ -873,9 +747,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| sheet::tag_element(s, sheet, element)))();
-                to_reply(r)
+                to_reply(crate::commands::app::tag_element(
+                    &window, state, sheet, element,
+                ))
             }
             "set_quantity" => {
                 #[derive(Deserialize)]
@@ -895,12 +769,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        sheet::set_quantity(s, sheet, element, &count, daily)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_quantity(
+                    &window, state, sheet, element, count, daily,
+                ))
             }
             "create_element" => {
                 #[derive(Deserialize)]
@@ -918,12 +789,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        sheet::create_element(s, sheet, &category, &name)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::create_element(
+                    &window, state, sheet, category, name,
+                ))
             }
             "untag_element" => {
                 #[derive(Deserialize)]
@@ -936,9 +804,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| sheet::untag_element(s, sheet, element)))();
-                to_reply(r)
+                to_reply(crate::commands::app::untag_element(
+                    &window, state, sheet, element,
+                ))
             }
             "new_sheet" => {
                 #[derive(Deserialize)]
@@ -952,12 +820,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    sheet_edit(&window, &state, |s| {
-                        sheet::new_sheet(s, board, after).map(Some)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::new_sheet(
+                    &window, state, board, after,
+                ))
             }
             "delete_sheet" => {
                 #[derive(Deserialize)]
@@ -976,13 +841,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let by = sheet_order(order.as_deref())?;
-                    sheet_edit(&window, &state, |s| {
-                        sheet::delete_sheet(s, board, sheet, by)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_sheet(
+                    &window, state, board, sheet, order,
+                ))
             }
             "merge_sheets_preview" => {
                 #[derive(Deserialize)]
@@ -995,9 +856,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<sheet::SheetMergeDto> =
-                    (|| sheet::merge_preview(state.lock().schedule(), board, &sheets))();
-                to_reply(r)
+                to_reply(crate::commands::app::merge_sheets_preview(
+                    state, board, sheets,
+                ))
             }
             "merge_sheets" => {
                 #[derive(Deserialize)]
@@ -1010,26 +871,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let survivor = s.edit(|x| sheet::merge_sheets(x, board, &sheets))?;
-                    let shown = BoardId(board);
-                    let title = s
-                        .schedule()
-                        .sheet(SheetId(survivor))
-                        .map(sheet::sheet_title)
-                        .unwrap_or_default();
-                    let n = sheets.len();
-                    let mut v = finish(
-                        &window,
-                        &s,
-                        Some(format!("Merged {n} strips into one sheet: {title}.")),
-                    )?;
-                    v.sheet = Some(survivor);
-                    v.strip = sheet::strip_of(s.schedule(), shown, survivor);
-                    Ok(v)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::merge_sheets(
+                    &window, state, board, sheets,
+                ))
             }
             "duplicate_sheets" => {
                 #[derive(Deserialize)]
@@ -1042,22 +886,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let copies = s.edit(|x| sheet::duplicate_sheets(x, board, &sheets))?;
-                    let notice = match copies.len() {
-                        1 => "Duplicated the scene. The copy is selected.".to_string(),
-                        n => format!("Duplicated {n} scenes. The copies are selected."),
-                    };
-                    let mut v = finish(&window, &s, Some(notice))?;
-                    v.strips = copies
-                        .iter()
-                        .filter_map(|c| sheet::strip_of(s.schedule(), BoardId(board), *c))
-                        .collect();
-                    v.sheet = copies.last().copied();
-                    Ok(v)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::duplicate_sheets(
+                    &window, state, board, sheets,
+                ))
             }
             "paste_strips" => {
                 #[derive(Deserialize)]
@@ -1075,52 +906,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let clip = s
-                        .clipboard()
-                        .cloned()
-                        .ok_or("Nothing has been cut or copied yet.")?;
-                    let from = match &clip {
-                        clipboard::Clip::Strips { board, .. } => s
-                            .schedule()
-                            .board(*board)
-                            .map(|b| b.name.clone())
-                            .unwrap_or_default(),
-                        clipboard::Clip::Carried { from, .. } => from.clone(),
-                        clipboard::Clip::Elements { .. } => String::new(),
-                    };
-                    let carried = matches!(clip, clipboard::Clip::Carried { .. });
-                    let pasted =
-                        s.edit(|x| clipboard::paste_strips(x, &clip, board, sub_board, index))?;
-                    let n = clipboard::count_text(pasted.strips.len(), "strip", "strips");
-                    let notice = if pasted.moved {
-                        format!("Moved {n}.")
-                    } else if carried && pasted.from_other_board {
-                        format!(
-                "Pasted copies of {n} from {from}. A cut moves strips only within its own schedule, so the originals stay there."
-                )
-                    } else if carried {
-                        format!("Pasted {n} from {from}.")
-                    } else if pasted.from_other_board {
-                        format!(
-                "Pasted copies of {n}. A cut moves strips only on its own board, so the originals stay on {from}."
-                )
-                    } else {
-                        format!("Pasted {n}.")
-                    };
-                    if matches!(
-                        clip,
-                        clipboard::Clip::Strips { cut: true, .. }
-                            | clipboard::Clip::Carried { cut: true, .. }
-                    ) {
-                        s.set_clipboard(None);
-                    }
-                    let mut v = finish(&window, &s, Some(notice))?;
-                    v.strips = pasted.strips;
-                    Ok(v)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::paste_strips(
+                    &window, state, board, sub_board, index,
+                ))
             }
             "paste_elements" => {
                 #[derive(Deserialize)]
@@ -1132,22 +920,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let clip = s
-                        .clipboard()
-                        .cloned()
-                        .ok_or("Nothing has been cut or copied yet.")?;
-                    let pasted = s.edit(|x| clipboard::paste_elements(x, &clip, sheet))?;
-                    let notice = clipboard::elements_notice(s.schedule(), &clip, sheet, &pasted);
-                    if matches!(clip, clipboard::Clip::Elements { cut: true, .. })
-                        && pasted.moved + pasted.added > 0
-                    {
-                        s.set_clipboard(None);
-                    }
-                    finish(&window, &s, Some(notice))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::paste_elements(&window, state, sheet))
             }
             "elements_view" => {
                 #[derive(Deserialize)]
@@ -1166,15 +939,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<ElementsDto> = (|| {
-                    view::elements_view(
-                        state.lock().schedule(),
-                        sub_board,
-                        category,
-                        header.as_deref(),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::elements_view(
+                    state, sub_board, category, header,
+                ))
             }
             "add_category" => {
                 #[derive(Deserialize)]
@@ -1186,14 +953,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let id = s.edit(|x| elements::add_category(x, &name))?;
-                    let mut v = finish(&window, &s, None)?;
-                    v.category = Some(id);
-                    Ok(v)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::add_category(&window, state, name))
             }
             "set_category_field" => {
                 #[derive(Deserialize)]
@@ -1211,12 +971,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::set_category_field(s, category, &field, &value)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_category_field(
+                    &window, state, category, field, value,
+                ))
             }
             "move_category" => {
                 #[derive(Deserialize)]
@@ -1229,12 +986,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::move_category(s, category, to)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::move_category(
+                    &window, state, category, to,
+                ))
             }
             "delete_category" => {
                 #[derive(Deserialize)]
@@ -1246,9 +1000,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| elements::delete_category(s, category)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_category(
+                    &window, state, category,
+                ))
             }
             "apply_category_defaults" => {
                 #[derive(Deserialize)]
@@ -1260,17 +1014,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let n = s.edit(|x| elements::apply_category_defaults(x, category))?;
-                    let notice = match n {
-                        0 => "Every element already had these rules.".to_string(),
-                        1 => "Gave 1 element the category's rules.".to_string(),
-                        n => format!("Gave {n} elements the category's rules."),
-                    };
-                    finish(&window, &s, Some(notice))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::apply_category_defaults(
+                    &window, state, category,
+                ))
             }
             "set_element_field" => {
                 #[derive(Deserialize)]
@@ -1288,12 +1034,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::set_element_field(s, element, &field, &value)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_element_field(
+                    &window, state, element, field, value,
+                ))
             }
             "element_days" => {
                 #[derive(Deserialize)]
@@ -1305,9 +1048,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<ElementDaysDto> =
-                    (|| view::element_days(state.lock().schedule(), sub_board, element))();
-                to_reply(r)
+                to_reply(crate::commands::app::element_days(
+                    state, sub_board, element,
+                ))
             }
             "add_property" => {
                 #[derive(Deserialize)]
@@ -1320,12 +1063,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::add_property(s, category, &name)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::add_property(
+                    &window, state, category, name,
+                ))
             }
             "rename_property" => {
                 #[derive(Deserialize)]
@@ -1339,12 +1079,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::rename_property(s, category, at, &name)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::rename_property(
+                    &window, state, category, at, name,
+                ))
             }
             "move_property" => {
                 #[derive(Deserialize)]
@@ -1358,12 +1095,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::move_property(s, category, at, to)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::move_property(
+                    &window, state, category, at, to,
+                ))
             }
             "delete_property" => {
                 #[derive(Deserialize)]
@@ -1376,12 +1110,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::delete_property(s, category, at)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_property(
+                    &window, state, category, at,
+                ))
             }
             "set_property_multi_line" => {
                 #[derive(Deserialize)]
@@ -1398,12 +1129,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::set_property_multi_line(s, category, at, multi_line)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_property_multi_line(
+                    &window, state, category, at, multi_line,
+                ))
             }
             "set_property_value" => {
                 #[derive(Deserialize)]
@@ -1421,12 +1149,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::set_property_value(s, element, &name, &value)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_property_value(
+                    &window, state, element, name, value,
+                ))
             }
             "set_links" => {
                 #[derive(Deserialize)]
@@ -1444,20 +1169,13 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let n = s.edit(|x| elements::set_links(x, element, &links, retroactive))?;
-                    let notice = match (retroactive, n) {
-                        (false, _) => None,
-                        (true, 0) => {
-                            Some("Every sheet with it already had its linked elements.".to_string())
-                        }
-                        (true, 1) => Some("Added its linked elements to 1 sheet.".to_string()),
-                        (true, n) => Some(format!("Added its linked elements to {n} sheets.")),
-                    };
-                    finish(&window, &s, notice)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_links(
+                    &window,
+                    state,
+                    element,
+                    links,
+                    retroactive,
+                ))
             }
             "remove_element_image" => {
                 #[derive(Deserialize)]
@@ -1470,9 +1188,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| elements::remove_image(s, element, at)))();
-                to_reply(r)
+                to_reply(crate::commands::app::remove_element_image(
+                    &window, state, element, at,
+                ))
             }
             "merge_elements" => {
                 #[derive(Deserialize)]
@@ -1485,12 +1203,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::merge_elements(s, survivor, &others)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::merge_elements(
+                    &window, state, survivor, others,
+                ))
             }
             "move_element" => {
                 #[derive(Deserialize)]
@@ -1503,12 +1218,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::move_element(s, element, category)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::move_element(
+                    &window, state, element, category,
+                ))
             }
             "renumber_elements" => {
                 #[derive(Deserialize)]
@@ -1527,12 +1239,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::renumber(s, category, &start, order.as_deref())
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::renumber_elements(
+                    &window, state, category, start, order,
+                ))
             }
             "delete_element" => {
                 #[derive(Deserialize)]
@@ -1545,12 +1254,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        elements::delete_element(s, element, unlink)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_element(
+                    &window, state, element, unlink,
+                ))
             }
             "red_flags_view" => {
                 #[derive(Deserialize)]
@@ -1561,9 +1267,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<redflags::RedFlagsDto> =
-                    (|| redflags::red_flags_view(state.lock().schedule(), sub_board))();
-                to_reply(r)
+                to_reply(crate::commands::app::red_flags_view(state, sub_board))
             }
             "set_red_flag" => {
                 #[derive(Deserialize)]
@@ -1575,12 +1279,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::set_red_flag(s, element, &flag)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_red_flag(
+                    &window, state, element, flag,
+                ))
             }
             "delete_red_flag" => {
                 #[derive(Deserialize)]
@@ -1591,9 +1292,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| redflags::delete_red_flag(s, flag)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_red_flag(&window, state, flag))
             }
             "add_red_flag_type" => {
                 #[derive(Deserialize)]
@@ -1604,9 +1303,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| redflags::add_red_flag_type(s, &name)))();
-                to_reply(r)
+                to_reply(crate::commands::app::add_red_flag_type(
+                    &window, state, name,
+                ))
             }
             "rename_red_flag_type" => {
                 #[derive(Deserialize)]
@@ -1621,12 +1320,12 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::rename_red_flag_type(s, red_flag_type, &name)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::rename_red_flag_type(
+                    &window,
+                    state,
+                    red_flag_type,
+                    name,
+                ))
             }
             "move_red_flag_type" => {
                 #[derive(Deserialize)]
@@ -1638,12 +1337,12 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::move_red_flag_type(s, red_flag_type, to)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::move_red_flag_type(
+                    &window,
+                    state,
+                    red_flag_type,
+                    to,
+                ))
             }
             "delete_red_flag_type" => {
                 #[derive(Deserialize)]
@@ -1654,21 +1353,15 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::delete_red_flag_type(s, red_flag_type)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_red_flag_type(
+                    &window,
+                    state,
+                    red_flag_type,
+                ))
             }
-            "add_standard_red_flag_types" => {
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::add_standard_types(s).map(|_| ())
-                    })
-                })();
-                to_reply(r)
-            }
+            "add_standard_red_flag_types" => to_reply(
+                crate::commands::app::add_standard_red_flag_types(&window, state),
+            ),
             "add_red_flags" => {
                 #[derive(Deserialize)]
                 struct A {
@@ -1678,12 +1371,7 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        redflags::add_red_flags(s, &flags).map(|_| ())
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::add_red_flags(&window, state, flags))
             }
             "delete_red_flags" => {
                 #[derive(Deserialize)]
@@ -1694,9 +1382,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| redflags::delete_red_flags(s, &flags)))();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_red_flags(
+                    &window, state, flags,
+                ))
             }
             "calendar_view" => {
                 #[derive(Deserialize)]
@@ -1724,33 +1412,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<CalendarDto> = (|| {
-                    // The user's week start (decision 59); the strip fields are the schedule's
-                    // (decision 102), or, while it has none, the user's older per-user pick when it was
-                    // ever changed from that preference's default.
-                    let doc = state.lock();
-                    let sch = doc.schedule();
-                    let mut opts = view::CalOpts {
-                        monday: week_start.as_deref() == Some("mon"),
-                        fields: sch.calendar_strip_fields(),
-                        span: span.unwrap_or(false),
-                    };
-                    if let (true, Some(f)) = (sch.calendar_fields.is_empty(), fields) {
-                        let old: Vec<_> = f
-                            .iter()
-                            .take(13)
-                            .filter_map(|x| {
-                                method_schedule_core::model::StripField::from_name(x)
-                                    .filter(|f| f.of_sheet())
-                            })
-                            .collect();
-                        if crate::reportsetup::old_calendar_pick(&old) {
-                            opts.fields = old;
-                        }
-                    }
-                    view::calendar_view_with(sch, sub_board, year, month, &opts)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::calendar_view(
+                    state, sub_board, year, month, week_start, fields, span,
+                ))
             }
             "set_day_kind" => {
                 #[derive(Deserialize)]
@@ -1767,12 +1431,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        calendar::set_day_kind(s, sub_board, &date, &kind)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_day_kind(
+                    &window, state, sub_board, date, kind,
+                ))
             }
             "set_weekly_off" => {
                 #[derive(Deserialize)]
@@ -1784,12 +1445,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        calendar::set_weekly_off(s, sub_board, &days)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_weekly_off(
+                    &window, state, sub_board, days,
+                ))
             }
             "save_event" => {
                 #[derive(Deserialize)]
@@ -1807,12 +1465,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        calendar::save_event(s, sub_board, index, &event)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::save_event(
+                    &window, state, sub_board, index, event,
+                ))
             }
             "set_calendar_hidden" => {
                 #[derive(Deserialize)]
@@ -1823,12 +1478,9 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        calendar::set_calendar_hidden(s, &hidden)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::set_calendar_hidden(
+                    &window, state, hidden,
+                ))
             }
             "delete_event" => {
                 #[derive(Deserialize)]
@@ -1840,23 +1492,18 @@ mod app_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        calendar::delete_event(s, sub_board, index)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::app::delete_event(
+                    &window, state, sub_board, index,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod breakdown_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::breakdown::*;
     use serde::Deserialize;
     use serde_json::Value;
@@ -1886,31 +1533,18 @@ mod breakdown_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| {
-                        set_design(
-                            x,
-                            &fields,
-                            hidden.as_deref(),
-                            widths.as_ref(),
-                            rows.as_deref(),
-                        )
-                    })?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::breakdown::set_sheet_field_order(
+                    &window, state, fields, hidden, widths, rows,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod events_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::events::*;
     use serde::Deserialize;
     use serde_json::Value;
@@ -1934,23 +1568,18 @@ mod events_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| move_event(x, sub_board, index, &date))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::events::move_event_to(
+                    &window, state, sub_board, index, date,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod find_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::find::*;
     use crate::view::View;
     use serde::Deserialize;
@@ -1970,8 +1599,7 @@ mod find_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<FoundDto> = (|| find(state.lock().schedule(), &query))();
-                to_reply(r)
+                to_reply(crate::commands::find::find_text(state, query))
             }
             "replace_text" => {
                 #[derive(Deserialize)]
@@ -1985,23 +1613,18 @@ mod find_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<View> = (|| {
-                    let mut s = state.lock();
-                    let notice = replace(&mut s, &query, &with, &picks)?;
-                    finish(&window, &s, Some(notice))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::find::replace_text(
+                    &window, state, query, with, picks,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod flagcolors_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::flagcolors::*;
     use serde::Deserialize;
     use serde_json::Value;
@@ -2023,23 +1646,21 @@ mod flagcolors_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| set_color(x, red_flag_type, &color))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::flagcolors::set_red_flag_type_color(
+                    &window,
+                    state,
+                    red_flag_type,
+                    color,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod layouts_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::board::EditResult;
     use crate::layouts::*;
     use method_schedule_core::Schedule;
@@ -2069,12 +1690,9 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit_with(&window, &state, |s| {
-                        add_named(s, &name, &kind, &layout, board).map(|_| ())
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::layouts::add_layout(
+                    &window, state, name, kind, layout, board,
+                ))
             }
             "save_layout" => {
                 #[derive(Deserialize)]
@@ -2086,9 +1704,9 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit_with(&window, &state, |s| save_named(s, id, &layout)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::save_layout(
+                    &window, state, id, layout,
+                ))
             }
             "rename_layout" => {
                 #[derive(Deserialize)]
@@ -2100,9 +1718,9 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit_with(&window, &state, |s| rename_named(s, id, &name)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::rename_layout(
+                    &window, state, id, name,
+                ))
             }
             "move_layout" => {
                 #[derive(Deserialize)]
@@ -2114,8 +1732,9 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| edit_with(&window, &state, |s| move_named(s, id, to)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::move_layout(
+                    &window, state, id, to,
+                ))
             }
             "delete_layout" => {
                 #[derive(Deserialize)]
@@ -2126,8 +1745,7 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| edit_with(&window, &state, |s| delete_named(s, id)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::delete_layout(&window, state, id))
             }
             "use_layout" => {
                 #[derive(Deserialize)]
@@ -2141,9 +1759,9 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit_with(&window, &state, |s| pick_layout(s, board, &kind, id)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::use_layout(
+                    &window, state, board, kind, id,
+                ))
             }
             "use_one_line_layout" => {
                 #[derive(Deserialize)]
@@ -2155,19 +1773,18 @@ mod layouts_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| edit_with(&window, &state, |s| pick_one_line(s, id)))();
-                to_reply(r)
+                to_reply(crate::commands::layouts::use_one_line_layout(
+                    &window, state, id,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod plan_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::plan::*;
     use crate::session;
     use crate::view::View;
@@ -2196,9 +1813,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<TimelineDto> =
-                    (|| timeline_view(state.lock().schedule(), sub_board, strip))();
-                to_reply(r)
+                to_reply(crate::commands::plan::timeline_data(
+                    state, sub_board, strip,
+                ))
             }
             "push_past_wrap" => {
                 #[derive(Deserialize)]
@@ -2215,27 +1832,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    if strips.len() > 100_000 {
-                        return Err("Too many strips at once.".to_string());
-                    }
-                    let mut s = state.lock();
-                    let n = s.edit(|x| push_past(x, sub_board, day, &strips))?;
-                    let what = if n == 1 {
-                        "1 strip".to_string()
-                    } else {
-                        format!("{n} strips")
-                    };
-                    finish(
-                        &window,
-                        &s,
-                        Some(format!(
-                            "Moved {what} to the start of day {}. Undo puts them back.",
-                            day + 1
-                        )),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::push_past_wrap(
+                    &window, state, sub_board, day, strips,
+                ))
             }
             "set_call_time" => {
                 #[derive(Deserialize)]
@@ -2248,12 +1847,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| set_call(x, day, &call))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::set_call_time(
+                    &window, state, day, call,
+                ))
             }
             "set_shot" => {
                 #[derive(Deserialize)]
@@ -2273,12 +1869,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| set_scene_shot(x, sheet, day, &eighths, complete))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::set_shot(
+                    &window, state, sheet, day, eighths, complete,
+                ))
             }
             "set_long_day" => {
                 #[derive(Deserialize)]
@@ -2290,18 +1883,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| set_long(x, &value))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::set_long_day(&window, state, value))
             }
-            "locations_data" => {
-                let r: CmdResult<Vec<LocationDto>> =
-                    (|| Ok(locations_view(state.lock().schedule())))();
-                to_reply(r)
-            }
+            "locations_data" => to_reply(crate::commands::plan::locations_data(state)),
             "set_location" => {
                 #[derive(Deserialize)]
                 struct A {
@@ -2321,21 +1905,15 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| {
-                        place_location(
-                            x,
-                            &name,
-                            &latitude,
-                            &longitude,
-                            &utc_offset,
-                            &daylight_saving,
-                        )
-                    })?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::set_location(
+                    &window,
+                    state,
+                    name,
+                    latitude,
+                    longitude,
+                    utc_offset,
+                    daylight_saving,
+                ))
             }
             "rest_data" => {
                 #[derive(Deserialize)]
@@ -2347,8 +1925,7 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<RestDto> = (|| rest_view(state.lock().schedule(), board))();
-                to_reply(r)
+                to_reply(crate::commands::plan::rest_data(state, board))
             }
             "set_turnaround" => {
                 #[derive(Deserialize)]
@@ -2361,12 +1938,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| set_minimum(x, category, &value))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::set_turnaround(
+                    &window, state, category, value,
+                ))
             }
             "locks_data" => {
                 #[derive(Deserialize)]
@@ -2378,21 +1952,7 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<Vec<LockDto>> = (|| {
-                    let s = state.lock();
-                    Ok(s.schedule()
-                        .plan
-                        .locks
-                        .iter()
-                        .filter(|l| l.board.0 == board)
-                        .map(|l| LockDto {
-                            name: l.name.clone(),
-                            made: l.made.map_or(String::new(), |d| d.to_string()),
-                            scenes: l.scenes.len(),
-                        })
-                        .collect())
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::locks_data(state, board))
             }
             "lock_schedule" => {
                 #[derive(Deserialize)]
@@ -2405,21 +1965,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| {
-                        if name.chars().count() > 200 {
-                            return Err("A lock's name is 200 characters at most.".to_string());
-                        }
-                        lock(x, BoardId(board), &name, super::super::today()).map_err(upper)
-                    })?;
-                    finish(
-                        &window,
-                        &s,
-                        Some(format!("Locked the schedule as {:?}.", name.trim())),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::lock_schedule(
+                    &window, state, board, name,
+                ))
             }
             "delete_lock" => {
                 #[derive(Deserialize)]
@@ -2431,12 +1979,7 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| unlock(x, &name).map_err(upper))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::delete_lock(&window, state, name))
             }
             "drift_data" => {
                 #[derive(Deserialize)]
@@ -2448,8 +1991,7 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<DriftDto> = (|| drift_view(state.lock().schedule(), &name))();
-                to_reply(r)
+                to_reply(crate::commands::plan::drift_data(state, name))
             }
             "pin_strips" => {
                 #[derive(Deserialize)]
@@ -2462,25 +2004,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    if strips.len() > 100_000 {
-                        return Err("Too many strips at once.".to_string());
-                    }
-                    let ids: Vec<StripId> = strips.into_iter().map(StripId).collect();
-                    let mut s = state.lock();
-                    let n = s.edit(|x| {
-                        p::set_pinned(x, &ids, pinned)
-                            .map_err(|_| "Only scene strips can be pinned.".to_string())
-                    })?;
-                    let what = if n == 1 {
-                        "1 strip".to_string()
-                    } else {
-                        format!("{n} strips")
-                    };
-                    let verb = if pinned { "Pinned" } else { "Unpinned" };
-                    finish(&window, &s, Some(format!("{verb} {what}.")))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::pin_strips(
+                    &window, state, strips, pinned,
+                ))
             }
             "suggest_order" => {
                 #[derive(Deserialize)]
@@ -2491,9 +2017,7 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<SuggestionDto> =
-                    (|| suggestion_view(state.lock().schedule(), sub_board))();
-                to_reply(r)
+                to_reply(crate::commands::plan::suggest_order(state, sub_board))
             }
             "apply_suggested_order" => {
                 #[derive(Deserialize)]
@@ -2505,23 +2029,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let n = s.edit(|x| apply_order(x, sub_board, &order))?;
-                    let what = if n == 1 {
-                        "1 scene".to_string()
-                    } else {
-                        format!("{n} scenes")
-                    };
-                    finish(
-                        &window,
-                        &s,
-                        Some(format!(
-                            "Moved {what} into the suggested order. Undo puts them back."
-                        )),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::apply_suggested_order(
+                    &window, state, sub_board, order,
+                ))
             }
             "call_sheet_data" => {
                 #[derive(Deserialize)]
@@ -2533,12 +2043,9 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<serde_json::Value> = (|| {
-                    let s = state.lock();
-                    let bytes = call_sheet_bytes(s.schedule(), sub_board, day, false)?;
-                    serde_json::from_slice(&bytes).map_err(|e| e.to_string())
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::call_sheet_data(
+                    state, sub_board, day,
+                ))
             }
             "shoot_day_count" => {
                 #[derive(Deserialize)]
@@ -2549,26 +2056,16 @@ mod plan_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<u32> = (|| {
-                    let s = state.lock();
-                    let (b, sb) = ids(s.schedule(), sub_board)?;
-                    Ok(method_schedule_core::days::days(s.schedule(), b, sb)
-                        .map_err(upper)?
-                        .days
-                        .len() as u32)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::plan::shoot_day_count(state, sub_board))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod reports_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::reports::*;
     use method_schedule_core::model::Schedule;
     use method_schedule_format::pdf_info::PdfInfo;
@@ -2596,26 +2093,18 @@ mod reports_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<ReportDto> = (|| {
-                    build_report(
-                        state.lock().schedule(),
-                        sub_board,
-                        index,
-                        week_start.as_deref().unwrap_or("sun"),
-                    )
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reports::report_data(
+                    state, sub_board, index, week_start,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod reportsetup_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::board::EditResult;
     use crate::reportsetup::*;
     use method_schedule_core::headers::HeaderId;
@@ -2627,10 +2116,7 @@ mod reportsetup_cmds {
         let window = W;
         let _ = &window;
         Some(match command {
-            "report_list" => {
-                let r: CmdResult<ReportsDto> = (|| Ok(reports_dto(state.lock().schedule())))();
-                to_reply(r)
-            }
+            "report_list" => to_reply(crate::commands::reportsetup::report_list(state)),
             "save_report" => {
                 #[derive(Deserialize)]
                 #[serde(rename_all = "camelCase")]
@@ -2647,9 +2133,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| apply_report(s, index, &name, &options)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::save_report(
+                    &window, state, index, name, options,
+                ))
             }
             "duplicate_report" => {
                 #[derive(Deserialize)]
@@ -2661,17 +2147,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let at = s.edit(|x| x.duplicate_report(index).map_err(say))?;
-                    let name = s
-                        .schedule()
-                        .report_list()
-                        .get(at)
-                        .map_or(String::new(), |r| r.name.clone());
-                    finish(&window, &s, Some(format!("Added {name}.")))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::duplicate_report(
+                    &window, state, index,
+                ))
             }
             "move_report" => {
                 #[derive(Deserialize)]
@@ -2684,9 +2162,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| s.move_report(index, to).map_err(say)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::move_report(
+                    &window, state, index, to,
+                ))
             }
             "delete_report" => {
                 #[derive(Deserialize)]
@@ -2698,9 +2176,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| s.delete_report(index).map_err(say)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::delete_report(
+                    &window, state, index,
+                ))
             }
             "save_header_layout" => {
                 #[derive(Deserialize)]
@@ -2712,15 +2190,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    let added = design.id == 0;
-                    s.edit(|x| apply_header(x, &design).map(|_| ()))?;
-                    let note =
-                        added.then(|| format!("Added header layout {}.", design.name.trim()));
-                    finish(&window, &s, note)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::save_header_layout(
+                    &window, state, design,
+                ))
             }
             "delete_header_layout" => {
                 #[derive(Deserialize)]
@@ -2732,12 +2204,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        s.delete_header(HeaderId(id)).map_err(header_say)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::delete_header_layout(
+                    &window, state, id,
+                ))
             }
             "move_header_layout" => {
                 #[derive(Deserialize)]
@@ -2750,12 +2219,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        s.move_header(HeaderId(id), to).map_err(header_say)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::move_header_layout(
+                    &window, state, id, to,
+                ))
             }
             "set_production" => {
                 #[derive(Deserialize)]
@@ -2768,9 +2234,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| apply_production(s, &field, &value)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::set_production(
+                    &window, state, field, value,
+                ))
             }
             "set_dood_codes" => {
                 #[derive(Deserialize)]
@@ -2782,8 +2248,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| edit(&window, &state, |s| apply_codes(s, &codes)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::set_dood_codes(
+                    &window, state, codes,
+                ))
             }
             "set_prep_wrap" => {
                 #[derive(Deserialize)]
@@ -2800,12 +2267,9 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    edit(&window, &state, |s| {
-                        apply_prep_wrap(s, sub_board, &prep_start, &wrap_end)
-                    })
-                })();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::set_prep_wrap(
+                    &window, state, sub_board, prep_start, wrap_end,
+                ))
             }
             "set_calendar_fields" => {
                 #[derive(Deserialize)]
@@ -2817,20 +2281,18 @@ mod reportsetup_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult =
-                    (|| edit(&window, &state, |s| apply_calendar_fields(s, &fields)))();
-                to_reply(r)
+                to_reply(crate::commands::reportsetup::set_calendar_fields(
+                    &window, state, fields,
+                ))
             }
             _ => return None,
         })
     }
 }
 
+#[allow(unused_imports)]
 mod split_cmds {
-    use super::super::{
-        args, board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, to_reply,
-        CmdResult, DocState, Error, W,
-    };
+    use super::super::{args, to_reply, DocState, Error, W};
     use crate::split::*;
     use crate::view::{self, BoardDto, View};
     use method_schedule_core::model::BoardId;
@@ -2852,12 +2314,7 @@ mod split_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult<BoardDto> = (|| {
-                    let s = state.lock();
-                    view::board_ref(s.schedule(), board)?;
-                    view::board(s.schedule(), BoardId(board))
-                })();
-                to_reply(r)
+                to_reply(crate::commands::split::board_view(state, board))
             }
             "remove_sheet_image" => {
                 #[derive(Deserialize)]
@@ -2870,12 +2327,9 @@ mod split_cmds {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
                 };
-                let r: CmdResult = (|| {
-                    let mut s = state.lock();
-                    s.edit(|x| remove_image(x, sheet, at))?;
-                    finish(&window, &s, None)
-                })();
-                to_reply(r)
+                to_reply(crate::commands::split::remove_sheet_image(
+                    &window, state, sheet, at,
+                ))
             }
             _ => return None,
         })

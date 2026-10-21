@@ -13,11 +13,8 @@ use crate::docs::Doc;
 use crate::export::ExportOutcome;
 use crate::session;
 use crate::view::View;
-use method_schedule_core::drift::{lock, unlock};
 use method_schedule_core::fdx;
 use method_schedule_core::fountain::ImportedScript;
-use method_schedule_core::model::{BoardId, StripId};
-use method_schedule_core::plan::{self as p};
 use method_schedule_core::revise::{import_tagged, revise, revision_text};
 use std::sync::Mutex;
 use tauri::{Manager, Runtime, WebviewWindow};
@@ -184,7 +181,7 @@ pub fn revise_apply<R: Runtime>(window: WebviewWindow<R>, state: Doc, token: u64
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn timeline_data(state: Doc, sub_board: u32, strip: Option<u32>) -> CmdResult<TimelineDto> {
-    timeline_view(state.lock().schedule(), sub_board, strip)
+    method_schedule_session::commands::plan::timeline_data(&*state, sub_board, strip)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -195,23 +192,12 @@ pub fn push_past_wrap<R: Runtime>(
     day: u32,
     strips: Vec<u32>,
 ) -> CmdResult {
-    if strips.len() > 100_000 {
-        return Err("Too many strips at once.".to_string());
-    }
-    let mut s = state.lock();
-    let n = s.edit(|x| push_past(x, sub_board, day, &strips))?;
-    let what = if n == 1 {
-        "1 strip".to_string()
-    } else {
-        format!("{n} strips")
-    };
-    finish(
-        &window,
-        &s,
-        Some(format!(
-            "Moved {what} to the start of day {}. Undo puts them back.",
-            day + 1
-        )),
+    method_schedule_session::commands::plan::push_past_wrap(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        day,
+        strips,
     )
 }
 
@@ -222,9 +208,12 @@ pub fn set_call_time<R: Runtime>(
     day: u32,
     call: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| set_call(x, day, &call))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::set_call_time(
+        &crate::app::Win(&window),
+        &*state,
+        day,
+        call,
+    )
 }
 
 /// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
@@ -238,21 +227,24 @@ pub fn set_shot<R: Runtime>(
     eighths: String,
     complete: bool,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| set_scene_shot(x, sheet, day, &eighths, complete))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::set_shot(
+        &crate::app::Win(&window),
+        &*state,
+        sheet,
+        day,
+        eighths,
+        complete,
+    )
 }
 
 #[tauri::command]
 pub fn set_long_day<R: Runtime>(window: WebviewWindow<R>, state: Doc, value: String) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| set_long(x, &value))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::set_long_day(&crate::app::Win(&window), &*state, value)
 }
 
 #[tauri::command]
 pub fn locations_data(state: Doc) -> CmdResult<Vec<LocationDto>> {
-    Ok(locations_view(state.lock().schedule()))
+    method_schedule_session::commands::plan::locations_data(&*state)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -265,23 +257,20 @@ pub fn set_location<R: Runtime>(
     utc_offset: String,
     daylight_saving: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| {
-        place_location(
-            x,
-            &name,
-            &latitude,
-            &longitude,
-            &utc_offset,
-            &daylight_saving,
-        )
-    })?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::set_location(
+        &crate::app::Win(&window),
+        &*state,
+        name,
+        latitude,
+        longitude,
+        utc_offset,
+        daylight_saving,
+    )
 }
 
 #[tauri::command]
 pub fn rest_data(state: Doc, board: u32) -> CmdResult<RestDto> {
-    rest_view(state.lock().schedule(), board)
+    method_schedule_session::commands::plan::rest_data(&*state, board)
 }
 
 #[tauri::command]
@@ -291,25 +280,17 @@ pub fn set_turnaround<R: Runtime>(
     category: u32,
     value: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| set_minimum(x, category, &value))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::set_turnaround(
+        &crate::app::Win(&window),
+        &*state,
+        category,
+        value,
+    )
 }
 
 #[tauri::command]
 pub fn locks_data(state: Doc, board: u32) -> CmdResult<Vec<LockDto>> {
-    let s = state.lock();
-    Ok(s.schedule()
-        .plan
-        .locks
-        .iter()
-        .filter(|l| l.board.0 == board)
-        .map(|l| LockDto {
-            name: l.name.clone(),
-            made: l.made.map_or(String::new(), |d| d.to_string()),
-            scenes: l.scenes.len(),
-        })
-        .collect())
+    method_schedule_session::commands::plan::locks_data(&*state, board)
 }
 
 #[tauri::command]
@@ -319,36 +300,22 @@ pub fn lock_schedule<R: Runtime>(
     board: u32,
     name: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| {
-        if name.chars().count() > 200 {
-            return Err("A lock's name is 200 characters at most.".to_string());
-        }
-        lock(
-            x,
-            BoardId(board),
-            &name,
-            method_schedule_format::exchange::local_today(),
-        )
-        .map_err(upper)
-    })?;
-    finish(
-        &window,
-        &s,
-        Some(format!("Locked the schedule as {:?}.", name.trim())),
+    method_schedule_session::commands::plan::lock_schedule(
+        &crate::app::Win(&window),
+        &*state,
+        board,
+        name,
     )
 }
 
 #[tauri::command]
 pub fn delete_lock<R: Runtime>(window: WebviewWindow<R>, state: Doc, name: String) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| unlock(x, &name).map_err(upper))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::plan::delete_lock(&crate::app::Win(&window), &*state, name)
 }
 
 #[tauri::command]
 pub fn drift_data(state: Doc, name: String) -> CmdResult<DriftDto> {
-    drift_view(state.lock().schedule(), &name)
+    method_schedule_session::commands::plan::drift_data(&*state, name)
 }
 
 /// Schedule Locks > Export: each actor's drift since lock `name` as an Excel workbook or a
@@ -395,26 +362,17 @@ pub fn pin_strips<R: Runtime>(
     strips: Vec<u32>,
     pinned: bool,
 ) -> CmdResult {
-    if strips.len() > 100_000 {
-        return Err("Too many strips at once.".to_string());
-    }
-    let ids: Vec<StripId> = strips.into_iter().map(StripId).collect();
-    let mut s = state.lock();
-    let n = s.edit(|x| {
-        p::set_pinned(x, &ids, pinned).map_err(|_| "Only scene strips can be pinned.".to_string())
-    })?;
-    let what = if n == 1 {
-        "1 strip".to_string()
-    } else {
-        format!("{n} strips")
-    };
-    let verb = if pinned { "Pinned" } else { "Unpinned" };
-    finish(&window, &s, Some(format!("{verb} {what}.")))
+    method_schedule_session::commands::plan::pin_strips(
+        &crate::app::Win(&window),
+        &*state,
+        strips,
+        pinned,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
 pub fn suggest_order(state: Doc, sub_board: u32) -> CmdResult<SuggestionDto> {
-    suggestion_view(state.lock().schedule(), sub_board)
+    method_schedule_session::commands::plan::suggest_order(&*state, sub_board)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -424,19 +382,11 @@ pub fn apply_suggested_order<R: Runtime>(
     sub_board: u32,
     order: Vec<u32>,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let n = s.edit(|x| apply_order(x, sub_board, &order))?;
-    let what = if n == 1 {
-        "1 scene".to_string()
-    } else {
-        format!("{n} scenes")
-    };
-    finish(
-        &window,
-        &s,
-        Some(format!(
-            "Moved {what} into the suggested order. Undo puts them back."
-        )),
+    method_schedule_session::commands::plan::apply_suggested_order(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        order,
     )
 }
 
@@ -478,26 +428,21 @@ pub async fn export_call_sheet<R: Runtime>(
 /// lay out as a printed sheet (decision 207).
 #[tauri::command(rename_all = "snake_case")]
 pub fn call_sheet_data(state: Doc, sub_board: u32, day: u32) -> CmdResult<serde_json::Value> {
-    let s = state.lock();
-    let bytes = call_sheet_bytes(s.schedule(), sub_board, day, false)?;
-    serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+    method_schedule_session::commands::plan::call_sheet_data(&*state, sub_board, day)
 }
 
 /// How many shoot days a sub-board has, for the export's day picker.
 #[tauri::command(rename_all = "snake_case")]
 pub fn shoot_day_count(state: Doc, sub_board: u32) -> CmdResult<u32> {
-    let s = state.lock();
-    let (b, sb) = ids(s.schedule(), sub_board)?;
-    Ok(method_schedule_core::days::days(s.schedule(), b, sb)
-        .map_err(upper)?
-        .days
-        .len() as u32)
+    method_schedule_session::commands::plan::shoot_day_count(&*state, sub_board)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::Session;
+    use method_schedule_core::drift::lock;
+    use method_schedule_core::model::BoardId;
     use method_schedule_core::model::{Place, StripKind};
 
     fn harbor() -> Session {

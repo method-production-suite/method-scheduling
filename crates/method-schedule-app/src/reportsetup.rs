@@ -7,29 +7,16 @@
 //! Every schedule change is one undo step through `Session::edit`; options travel from
 //! the page as plain values and are read strictly here (typed dates through
 //! `calendar::typed_date`, names of fields, header layouts and sizes checked by name).
-use crate::app::{finish, AppState, CmdResult};
-use crate::board::EditResult;
+use crate::app::CmdResult;
 use crate::docs::Doc;
-use method_schedule_core::headers::HeaderId;
-use method_schedule_core::model::Schedule;
 use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow};
 
 pub use method_schedule_session::reportsetup::*;
 
-fn edit<R: Runtime>(
-    window: &WebviewWindow<R>,
-    state: &AppState,
-    f: impl FnOnce(&mut Schedule) -> EditResult,
-) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(f)?;
-    finish(window, &s, None)
-}
-
 /// The report list, the production info and what the filters can pick.
 #[tauri::command]
 pub fn report_list(state: Doc) -> CmdResult<ReportsDto> {
-    Ok(reports_dto(state.lock().schedule()))
+    method_schedule_session::commands::reportsetup::report_list(&*state)
 }
 
 #[tauri::command]
@@ -40,7 +27,13 @@ pub fn save_report<R: Runtime>(
     name: String,
     options: OptionsDto,
 ) -> CmdResult {
-    edit(&window, &state, |s| apply_report(s, index, &name, &options))
+    method_schedule_session::commands::reportsetup::save_report(
+        &crate::app::Win(&window),
+        &*state,
+        index,
+        name,
+        options,
+    )
 }
 
 /// Adds a copy right after report `index`; the view's notice names it.
@@ -50,14 +43,11 @@ pub fn duplicate_report<R: Runtime>(
     state: Doc,
     index: usize,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let at = s.edit(|x| x.duplicate_report(index).map_err(say))?;
-    let name = s
-        .schedule()
-        .report_list()
-        .get(at)
-        .map_or(String::new(), |r| r.name.clone());
-    finish(&window, &s, Some(format!("Added {name}.")))
+    method_schedule_session::commands::reportsetup::duplicate_report(
+        &crate::app::Win(&window),
+        &*state,
+        index,
+    )
 }
 
 #[tauri::command]
@@ -67,12 +57,21 @@ pub fn move_report<R: Runtime>(
     index: usize,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| s.move_report(index, to).map_err(say))
+    method_schedule_session::commands::reportsetup::move_report(
+        &crate::app::Win(&window),
+        &*state,
+        index,
+        to,
+    )
 }
 
 #[tauri::command]
 pub fn delete_report<R: Runtime>(window: WebviewWindow<R>, state: Doc, index: usize) -> CmdResult {
-    edit(&window, &state, |s| s.delete_report(index).map_err(say))
+    method_schedule_session::commands::reportsetup::delete_report(
+        &crate::app::Win(&window),
+        &*state,
+        index,
+    )
 }
 
 /// Saves a header layout (id 0: a new one); the notice names it.
@@ -82,11 +81,11 @@ pub fn save_header_layout<R: Runtime>(
     state: Doc,
     design: HeaderDto,
 ) -> CmdResult {
-    let mut s = state.lock();
-    let added = design.id == 0;
-    s.edit(|x| apply_header(x, &design).map(|_| ()))?;
-    let note = added.then(|| format!("Added header layout {}.", design.name.trim()));
-    finish(&window, &s, note)
+    method_schedule_session::commands::reportsetup::save_header_layout(
+        &crate::app::Win(&window),
+        &*state,
+        design,
+    )
 }
 
 #[tauri::command]
@@ -95,9 +94,11 @@ pub fn delete_header_layout<R: Runtime>(
     state: Doc,
     id: u32,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        s.delete_header(HeaderId(id)).map_err(header_say)
-    })
+    method_schedule_session::commands::reportsetup::delete_header_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+    )
 }
 
 #[tauri::command]
@@ -107,9 +108,12 @@ pub fn move_header_layout<R: Runtime>(
     id: u32,
     to: usize,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        s.move_header(HeaderId(id), to).map_err(header_say)
-    })
+    method_schedule_session::commands::reportsetup::move_header_layout(
+        &crate::app::Win(&window),
+        &*state,
+        id,
+        to,
+    )
 }
 
 /// `field`: `title` or a production field's key (`company`, `art_director`...).
@@ -120,7 +124,12 @@ pub fn set_production<R: Runtime>(
     field: String,
     value: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| apply_production(s, &field, &value))
+    method_schedule_session::commands::reportsetup::set_production(
+        &crate::app::Win(&window),
+        &*state,
+        field,
+        value,
+    )
 }
 
 /// `codes`: the letters to change, by key (`hold`, `company_move`...).
@@ -130,7 +139,11 @@ pub fn set_dood_codes<R: Runtime>(
     state: Doc,
     codes: std::collections::BTreeMap<String, String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| apply_codes(s, &codes))
+    method_schedule_session::commands::reportsetup::set_dood_codes(
+        &crate::app::Win(&window),
+        &*state,
+        codes,
+    )
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -141,9 +154,13 @@ pub fn set_prep_wrap<R: Runtime>(
     prep_start: String,
     wrap_end: String,
 ) -> CmdResult {
-    edit(&window, &state, |s| {
-        apply_prep_wrap(s, sub_board, &prep_start, &wrap_end)
-    })
+    method_schedule_session::commands::reportsetup::set_prep_wrap(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        prep_start,
+        wrap_end,
+    )
 }
 
 /// Calendar > Strip Fields: what a strip shows on a date, kept in the schedule.
@@ -153,7 +170,11 @@ pub fn set_calendar_fields<R: Runtime>(
     state: Doc,
     fields: Vec<String>,
 ) -> CmdResult {
-    edit(&window, &state, |s| apply_calendar_fields(s, &fields))
+    method_schedule_session::commands::reportsetup::set_calendar_fields(
+        &crate::app::Win(&window),
+        &*state,
+        fields,
+    )
 }
 
 #[tauri::command]
@@ -176,8 +197,11 @@ pub fn set_preferences<R: Runtime>(app: AppHandle<R>, prefs: Prefs) -> Result<Pr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::board::EditResult;
+    use method_schedule_core::headers::HeaderId;
     use method_schedule_core::model::StripField;
     use method_schedule_core::setup::{ReportColumn, TextSize};
+    use method_schedule_core::Schedule;
 
     fn opts(s: &Schedule, i: usize) -> OptionsDto {
         OptionsDto::of(&s.report_list()[i].options)

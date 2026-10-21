@@ -1,6 +1,6 @@
 //! Dragging an event on the Calendar to another date (decisions.md, entry 83): the event
 //! keeps its length and moves to start on the date it was dropped on, as one undo step.
-use crate::app::{finish, CmdResult};
+use crate::app::CmdResult;
 use crate::docs::Doc;
 use tauri::{Runtime, WebviewWindow};
 
@@ -15,7 +15,11 @@ pub fn move_event_to<R: Runtime>(
     index: usize,
     date: String,
 ) -> CmdResult {
-    let mut s = state.lock();
-    s.edit(|x| move_event(x, sub_board, index, &date))?;
-    finish(&window, &s, None)
+    method_schedule_session::commands::events::move_event_to(
+        &crate::app::Win(&window),
+        &*state,
+        sub_board,
+        index,
+        date,
+    )
 }
