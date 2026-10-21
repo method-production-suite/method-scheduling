@@ -28,12 +28,18 @@ section. Everything else on this page goes ahead without waiting.
   own window (D219); K184 Find with the board beside the board; M192 the Day Timeline past
   wrap; Layouts and Red Flag Types rename then click; K185 and K187 on paper; crash
   recovery in the window (`scripts/crash-check.sh`, M2); the app on Tauri 2.12 opening, its
-  menus and a Save dialog (the move's live check, Windows and Linux too); and in the reference app E-L5,
+  menus and a Save dialog (the move's live check; Linux too, eventually); and in the reference app E-L5,
   E-S34 and the two report questions (M1's review row).
-- **Windows and Linux machines** for M3's hand checks (the screen block 3 list), including
-  the keys: every shortcut is Ctrl there, and a test keeps them off the keys Windows and
-  the usual Linux desktops keep for themselves; pressing them is the live check. Also
+- **A Linux machine, eventually**, for M3's hand checks there (the screen block 3 list),
+  including the keys: every shortcut is Ctrl there, and a test keeps them off the keys the
+  usual Linux desktops keep for themselves; pressing them is the live check. Also
   double-clicking a `.mtsc` and a `.mtst` (both associated in `tauri.conf.json`).
+
+**Deferred (Sam, 2026-10-20)**: "defer windows tests indefinitely. We can do linux ones
+eventually." Windows is still built and tested automatically (the weekly build and every
+release make and test the Windows app and its installer), and its release notes keep
+saying it hasn't been tested by a person yet. The Windows hand checks (the same list as
+Linux's, plus SmartScreen on the unsigned installer) wait until the owner says otherwise.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
 - **Merge in the browser host** (D226), built on the recommendation: the browser host offers
@@ -185,7 +191,9 @@ every picture retaken.
 
 ## M3 Windows and Linux
 
-**Goal**: the same app, tested by hand, on Windows (WebView2) and Linux (WebKitGTK).
+**Goal**: the same app on Windows (WebView2) and Linux (WebKitGTK): built and tested
+automatically on both, and by hand on Linux eventually. Windows hand tests are deferred
+(the owner, 2026-10-20; Waiting on the owner).
 
 | Item | Size | Refs |
 |---|---|---|
@@ -196,8 +204,9 @@ every picture retaken.
 | Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, or after the process freeze `deny.toml` checks per target and the plugin goes in for Windows alone. The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
 | The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. Also carries the release-workflow fix that compiles before any signing key is unpacked (local branch `ci/compile-before-secrets`) | M | D213, D214, SUITE-STANDARDS.md section 1 |
 
-**Exit**: the live check list from screen block 3 passes on both systems, and their
-installers update themselves.
+**Exit**: the live check list from screen block 3 passes on Linux, and both systems'
+installers build, pass their automatic tests and update themselves (Windows hand checks
+deferred, the owner, 2026-10-20).
 
 ---
 
