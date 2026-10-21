@@ -164,8 +164,10 @@ in the browser (`crates/method-schedule-web/demo/`), and a Content-Security-Poli
 allows only the page's own files and compiling the module. Nothing is committed under
 `site/try/`: the suite website's sync runs the build on the release it publishes (its
 catalog's `build` line, as for Method Budget's demo), so the demo is always the released
-engine. Until the catalog has the line and a release carries the demo, the feature list
-keeps "Try it in your browser" under On the roadmap.
+engine. From 0.5.0 the site links it (the hero's "Try it in your browser") and the feature
+list has it as built; MOrg adds the catalog's `build` line for that release's sync. Its
+hardening: `?open=` loads only a schedule on the page's own site, and files are capped
+before they are read.
 
 ## Publishing: the suite website
 

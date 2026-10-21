@@ -137,7 +137,6 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| `/try/` live with 0.5.0: the feature list's "Try it in your browser" moves to built and the site links `try/` in that release's `site/`; MOrg adds the demo build to the website's sync at 0.5.0 (the hardening is in, #84) | S | WEBSITE.md |
 | The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the
@@ -161,6 +160,17 @@ call sheet data). `diffmerge` stays on the desktop: it is the file side (reading
 the backups and their times) around the engine's own merge, which the session already
 reaches, and sharing in the browser is the partner's server's (decision 222). `docs`, the
 open-schedules list, is window bookkeeping and stays too.
+
+**Complete** (2026-10-20). Phases 1b, 2 and 3 are in: the browser host runs every command
+that needs only the schedule, plus files in and out, the picture store, preferences and the
+clipboard; `method-schedule-web` builds the page with the engine as WebAssembly
+(`cargo xtask web`, its smoke test passing); the browser draws the desktop's menus; and the
+`/try/` demo (`cargo xtask web --demo`) is hardened and linked from the site and the feature
+list for 0.5.0, when the website's sync builds it. The web refactor that closed it: every
+command has one body, in `method_schedule_session::commands`, which the desktop's Tauri
+commands and the browser host both call (#90), and the file commands share their
+file-free halves (#91), so the generated copy of the desktop's bodies and its script are
+gone. Left, waiting on the process freeze (2026-11-02): the smoke test in the weekly build.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.

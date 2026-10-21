@@ -482,8 +482,9 @@ ref = ["D224"]
 [[feature]]
 group = "beyond"
 title = "Try it in your browser"
-text = "The app with an invented schedule, running in the browser with nothing to install."
-status = "soon"
+text = "The whole app with Field Station, an invented production, running in your browser with nothing to install: nothing is uploaded, and Save downloads the file."
+status = "have"
+ref = ["D222"]
 
 [[feature]]
 group = "beyond"
