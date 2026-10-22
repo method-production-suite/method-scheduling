@@ -147,7 +147,14 @@ pub fn revise_apply<R: Runtime>(window: WebviewWindow<R>, state: Doc, token: u64
     let mut s = state.lock();
     let first = s.edit(|x| {
         let cast = x.cast_or_add();
-        let r = revise(x, &pending.script, cast, pending.tags).map_err(upper)?;
+        let r = revise(
+            x,
+            &pending.script,
+            cast,
+            pending.tags,
+            method_schedule_session::clock::today(),
+        )
+        .map_err(upper)?;
         Ok(revision_text(x, &r)
             .lines()
             .next()
@@ -242,6 +249,11 @@ pub fn set_shot<R: Runtime>(
 #[tauri::command]
 pub fn set_long_day<R: Runtime>(window: WebviewWindow<R>, state: Doc, value: String) -> CmdResult {
     method_schedule_session::commands::plan::set_long_day(&crate::app::Win(&window), &*state, value)
+}
+
+#[tauri::command]
+pub fn drafts_data(state: Doc) -> CmdResult<Vec<DraftDto>> {
+    method_schedule_session::commands::plan::drafts_data(&*state)
 }
 
 #[tauri::command]

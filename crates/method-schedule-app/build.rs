@@ -162,6 +162,7 @@ const COMMANDS: &[&str] = &[
     "locations_data",
     "set_location",
     "rest_data",
+    "drafts_data",
     "set_turnaround",
     "locks_data",
     "lock_schedule",

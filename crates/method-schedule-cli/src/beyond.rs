@@ -173,7 +173,7 @@ fn revise_cmd(args: &[String]) -> Result<String, String> {
     let script = read_script(script_path, tags, lines_per_page(args)?)?;
     let mut s = load(path)?;
     let cast = s.cast_or_add();
-    let r = revise(&mut s, &script, cast, tags).map_err(|e| e.to_string())?;
+    let r = revise(&mut s, &script, cast, tags, today()).map_err(|e| e.to_string())?;
     let text = revision_text(&s, &r);
     if args.iter().any(|a| a == "--dry-run") {
         return Ok(format!("{text}(dry run: nothing saved)\n"));

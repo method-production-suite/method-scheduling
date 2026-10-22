@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, DayShot, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot, Turnaround,
-    DEFAULT_LONG_DAY, MAX_WRAP,
+    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot,
+    Turnaround, DEFAULT_LONG_DAY, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -41,6 +41,23 @@ pub(crate) struct FilePlan {
     scenes_shot: Vec<FileSceneShot>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     person_calls: Vec<FilePersonCall>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    drafts: Vec<FileDraft>,
+}
+
+/// A script draft a revision merged (decision 233).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileDraft {
+    color: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    date: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    changed: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    added: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    omitted: Vec<u32>,
 }
 
 /// One element's own call and wrap on one day (decision 231).
@@ -138,7 +155,19 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
     if p.is_empty() {
         return None;
     }
+    let ids = |v: &[SheetId]| v.iter().map(|x| x.0).collect::<Vec<_>>();
     Some(FilePlan {
+        drafts: p
+            .drafts
+            .iter()
+            .map(|d| FileDraft {
+                color: d.color.clone(),
+                date: d.date.map(|x| x.to_string()),
+                changed: ids(&d.changed),
+                added: ids(&d.added),
+                omitted: ids(&d.omitted),
+            })
+            .collect(),
         person_calls: p
             .person_calls
             .iter()
@@ -351,6 +380,27 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             date: d.date.as_deref().map(date).transpose()?,
             call: d.call,
             wrap: d.wrap,
+        });
+    }
+    for d in f.drafts {
+        if d.color.trim() != d.color
+            || d.color.is_empty()
+            || p.drafts
+                .iter()
+                .any(|o| o.color.eq_ignore_ascii_case(&d.color))
+        {
+            return Err(bad(format!(
+                "draft color {:?} is empty, has spaces around it or is used twice",
+                d.color
+            )));
+        }
+        let ids = |v: Vec<u32>| v.into_iter().map(SheetId).collect();
+        p.drafts.push(Draft {
+            date: d.date.as_deref().map(date).transpose()?,
+            changed: ids(d.changed),
+            added: ids(d.added),
+            omitted: ids(d.omitted),
+            color: d.color,
         });
     }
     for x in f.person_calls {

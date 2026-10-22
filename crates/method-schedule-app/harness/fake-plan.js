@@ -364,6 +364,11 @@ export function planFakes(ctx) {
     set_location: ({ name, latitude, longitude, utc_offset, daylight_saving }) => {
       return planEdit((m, plan) => placeLocation(plan, name, latitude, longitude, utc_offset, daylight_saving));
     },
+    // As plan.rs drafts_view (decision 233): a fixed history for the page.
+    drafts_data: () => [
+      { color: 'Blue', date: '2026-10-12', changed: ['Scene 3, EXT. HARBOR WALL'], added: ['Scene 3A, INT/EXT. KIT\'S TRUCK'], omitted: [] },
+      { color: 'Pink', date: '2026-10-19', changed: ['Scene 1, INT. NET LOFT', 'Scene 2, EXT. BOATYARD'], added: [], omitted: ['Scene 4, INT. NET LOFT'] },
+    ],
     rest_data: () => {
       const m = model();
       const plan = planOf(m);

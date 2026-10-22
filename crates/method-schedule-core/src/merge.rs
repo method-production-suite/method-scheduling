@@ -927,6 +927,11 @@ fn remap(s: &mut Schedule, map: &BTreeMap<u32, u32>) {
     p.turnarounds.iter_mut().for_each(|x| m(&mut x.category.0));
     p.pinned.iter_mut().for_each(|x| m(&mut x.0));
     p.omitted.iter_mut().for_each(|x| m(&mut x.0));
+    for d in &mut p.drafts {
+        for l in [&mut d.changed, &mut d.added, &mut d.omitted] {
+            l.iter_mut().for_each(|x| m(&mut x.0));
+        }
+    }
     for l in &mut p.locks {
         m(&mut l.board.0);
         for sc in &mut l.scenes {
@@ -1561,6 +1566,19 @@ impl M<'_> {
                 |l| match l.made {
                     Some(d) => format!("{} scenes, made {d}", l.scenes.len()),
                     None => format!("{} scenes", l.scenes.len()),
+                },
+            ),
+            drafts: merge_keyed(
+                cx,
+                "plan:draft",
+                &b.drafts,
+                &o.drafts,
+                &t.drafts,
+                |d| fold(&d.color),
+                |d| format!("The {} draft", d.color),
+                |d| match d.date {
+                    Some(x) => format!("{} scenes changed, made {x}", d.changed.len()),
+                    None => format!("{} scenes changed", d.changed.len()),
                 },
             ),
             pinned: merge_ids(cx, Some(&b.pinned), &o.pinned, &t.pinned),

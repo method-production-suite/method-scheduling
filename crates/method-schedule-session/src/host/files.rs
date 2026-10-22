@@ -480,7 +480,14 @@ impl Host {
                     let mut s = state.lock();
                     let first = s.edit(|x| {
                         let cast = x.cast_or_add();
-                        let r = revise(x, &pending.script, cast, pending.tags).map_err(upper)?;
+                        let r = revise(
+                            x,
+                            &pending.script,
+                            cast,
+                            pending.tags,
+                            crate::clock::today(),
+                        )
+                        .map_err(upper)?;
                         Ok(revision_text(x, &r)
                             .lines()
                             .next()

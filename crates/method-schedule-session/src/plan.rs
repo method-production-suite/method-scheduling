@@ -67,7 +67,7 @@ pub fn revision_preview(
 ) -> Result<(usize, usize, usize, usize, Vec<String>), String> {
     let mut copy = s.clone();
     let cast = copy.cast_or_add();
-    let r = revise(&mut copy, script, cast, tags).map_err(upper)?;
+    let r = revise(&mut copy, script, cast, tags, crate::clock::today()).map_err(upper)?;
     let lines = revision_text(&copy, &r)
         .lines()
         .map(str::to_string)
@@ -357,6 +357,39 @@ pub fn set_long(s: &mut Schedule, value: &str) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 // Locations
+
+/// A merged script draft as the Script Drafts dialog lists it (decision 233).
+#[derive(Clone, Debug, Serialize)]
+pub struct DraftDto {
+    pub color: String,
+    /// `YYYY-MM-DD`, or empty when not known.
+    pub date: String,
+    /// The scenes as people know them (`Scene 12, INT. BOAT`), in draft order.
+    pub changed: Vec<String>,
+    pub added: Vec<String>,
+    pub omitted: Vec<String>,
+}
+
+/// Every draft, oldest first.
+pub fn drafts_view(s: &Schedule) -> Vec<DraftDto> {
+    let names = |v: &[method_schedule_core::model::SheetId]| {
+        v.iter()
+            .filter_map(|id| s.sheet(*id))
+            .map(method_schedule_core::model::Sheet::title)
+            .collect()
+    };
+    s.plan
+        .drafts
+        .iter()
+        .map(|d| DraftDto {
+            color: d.color.clone(),
+            date: d.date.map_or(String::new(), |x| x.to_string()),
+            changed: names(&d.changed),
+            added: names(&d.added),
+            omitted: names(&d.omitted),
+        })
+        .collect()
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LocationDto {

@@ -19,12 +19,16 @@
 //! again loses its mark. Sheets with neither a scene number nor a set (made by hand, not
 //! from a script) are left alone. A sheet holding several scenes (`12, 15`, after Merge
 //! Strips) matches each of its numbers and keeps its fields.
+//!
+//! **Drafts.** A revision that changes anything is recorded in the plan as a draft
+//! (decision 233): the next revision color (Blue after the original White, then Pink,
+//! Yellow and on), the date given, and the sheets it changed, added and omitted.
 
 use std::collections::{HashMap, HashSet};
 
 use crate::fountain::{ImportedScene, ImportedScript, ImportedTag, IntExt};
 use crate::model::{same_name, CategoryId, ElementId, Error, Schedule, Sheet, SheetId};
-use crate::Eighths;
+use crate::{Date, Eighths};
 
 /// Category names a script's tags use for the cast.
 const CAST_NAMES: [&str; 3] = ["cast", "cast members", "cast member"];
@@ -136,6 +140,8 @@ pub struct Revision {
     pub added: Vec<SheetId>,
     /// Sheets the draft no longer has, newly marked omitted.
     pub omitted: Vec<SheetId>,
+    /// The color it was recorded as (decision 233); none when it changed nothing.
+    pub draft: Option<String>,
 }
 
 impl Revision {
@@ -179,12 +185,14 @@ fn heading_key(int_ext: &str, set: &str, tod: &str) -> (String, String, String) 
 }
 
 /// Merges a revised draft into the schedule (see the module notes). `cast` takes new
-/// speaking characters; `with_tags` adds each scene's production tags too.
+/// speaking characters; `with_tags` adds each scene's production tags too; `date` is
+/// when, for the draft it is recorded as.
 pub fn revise(
     s: &mut Schedule,
     script: &ImportedScript,
     cast: CategoryId,
     with_tags: bool,
+    date: Option<Date>,
 ) -> Result<Revision, Error> {
     s.category(cast).ok_or(Error::NoSuchCategory(cast))?;
     // Candidates: sheets made from a script, in sheet order.
@@ -277,6 +285,18 @@ pub fn revise(
             s.plan.omitted.push(id);
             out.omitted.push(id);
         }
+    }
+    let changed: Vec<SheetId> = out.changed().map(|r| r.sheet).collect();
+    if !(changed.is_empty() && out.added.is_empty() && out.omitted.is_empty()) {
+        let color = crate::plan::draft_color(s.plan.drafts.len() + 1);
+        s.plan.drafts.push(crate::plan::Draft {
+            color: color.clone(),
+            date,
+            changed,
+            added: out.added.clone(),
+            omitted: out.omitted.clone(),
+        });
+        out.draft = Some(color);
     }
     crate::plan::tidy(s);
     Ok(out)
@@ -418,6 +438,9 @@ pub fn revision_text(s: &Schedule, r: &Revision) -> String {
     for id in &r.omitted {
         out.push_str(&format!("Omitted {} (kept, marked omitted)\n", name(*id)));
     }
+    if let Some(c) = &r.draft {
+        out.push_str(&format!("Recorded as the {c} draft.\n"));
+    }
     out
 }
 
@@ -531,13 +554,53 @@ Hello.
         s
     }
 
+    /// Decision 233: each revision that changes anything is the next color, dated.
+    #[test]
+    fn each_draft_is_recorded_with_its_color_and_date() {
+        use crate::plan::draft_color;
+        let mut s = base();
+        let ids: Vec<SheetId> = s.sheets.iter().map(|h| h.id).collect();
+        let cast = s.cast().unwrap();
+        let day = "2027-02-10".parse().ok();
+        let r = revise(&mut s, &parse(DRAFT2), cast, false, day).unwrap();
+        assert_eq!(r.draft.as_deref(), Some("Blue"));
+        let d = &s.plan.drafts[0];
+        assert_eq!((d.color.as_str(), d.date), ("Blue", day));
+        assert_eq!(d.changed, vec![ids[0], ids[1]]);
+        assert_eq!(d.added, r.added);
+        assert_eq!(d.omitted, vec![ids[2]]);
+        assert!(revision_text(&s, &r).ends_with("Recorded as the Blue draft.\n"));
+        assert_eq!(s.plan.revised_in(ids[0]).unwrap().color, "Blue");
+        assert!(s.plan.revised_in(ids[2]).is_none(), "omitted, not revised");
+        s.check().unwrap();
+        // The same draft again changes nothing: no draft.
+        let again = revise(&mut s, &parse(DRAFT2), cast, false, None).unwrap();
+        assert_eq!(again.draft, None);
+        assert_eq!(s.plan.drafts.len(), 1);
+        // Back to the first draft: Pink, and scene 3 restored counts as changed.
+        let r = revise(&mut s, &parse(DRAFT1), cast, false, None).unwrap();
+        assert_eq!(r.draft.as_deref(), Some("Pink"));
+        assert!(s.plan.drafts[1].changed.contains(&ids[2]));
+        assert_eq!(s.plan.revised_in(ids[0]).unwrap().color, "Pink");
+        // The colors run on past Cherry.
+        assert_eq!(draft_color(8), "Cherry");
+        assert_eq!(draft_color(9), "Double White");
+        assert_eq!(draft_color(10), "Double Blue");
+        assert_eq!(draft_color(19), "Triple Blue");
+        assert_eq!(draft_color(28), "Blue 4");
+        // Two drafts of one color don't pass check.
+        let mut bad = s.clone();
+        bad.plan.drafts[1].color = "blue".into();
+        assert!(bad.check().is_err());
+    }
+
     #[test]
     fn a_revision_keeps_identity_tags_and_places() {
         let mut s = base();
         let ids: Vec<SheetId> = s.sheets.iter().map(|h| h.id).collect();
         let before_strip = s.boards[0].sub_boards[0].strips[0].clone();
         let cast = s.cast().unwrap();
-        let r = revise(&mut s, &parse(DRAFT2), cast, false).unwrap();
+        let r = revise(&mut s, &parse(DRAFT2), cast, false, None).unwrap();
         assert_eq!(r.matched.len(), 2);
         // Scene 1 by number: time of day and length changed, BO added.
         let m1 = &r.matched[0];
@@ -582,7 +645,7 @@ Hello.
         s.check().unwrap();
         // The first draft again: scene 3 comes back, 4 is omitted, nothing duplicated.
         let n = s.sheets.len();
-        let r = revise(&mut s, &parse(DRAFT1), cast, false).unwrap();
+        let r = revise(&mut s, &parse(DRAFT1), cast, false, None).unwrap();
         assert_eq!(s.sheets.len(), n);
         assert!(r.added.is_empty());
         assert!(r.matched.iter().any(|m| m.sheet == ids[2] && m.restored));
@@ -622,7 +685,7 @@ Hello.
         let net = s.element_named(props, "NET").unwrap();
         s.set_links(bo, &[net], false).unwrap();
         let s1 = s.sheets[0].id;
-        let r = revise(&mut s, &parse(DRAFT2), cast, false).unwrap();
+        let r = revise(&mut s, &parse(DRAFT2), cast, false, None).unwrap();
         assert!(s.sheet(s1).unwrap().elements.contains(&net), "BO's NET");
         assert!(r.matched[0].tagged.contains(&net));
         // An import does the same.

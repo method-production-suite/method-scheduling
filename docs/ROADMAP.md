@@ -15,12 +15,12 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None pending. v0.5.0 was published on 2026-10-21 (the `.mscenes` import, merge against
-  any schedule file, the drift printed, no other product's name anywhere, `/try/` linked
-  from the site); methodschedule.com follows it with the demo. v0.4.0 came out on
-  2026-10-20. The next release is proposed here when there is something people can use.
-  For its notes: files using per-person call times (D231, `plan.person_calls`) won't open
-  in 0.5.0 or earlier.
+- **v0.6.0, recommended**: per-person call times feeding the rest checks (D231), the call
+  sheet's advance schedule (D232) and script drafts with their colors and dates (D233).
+  The rehearsal and the ask, naming the commit, go to MOrg once this is on main. For the
+  notes: files using per-person call times or drafts (`plan.person_calls`,
+  `plan.drafts`) won't open in 0.5.0 or earlier. v0.5.0 was published on 2026-10-21 and
+  methodschedule.com follows it with the demo.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
@@ -250,13 +250,14 @@ kept or offered as a pick, in tests and in a live run.
 | Call sheets beyond the printed sheet (decision 207): crew calls and a map (the advance schedule came in D232); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (D230, 2026-10-21): the ones that move with a lunar calendar or by decree (others keep a typed offset today) | S | D72, D193, D220, D230, BYD-08 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
-| Script revision workflow: revision colors and dates, a report of what each draft changed | M | D69, BYD-01 |
+| Script revision workflow: revision colors on strips and sheets, picking or renaming a color, a printed revision report (each draft's color, date and changes are kept since D233) | M | D69, D233, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |
 
 Done: per-person call times (D231, 2026-10-21). The Day Timeline sets each person's own
 call and wrap; the rest checks and the call sheet use them. The call sheet's advance
-schedule, the next two shoot days in brief (D232, 2026-10-21).
+schedule, the next two shoot days in brief (D232, 2026-10-21). Script drafts: each merged
+revision's color, date and changes, under Plan > Script Drafts (D233, 2026-10-22).
 
 **Exit**: each item ships behind its own menu entry or option, documented, with the
 exchange at version 1 read by Method Budget.
