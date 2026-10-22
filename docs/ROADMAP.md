@@ -15,9 +15,10 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **v0.6.0, recommended**: per-person call times feeding the rest checks (D231), the call
-  sheet's advance schedule (D232) and script drafts with their colors and dates (D233).
-  The rehearsal and the ask, naming the commit, go to MOrg once this is on main. For the
+- **v0.6.0 on 4892e3e, asked through MOrg on 2026-10-22**: per-person call times feeding
+  the rest checks (D231), the call sheet's advance schedule (D232) and script drafts with
+  their colors and dates (D233). Release PR #104 merged; the rehearsal on 4892e3e passed
+  (notarized, Gatekeeper accepted, universal). For the
   notes: files using per-person call times or drafts (`plan.person_calls`,
   `plan.drafts`) won't open in 0.5.0 or earlier. v0.5.0 was published on 2026-10-21 and
   methodschedule.com follows it with the demo.
