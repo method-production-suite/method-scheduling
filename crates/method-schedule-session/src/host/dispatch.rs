@@ -111,6 +111,7 @@ pub const COMMANDS: &[&str] = &[
     "set_location",
     "rest_data",
     "set_turnaround",
+    "drafts_data",
     "locks_data",
     "lock_schedule",
     "delete_lock",
@@ -154,6 +155,7 @@ pub const READS: &[&str] = &[
     "timeline_data",
     "locations_data",
     "rest_data",
+    "drafts_data",
     "locks_data",
     "drift_data",
     "suggest_order",
@@ -1901,6 +1903,7 @@ mod plan_cmds {
                 to_reply(crate::commands::plan::set_long_day(&window, state, value))
             }
             "locations_data" => to_reply(crate::commands::plan::locations_data(state)),
+            "drafts_data" => to_reply(crate::commands::plan::drafts_data(state)),
             "set_location" => {
                 #[derive(Deserialize)]
                 struct A {

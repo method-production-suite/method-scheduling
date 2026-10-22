@@ -1967,6 +1967,7 @@ pub fn run() {
             crate::plan::locations_data,
             crate::plan::set_location,
             crate::plan::rest_data,
+            crate::plan::drafts_data,
             crate::plan::set_turnaround,
             crate::plan::locks_data,
             crate::plan::lock_schedule,

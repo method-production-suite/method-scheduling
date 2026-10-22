@@ -646,6 +646,7 @@ fn revision_json(s: &Schedule, r: &Revision) -> Value {
         })).collect::<Vec<_>>(),
         "added": r.added.iter().map(|x| x.0).collect::<Vec<_>>(),
         "omitted": r.omitted.iter().map(|x| x.0).collect::<Vec<_>>(),
+        "draft": r.draft,
         "text": revision_text(s, r),
     })
 }
@@ -673,7 +674,13 @@ fn revise_script(ctx: &Ctx, a: &Args) -> ToolResult {
     .map_err(|e| ToolError::invalid(format!("{shown}: {e}")))?;
     let e = edit(ctx, a, |s| {
         let cast = s.cast_or_add();
-        let r = revise(s, &script, cast, tags)?;
+        let r = revise(
+            s,
+            &script,
+            cast,
+            tags,
+            method_schedule_format::exchange::local_today(),
+        )?;
         Ok(revision_json(s, &r))
     })?;
     let line = e.out["text"]

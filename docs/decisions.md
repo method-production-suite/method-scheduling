@@ -5593,3 +5593,20 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   shape as the day's own), the CSV (a sixth table, last so the first five keep their
   places) and so the command line and the MCP `call_sheet` tool.
 - **Not yet**: crew calls and a map, the rest of 207's list; a choice of how many days ahead.
+
+## 233. Script drafts with their colors and dates (2026-10-22)
+
+- **BYD-01's next step** (ROADMAP M5, the revision workflow): each revision that changes
+  anything is recorded in the plan as a draft (`plan.drafts`): its revision color, the
+  date it was merged, and the sheets it changed, added and omitted. A revision that
+  changes nothing records none.
+- **Colors** in the usual order, the original being White: Blue, Pink, Yellow, Green,
+  Goldenrod, Buff, Salmon, Cherry, then Double White, Double Blue and on, then Triple, then
+  `White 4`. Stored as text, so a later change can let people name their own.
+- **Where it shows**: Plan > Script Drafts... lists every draft, newest first, with its
+  scenes by name; the revision report ends "Recorded as the Blue draft."; the command line's
+  `revise` and the MCP `revise_script` (a `draft` key) say the same.
+- **Additive in the file**, as `person_calls` was: a file using it won't open in 0.5.0 or
+  earlier. Sheets since deleted leave a draft's lists; the draft stays.
+- **Not yet**: revision colors on strips and sheets (each sheet's newest draft is known, as
+  `Plan::revised_in`), picking or renaming a color, and a printed revision report.

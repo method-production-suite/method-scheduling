@@ -347,6 +347,14 @@ pub(crate) fn everything() -> Schedule {
             call: Some(300),
             wrap: Some(1560),
         });
+    // A merged script draft (decision 233).
+    s.plan.drafts.push(method_schedule_core::plan::Draft {
+        color: "Blue".into(),
+        date: "2027-02-10".parse().ok(),
+        changed: vec![s.sheets[0].id],
+        added: vec![last],
+        omitted: Vec::new(),
+    });
     // Additions from another app on every object that keeps them (decision 224).
     let x = &mut s.extensions;
     x.file = Some(r#"{"org.example.sync":{"rev":7}}"#.to_string());

@@ -108,6 +108,11 @@ pub fn set_long_day<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, None)
 }
 
+/// The `drafts_data` command: the script drafts merged so far (decision 233).
+pub fn drafts_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<DraftDto>> {
+    Ok(drafts_view(state.lock().schedule()))
+}
+
 /// The `locations_data` command.
 pub fn locations_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<LocationDto>> {
     Ok(locations_view(state.lock().schedule()))

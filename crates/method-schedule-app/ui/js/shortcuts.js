@@ -131,6 +131,7 @@ export const SHORTCUTS = [
   // The Plan menu (plan.js)
   { id: 'plan.import_tags', label: 'Import a tagged .fdx script with its production tags as elements', scope: 'menu' },
   { id: 'plan.revise', label: 'Merge a revised script into this schedule, keeping tags and places', scope: 'menu' },
+  { id: 'plan.drafts', label: 'The script drafts merged so far: each color and date, and what it changed', scope: 'menu' },
   { id: 'plan.timeline', label: "Each shoot day's clock times from its call time, with warnings", scope: 'menu' },
   { id: 'plan.locations', label: 'Place sheet locations on the map for sunrise and sunset', scope: 'menu' },
   { id: 'plan.rest', label: 'Set turnaround minimums and list rests shorter than them', scope: 'menu' },

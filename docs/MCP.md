@@ -729,7 +729,8 @@ map, `latitude`, `longitude` and `utc_offset` as text and `daylight_saving` (`no
 **`revise_script`** `{path, revision, script, tags?, lines_per_page?}`: merges a revised
 draft (see decisions.md, BYD-01; `lines_per_page` as for `import_script`): `matched`, `changed` (`sheet`, `by_heading`, `fields` with
 `before` and `after`, `added`, `no_longer_speaking`, `restored`), `added` and `omitted`
-sheet ids, and `text`, the report in lines.
+sheet ids, `draft` (the color it was recorded as, or null when it changed nothing;
+decisions.md, entry 233), and `text`, the report in lines.
 
 **`set_call_time`** `{path, revision, board?, sub_board?, day, call}`: `call` as `HH:MM`
 or null to clear.

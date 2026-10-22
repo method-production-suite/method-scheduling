@@ -236,6 +236,7 @@ by the next plan edit; they are never an error.
 | `omitted` | array of integers | empty | Sheet ids a script revision no longer has (kept, not deleted). |
 | `days_shot` | array of [day shot](#day-shot) | empty | Each shoot day as it was shot, written back by a production report (decisions.md, entry 224). One per day break. |
 | `scenes_shot` | array of [scene shot](#scene-shot) | empty | What was shot of each scene on each day (entry 224). One per scene and day. |
+| `drafts` | array of [draft](#draft) | empty | Each script draft a revision merged, oldest first (entry 233). |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
 
 #### Location
@@ -272,6 +273,19 @@ An entry with no eighths that doesn't finish its scene is refused: leave it out.
 shot over two days has two entries, the second with `complete`. A file without these keys
 reads and writes back byte for byte; a reader that doesn't know them (Method Schedule 0.1.0)
 refuses the file, as it refuses any unknown key.
+
+#### Draft
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `color` | string | | The revision color, `Blue`, `Pink`, ... (`Double White` after `Cherry`). Unique without regard to case; written trimmed. |
+| `date` | date | none | When it was merged. |
+| `changed` | array of integers | empty | Sheets whose script fields, speaking cast or omitted mark it changed. |
+| `added` | array of integers | empty | Sheets it added. |
+| `omitted` | array of integers | empty | Sheets it marked omitted. |
+
+A revision that changes nothing records no draft. Sheets since deleted leave the lists at
+the next plan edit; the draft stays.
 
 #### Person call
 

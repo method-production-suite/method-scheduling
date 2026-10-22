@@ -142,6 +142,7 @@
     "allow-locations-data",
     "allow-set-location",
     "allow-rest-data",
+    "allow-drafts-data",
     "allow-set-turnaround",
     "allow-locks-data",
     "allow-lock-schedule",

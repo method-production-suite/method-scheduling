@@ -302,6 +302,39 @@ export function planCommands(ctx) {
     });
   }
 
+  /** The script drafts merged so far, newest first (entry 233): a list, nothing to edit. */
+  async function drafts() {
+    let list;
+    try {
+      list = await invoke('drafts_data');
+    } catch (e) {
+      ctx.say(e, true);
+      return;
+    }
+    if (!list.length) {
+      ctx.say('No script revision has been merged yet: Plan > Import Script Revision... records each draft.');
+      return;
+    }
+    await customDialog((close) => {
+      const scenes = (label, names) => (names.length ? el('li', { text: `${label}: ${names.join('; ')}` }) : '');
+      const rows = [...list].reverse().map((d) =>
+        el(
+          'div',
+          { class: 'pl-draft' },
+          el('p', { class: 'pl-head', text: [d.color, d.date ? showDate(d.date) : ''].filter(Boolean).join(' · ') }),
+          el('ul', { class: 'pl-lines' }, scenes('Changed', d.changed), scenes('New', d.added), scenes('Omitted', d.omitted)),
+        ),
+      );
+      return box(
+        'Script Drafts',
+        'pl-drafts',
+        el('p', { class: 'modal-message', text: 'Each revision merged into this schedule, newest first, with its color and date and the scenes it changed, added and omitted.' }),
+        el('div', { class: 'pl-body' }, ...rows),
+        el('div', { class: 'modal-actions' }, closeButton(close)),
+      );
+    });
+  }
+
   async function rest() {
     const board = ctx.board();
     let dto;
@@ -570,6 +603,7 @@ export function planCommands(ctx) {
   return {
     'plan.import_tags': () => ctx.apply(invoke('import_script_tags')),
     'plan.revise': () => reviseScript(),
+    'plan.drafts': () => drafts(),
     'plan.timeline': () => timeline(),
     'plan.print_call_sheet': () => printCallSheet(),
     'plan.call_sheet': () => callSheet(),

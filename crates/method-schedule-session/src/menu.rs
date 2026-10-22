@@ -263,6 +263,7 @@ pub const HELP: &[Entry] = &[
 pub const PLAN: &[Entry] = &[
     plain("plan.import_tags", "Import Script with Tags\u{2026}"),
     plain("plan.revise", "Import Script Revision\u{2026}"),
+    plain("plan.drafts", "Script Drafts\u{2026}"),
     SEP,
     plain("plan.timeline", "Day Timeline\u{2026}"),
     plain("plan.locations", "Locations\u{2026}"),

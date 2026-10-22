@@ -47,6 +47,44 @@ pub struct Plan {
     /// Calls and wraps of their own for single elements (a cast member called later than
     /// the company, say) on a shoot day; the rest checks use them (decision 231).
     pub person_calls: Vec<PersonCall>,
+    /// Each script draft a revision merged, oldest first (decision 233).
+    pub drafts: Vec<Draft>,
+}
+
+/// A script draft merged by a revision (decision 233): its color, when, and what it did.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Draft {
+    /// The revision color, `Blue`, `Pink`, ...; unique without regard to case.
+    pub color: String,
+    pub date: Option<Date>,
+    pub changed: Vec<SheetId>,
+    pub added: Vec<SheetId>,
+    pub omitted: Vec<SheetId>,
+}
+
+/// The usual order of revision colors, the original draft first.
+pub const REVISION_COLORS: [&str; 9] = [
+    "White",
+    "Blue",
+    "Pink",
+    "Yellow",
+    "Green",
+    "Goldenrod",
+    "Buff",
+    "Salmon",
+    "Cherry",
+];
+
+/// The color of revision `n` (1 for the first after the original White): Blue, Pink and on
+/// to Cherry, then Double White, Double Blue and on, then Triple, then `White 4`.
+pub fn draft_color(n: usize) -> String {
+    let c = REVISION_COLORS[n % REVISION_COLORS.len()];
+    match n / REVISION_COLORS.len() {
+        0 => c.to_string(),
+        1 => format!("Double {c}"),
+        2 => format!("Triple {c}"),
+        r => format!("{c} {}", r + 1),
+    }
 }
 
 /// One element's own call and wrap on a shoot day (decision 231). Each part is left out
@@ -236,6 +274,14 @@ impl Plan {
     }
 
     /// Element `element`'s own call and wrap on the day closed by `day`, if set.
+    /// The newest draft that changed or added `sheet` (decision 233).
+    pub fn revised_in(&self, sheet: SheetId) -> Option<&Draft> {
+        self.drafts
+            .iter()
+            .rev()
+            .find(|d| d.changed.contains(&sheet) || d.added.contains(&sheet))
+    }
+
     pub fn person_call(&self, day: StripId, element: ElementId) -> Option<&PersonCall> {
         self.person_calls
             .iter()
@@ -386,6 +432,19 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
             return broken(format!("two locks are named {:?}", l.name));
         }
     }
+    for (i, d) in p.drafts.iter().enumerate() {
+        if d.color.trim().is_empty()
+            || d.color.chars().count() > MAX_LOCK_NAME
+            || d.color.chars().any(char::is_control)
+        {
+            return broken(format!(
+                "a draft color is one line of 1 to {MAX_LOCK_NAME} characters"
+            ));
+        }
+        if p.drafts[..i].iter().any(|o| same_name(&o.color, &d.color)) {
+            return broken(format!("two drafts are {:?}", d.color));
+        }
+    }
     // Pins are on scene strips only; a pin on a strip that is gone waits for tidy.
     let kinds: crate::model::IdMap<StripId, &StripKind> = s
         .boards
@@ -465,6 +524,12 @@ pub fn tidy(s: &mut Schedule) {
     p.pinned.retain(|x| strips.contains(x));
     p.omitted.retain(|x| sheets.contains(x));
     p.locks.retain(|l| boards.contains(&l.board));
+    // A draft stays in the history; only sheets since deleted leave it.
+    for d in &mut p.drafts {
+        for l in [&mut d.changed, &mut d.added, &mut d.omitted] {
+            l.retain(|x| sheets.contains(x));
+        }
+    }
 }
 
 /// Sets or clears (`None`) the call time of the day closed by `day`.
@@ -872,6 +937,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     }
     if a.pinned != b.pinned {
         out.push("pinned strips changed".to_string());
+    }
+    if a.drafts != b.drafts {
+        out.push("script drafts changed".to_string());
     }
     if a.omitted != b.omitted {
         out.push("omitted scenes changed".to_string());
