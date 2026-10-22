@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot, Turnaround,
-    DEFAULT_LONG_DAY, MAX_WRAP,
+    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot,
+    Turnaround, DEFAULT_LONG_DAY, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -385,7 +385,9 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
     for d in f.drafts {
         if d.color.trim() != d.color
             || d.color.is_empty()
-            || p.drafts.iter().any(|o| o.color.eq_ignore_ascii_case(&d.color))
+            || p.drafts
+                .iter()
+                .any(|o| o.color.eq_ignore_ascii_case(&d.color))
         {
             return Err(bad(format!(
                 "draft color {:?} is empty, has spaces around it or is used twice",
