@@ -1300,10 +1300,13 @@ pub fn sheet_view_in(
         episode: h.episode.clone(),
         comments: h.comments.clone(),
         place: place.0,
-        revised: s.plan.revised_in(h.id).map_or(String::new(), |d| match d.date {
-            Some(x) => format!("{} draft, {x}", d.color),
-            None => format!("{} draft", d.color),
-        }),
+        revised: s
+            .plan
+            .revised_in(h.id)
+            .map_or(String::new(), |d| match d.date {
+                Some(x) => format!("{} draft, {x}", d.color),
+                None => format!("{} draft", d.color),
+            }),
         date: place.1.map(|d| d.to_string()),
         strip: s.sheet_place(b.id, h.id).and_then(|p| {
             let list = match p.sub_board {
