@@ -346,7 +346,7 @@ export function planCommands(ctx) {
       ].filter(([, names]) => names.length);
       return kinds.map(([kind, names], i) => row(el('tr', {}, td(i ? '' : d.color, 'fb'), td(i ? '' : d.date), td(kind), td(names.join('; ')))));
     });
-    const flow = { name: 'Script Drafts', cls: '', cols: ['', '', '', 'c-wide'], head, rows, intro: el('h2', { class: 'bp-title', text: 'Script Drafts' }) };
+    const flow = { name: 'Script Drafts', cls: '', cols: ['dr-c-draft', 'dr-c-date', 'dr-c-kind', 'dr-c-scenes'], head, rows, intro: el('h2', { class: 'bp-title', text: 'Script Drafts' }) };
     try {
       await printPages((root) => layout(root, [flow], { title: 'Script Drafts', place: 'Script revisions' }), { title: 'Script Drafts', subject: 'Script drafts' });
     } catch (e) {
