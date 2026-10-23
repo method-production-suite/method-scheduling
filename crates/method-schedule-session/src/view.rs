@@ -1041,6 +1041,9 @@ pub struct SheetDto {
     /// Boneyard): the place is a link to it on the Board tab (decisions.md, entry 58).
     pub strip: Option<u32>,
     pub strip_sub_board: Option<u32>,
+    /// The newest script draft that changed or added it (decision 233): `Pink draft,
+    /// 2026-10-19`; empty when no merged revision touched it.
+    pub revised: String,
     /// The date it shoots on, when scheduled on a dated sub-board (`YYYY-MM-DD`): where
     /// New Event starts.
     pub date: Option<String>,
@@ -1297,6 +1300,13 @@ pub fn sheet_view_in(
         episode: h.episode.clone(),
         comments: h.comments.clone(),
         place: place.0,
+        revised: s
+            .plan
+            .revised_in(h.id)
+            .map_or(String::new(), |d| match d.date {
+                Some(x) => format!("{} draft, {x}", d.color),
+                None => format!("{} draft", d.color),
+            }),
         date: place.1.map(|d| d.to_string()),
         strip: s.sheet_place(b.id, h.id).and_then(|p| {
             let list = match p.sub_board {

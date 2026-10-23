@@ -611,6 +611,8 @@ function sheetDto(sheet, index, order = 'board') {
     place: where,
     strip: s.id,
     strip_sub_board: sub ? sub.id : null,
+    // As plan.rs (decision 233): the fake's drafts_data has Blue changing scene 3.
+    revised: s.n === '3' ? 'Blue draft, 2026-10-12' : '',
     date: where === 'Main' && model.subs[0].start ? model.subs[0].start : null,
     index: at,
     count: all.length,

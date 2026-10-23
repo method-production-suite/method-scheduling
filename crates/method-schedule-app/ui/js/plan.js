@@ -328,11 +328,30 @@ export function planCommands(ctx) {
       return box(
         'Script Drafts',
         'pl-drafts',
-        el('p', { class: 'modal-message', text: 'Each revision merged into this schedule, newest first, with its color and date and the scenes it changed, added and omitted.' }),
+        el('p', { class: 'modal-message', text: 'Each revision merged into this schedule, newest first, with its color and date and the scenes it changed, added and omitted. The Breakdown tab shows each sheet’s newest draft.' }),
         el('div', { class: 'pl-body' }, ...rows),
-        el('div', { class: 'modal-actions' }, closeButton(close)),
+        el('div', { class: 'modal-actions' }, button('Print…', () => printDrafts(list)), closeButton(close)),
       );
     });
+  }
+
+  /** The script drafts, printed (entry 233): a row per draft and kind of change, newest first. */
+  async function printDrafts(list) {
+    const head = el('tr', {}, th('Draft'), th('Date'), th('Change'), th('Scenes'));
+    const rows = [...list].reverse().flatMap((d) => {
+      const kinds = [
+        ['Changed', d.changed],
+        ['New', d.added],
+        ['Omitted', d.omitted],
+      ].filter(([, names]) => names.length);
+      return kinds.map(([kind, names], i) => row(el('tr', {}, td(i ? '' : d.color, 'fb'), td(i ? '' : d.date), td(kind), td(names.join('; ')))));
+    });
+    const flow = { name: 'Script Drafts', cls: '', cols: ['dr-c-draft', 'dr-c-date', 'dr-c-kind', 'dr-c-scenes'], head, rows, intro: el('h2', { class: 'bp-title', text: 'Script Drafts' }) };
+    try {
+      await printPages((root) => layout(root, [flow], { title: 'Script Drafts', place: 'Script revisions' }), { title: 'Script Drafts', subject: 'Script drafts' });
+    } catch (e) {
+      ctx.say(e, true);
+    }
   }
 
   async function rest() {

@@ -395,6 +395,10 @@
 .method-report col.c-pages { width: 8%; }
 .method-report col.c-cast { width: 22%; }
 .method-report col.c-wide { width: 100%; }
+.method-report col.dr-c-draft { width: 16%; }
+.method-report col.dr-c-date { width: 13%; }
+.method-report col.dr-c-kind { width: 11%; }
+.method-report col.dr-c-scenes { width: 60%; }
 
 .method-report col.e-id { width: 9%; }
 .method-report col.e-name { width: 37%; }
