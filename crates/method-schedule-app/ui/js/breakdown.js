@@ -356,6 +356,8 @@ export function createBreakdown(host, actions) {
       attrs: { type: 'button', title: 'Show this strip on the Board' },
       on: { click: () => dto && dto.strip !== null && dto.strip !== undefined && actions.goStrip(dto.strip_sub_board ?? null, dto.strip) },
     }),
+    // The newest script draft that changed it (entry 233), beside where it is.
+    revised: el('span', { class: 'bd-where bd-revised' }),
     add: el('button', { class: 'btn', text: 'New Sheet', attrs: { type: 'button' }, on: { click: () => actions.newSheet(dto ? dto.id : null) } }),
     dup: el('button', { class: 'btn', text: 'Duplicate Sheet', attrs: { type: 'button', id: 'bd-duplicate' }, on: { click: () => dto && actions.duplicateSheet(dto) } }),
     del: el('button', { class: 'btn', text: 'Delete Sheet', attrs: { type: 'button' }, on: { click: () => dto && actions.deleteSheet(dto) } }),
@@ -963,6 +965,7 @@ export function createBreakdown(host, actions) {
       el('label', { class: 'field', attrs: { for: 'bd-order', title: 'The order Previous and Next step through the sheets' } }, 'by', nav.order),
       nav.where,
       nav.place,
+      nav.revised,
       el('span', { class: 'bd-spacer' }),
       el('label', { class: 'bd-check', attrs: { for: 'bd-decimal', title: 'Show the shoot time as decimal hours (1.50 for 1:30); either form can be typed' } }, nav.decimal, 'Decimal time'),
       nav.event,
@@ -1019,6 +1022,7 @@ export function createBreakdown(host, actions) {
     nav.where.textContent = `Sheet ${dto.index + 1} of ${dto.count} · ${scene} ·`;
     nav.place.textContent = dto.place;
     nav.place.disabled = dto.strip === null || dto.strip === undefined;
+    nav.revised.textContent = dto.revised ? `· ${dto.revised}` : '';
     nav.prev.disabled = dto.prev === null;
     nav.next.disabled = dto.next === null;
     const options = (list, values) => list.replaceChildren(...values.map((v) => el('option', { attrs: { value: v } })));

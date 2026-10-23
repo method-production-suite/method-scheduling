@@ -5610,3 +5610,7 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   earlier. Sheets since deleted leave a draft's lists; the draft stays.
 - **Not yet**: revision colors on strips and sheets (each sheet's newest draft is known, as
   `Plan::revised_in`), picking or renaming a color, and a printed revision report.
+- **Then (2026-10-23)**: the Breakdown tab's header line names each sheet's newest draft
+  (`· Pink draft, 2026-10-19`), and Script Drafts prints (a row per draft and kind of
+  change, through the report pages every printout uses). Colors on strips wait: the board
+  colors strips by I/E and day or night already, and a second color code needs a design.

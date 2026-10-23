@@ -134,9 +134,11 @@ of it with different options. Production Info sets what the full header prints.
 one-line schedule, the element list, the breakdowns and more. Totals in a workbook are
 working formulas.
 
-The Plan menu has the planning tools: the Day Timeline (call to wrap, sunrise and sunset),
-map places for locations, turnarounds and rest, call sheets (printed, saved as a PDF, or
-as data), schedule locks and a suggested strip order.
+The Plan menu has the planning tools: script revisions and the drafts they recorded (each
+with its color, date and changed scenes), the Day Timeline (call to wrap, sunrise and
+sunset, and each person's own call and wrap), map places for locations, turnarounds and
+rest, call sheets (printed, saved as a PDF, or as data), schedule locks and a suggested
+strip order.
 
 ## Red flags and conflicts
 

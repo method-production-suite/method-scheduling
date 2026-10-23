@@ -251,7 +251,7 @@ kept or offered as a pick, in tests and in a live run.
 | Call sheets beyond the printed sheet (decision 207): crew calls and a map (the advance schedule came in D232); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (D230, 2026-10-21): the ones that move with a lunar calendar or by decree (others keep a typed offset today) | S | D72, D193, D220, D230, BYD-08 |
 | Auto-schedule improvements: more grouping rules, a cost to compare orders (a long day's tail moves to the next day by hand since D192) | M | D75, BYD-06 |
-| Script revision workflow: revision colors on strips and sheets, picking or renaming a color, a printed revision report (each draft's color, date and changes are kept since D233) | M | D69, D233, BYD-01 |
+| Script revision workflow: revision colors on strips (needs a design beside the I/E and day or night colors), picking or renaming a color (each draft's color, date and changes are kept, shown on the Breakdown tab and printed since D233) | M | D69, D233, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |
 
