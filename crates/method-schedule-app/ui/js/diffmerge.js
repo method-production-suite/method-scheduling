@@ -25,12 +25,19 @@ const nextId = (prefix) => `${prefix}-${++uid}`;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-/** Grouped changes: a heading and a list for each group. */
-function changeList(groups) {
+/**
+ * Grouped changes: a heading and a list for each group. With `onGo`, a change that says
+ * where it is (`go`, entry 235) is a link that shows it.
+ */
+function changeList(groups, onGo = null) {
   const out = [];
   for (const g of groups) {
     out.push(el('h4', { class: 'dm-group', text: g.group }));
-    out.push(el('ul', { class: 'dm-list' }, ...g.changes.map((c) => el('li', { class: `dm-change k-${c.kind}`, text: c.text }))));
+    const item = (c) =>
+      onGo && c.go
+        ? el('li', { class: `dm-change k-${c.kind}` }, el('button', { class: 'cf-link dm-go', text: c.text, attrs: { type: 'button', title: 'Show it' }, on: { click: () => onGo(c.go) } }))
+        : el('li', { class: `dm-change k-${c.kind}`, text: c.text });
+    out.push(el('ul', { class: 'dm-list' }, ...g.changes.map(item)));
   }
   return out;
 }
@@ -39,7 +46,7 @@ function changeList(groups) {
  * File > What Changed (`against` "file"), What Changed Since Saved ("saved"), and a backup
  * from Revert to Backup's list ("backup", by its name in the backups folder).
  */
-export async function whatChanged(against, say, backup = null) {
+export async function whatChanged(against, say, backup = null, go = null) {
   let dto;
   try {
     dto = await invoke('what_changed', { against, backup });
@@ -56,7 +63,8 @@ export async function whatChanged(against, say, backup = null) {
       el('h2', { class: 'modal-title', text: 'What Changed', attrs: { id: 'wc-title' } }),
       el('p', { class: 'modal-message', text: `From ${dto.from} to ${dto.to}.` }),
       el('p', { class: 'dm-count', text: dto.count ? plural(dto.count, 'change', 'changes') : 'No changes.' }),
-      el('div', { class: 'dm-body' }, ...changeList(dto.groups)),
+      dto.count && go ? el('p', { class: 'modal-message', text: 'Click a change to see it.' }) : null,
+      el('div', { class: 'dm-body' }, ...changeList(dto.groups, go ? (where) => close(null) || go(where) : null)),
       el('div', { class: 'modal-actions' }, done),
     );
   });
@@ -74,14 +82,19 @@ function conflictNode(c, onPick) {
     });
     return el('label', { class: 'dm-side', attrs: { for: id } }, box, label);
   };
-  const row = (label, value, cls) => el('div', { class: `dm-value ${cls}` }, el('span', { class: 'dm-label', text: label }), el('span', { text: value }));
+  // Yours, theirs and the base side by side (entry 235).
+  const col = (label, value, cls) => el('div', { class: `dm-value ${cls}` }, el('span', { class: 'dm-label', text: label }), el('span', { text: value }));
   return el(
     'li',
     { class: 'dm-conflict' },
     el('div', { class: 'dm-what', text: c.what }),
-    row('Yours', c.ours, 'v-ours'),
-    row('Theirs', c.theirs, 'v-theirs'),
-    c.base !== null && c.base !== undefined ? row('Was', c.base, 'v-base') : null,
+    el(
+      'div',
+      { class: 'dm-cols' },
+      col('Yours', c.ours, 'v-ours'),
+      col('Theirs', c.theirs, 'v-theirs'),
+      c.base !== null && c.base !== undefined ? col('Was', c.base, 'v-base') : null,
+    ),
     el('div', { class: 'dm-sides', attrs: { role: 'radiogroup', 'aria-label': `Keep for ${c.what}` } }, radio('ours', 'Keep yours'), radio('theirs', 'Keep theirs')),
   );
 }

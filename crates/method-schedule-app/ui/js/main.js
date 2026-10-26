@@ -344,7 +344,7 @@ async function goToHit(h, { keepFocus }) {
       await elementsShown;
       if (h.kind === 'element') elements.select(h.element, !keepFocus);
       else elements.focusCategory(!keepFocus);
-    } else if (h.kind === 'banner') {
+    } else if (h.kind === 'banner' || h.kind === 'strip') {
       goStrip(h.sub_board, h.strip);
     } else if (h.kind === 'event' && h.date) {
       await goDate(h.sub_board, h.date, !keepFocus);
@@ -1963,8 +1963,8 @@ const COMMANDS = {
   'file.export_budget': () => exportBudget(say, state.subBoard),
   'file.print': () => printReport(false),
   'file.save_pdf': () => printReport(true),
-  'file.what_changed': () => whatChanged('file', say),
-  'file.what_changed_saved': () => whatChanged('saved', say),
+  'file.what_changed': () => whatChanged('file', say, null, (h) => goToHit(h, { keepFocus: false })),
+  'file.what_changed_saved': () => whatChanged('saved', say, null, (h) => goToHit(h, { keepFocus: false })),
   'file.merge': () => mergeChanges(say, show),
   'file.revert_backup': () => outside.revertToBackup(),
   'edit.undo': () => apply(invoke('undo')),

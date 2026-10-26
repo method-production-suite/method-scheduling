@@ -5632,3 +5632,17 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   day and night switches and the cost; the command line and the MCP tool say the same.
 - **Not yet**: weights people can set, searching beyond the three orders, and a day's
   length or a long day in the cost.
+
+## 235. Changes that link to where they are (2026-10-26)
+
+- **M4's merge UI polish, first part**: in What Changed (against another file, the file on
+  disk or a backup), a change to something still in the window is a link: a sheet opens on
+  the Breakdown tab with the first changed field marked, an element (or its red flag) on
+  the Elements tab, a strip selected on the board. Removed things have none. The dialog
+  closes as it goes, the way Find goes to a result.
+- **Conflicts side by side**: the merge shows yours, theirs and the base in columns, each
+  with its label above, so a long value doesn't push the others down.
+- **The merge's own list stays without links**: leaving the merge would drop the picks
+  made so far. What Changed against the same file shows the same changes with links.
+- **Not yet**: calendar changes (a date or an event) as places to go; going from inside
+  the merge.
