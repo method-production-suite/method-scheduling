@@ -1495,7 +1495,11 @@ const CANNED_CHANGES = [
 function whatChanged(against, backup) {
   if (against === 'file') {
     if (cancelled()) return null;
-    return { from: 'harbor-copy.mtsc', to: `${fileName} as it is now`, count: 4, groups: CANNED_CHANGES };
+    // As changes.rs (decision 235): scene 1's change says where it is in the window.
+    const one = scenesBy(model, 'board').find((x) => x.n === '1');
+    const go = one ? { kind: 'sheet', sheet: one.sheet, field: 'set' } : null;
+    const groups = CANNED_CHANGES.map((g) => (g.group === 'Sheets' && go ? { ...g, changes: g.changes.map((c) => ({ ...c, go })) } : g));
+    return { from: 'harbor-copy.mtsc', to: `${fileName} as it is now`, count: 4, groups };
   }
   // A backup from Revert to Backup's list, by its name (src/diffmerge.rs).
   if (against === 'backup') {

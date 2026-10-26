@@ -231,7 +231,7 @@ deferred, the owner, 2026-10-20).
 
 | Item | Size | Refs |
 |---|---|---|
-| Merge UI polish: a click on a change goes to its sheet, element, strip or date; each conflict shown side by side | M | D26, APP.md "Not yet" |
+| Merge UI polish: going to a change from the merge itself (it would drop the picks; What Changed links them since D235), and calendar dates as places to go | S | D26, D235, APP.md "Not yet" |
 | Conflict review: a list of every conflict pick, kept with the file until resolved | M | MERGE.md |
 | Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |
 | A rename on one side matched to the same element on the other | S | D25 note |
