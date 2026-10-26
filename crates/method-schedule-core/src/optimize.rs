@@ -465,11 +465,7 @@ pub fn suggestion_text(sug: &Suggestion) -> String {
         sug.after.red_flag_clashes,
     ));
     out.push_str(&row("Cost", sug.before.cost(), sug.after.cost()));
-    let tried: Vec<String> = sug
-        .tried
-        .iter()
-        .map(|(r, c)| format!("{r} {c}"))
-        .collect();
+    let tried: Vec<String> = sug.tried.iter().map(|(r, c)| format!("{r} {c}")).collect();
     out.push_str(&format!(
         "Suggested: {} (costs tried: {}).\n",
         sug.rule,
@@ -647,11 +643,20 @@ mod tests {
         assert_eq!(sug.before.day_night_switches, 2);
         assert_eq!(sug.after.day_night_switches, 0);
         assert_eq!(sug.rule, RULES[1]);
-        assert_eq!(sug.before.cost() - sug.after.cost(), 2 * COST_DAY_NIGHT_SWITCH);
+        assert_eq!(
+            sug.before.cost() - sug.after.cost(),
+            2 * COST_DAY_NIGHT_SWITCH
+        );
         assert_eq!(sug.tried.len(), 3);
-        assert!(sug.tried.iter().any(|(r, c)| *r == RULES[0] && *c == sug.before.cost()));
+        assert!(sug
+            .tried
+            .iter()
+            .any(|(r, c)| *r == RULES[0] && *c == sug.before.cost()));
         let text = suggestion_text(&sug);
-        assert!(text.contains("Suggested: location, then day or night, then set"), "{text}");
+        assert!(
+            text.contains("Suggested: location, then day or night, then set"),
+            "{text}"
+        );
         apply(&mut s, &sug).unwrap();
         assert_eq!(scene_order(&s), ["1", "3", "|", "2", "4", "|"]);
         // Sorted already: nothing costs less, so the board's order stays.
