@@ -69,11 +69,11 @@ fn go(here: &Schedule, c: &Change) -> Option<GoDto> {
             ..none
         }),
         Subject::Strip(b, id) => {
-            let sb = here
-                .board(b)?
-                .sub_boards
-                .iter()
-                .find(|sb| sb.strips.iter().any(|x| x.id == id && x.kind != StripKind::DayBreak))?;
+            let sb = here.board(b)?.sub_boards.iter().find(|sb| {
+                sb.strips
+                    .iter()
+                    .any(|x| x.id == id && x.kind != StripKind::DayBreak)
+            })?;
             Some(GoDto {
                 kind: "strip",
                 board: Some(b.0),
@@ -184,12 +184,21 @@ mod tests {
                 .unwrap_or_else(|| panic!("no {kind} {subject} in {all:?}"))
         };
         let sheet = find("sheet", "changed").go.as_ref().unwrap();
-        assert_eq!((sheet.kind, sheet.sheet, sheet.field), ("sheet", Some(h.0), Some("set")));
+        assert_eq!(
+            (sheet.kind, sheet.sheet, sheet.field),
+            ("sheet", Some(h.0), Some("set"))
+        );
         let el = find("element", "changed").go.as_ref().unwrap();
-        assert_eq!((el.kind, el.element, el.category), ("element", Some(ann.0), Some(cast.0)));
+        assert_eq!(
+            (el.kind, el.element, el.category),
+            ("element", Some(ann.0), Some(cast.0))
+        );
         assert!(find("element", "removed").go.is_none(), "not in the window");
         let strip = find("strip", "moved").go.as_ref().unwrap();
-        assert_eq!((strip.kind, strip.sub_board, strip.strip), ("strip", Some(sb.0), Some(st.0)));
+        assert_eq!(
+            (strip.kind, strip.sub_board, strip.strip),
+            ("strip", Some(sb.0), Some(st.0))
+        );
         // The merge's list has no links: leaving it would drop the picks.
         assert!(groups(&diff(&older, &newer))
             .iter()
