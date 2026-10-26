@@ -447,7 +447,16 @@ export function planFakes(ctx) {
           { label: 'Shoot days', before: 3, after: 3 },
           { label: 'Cast work days', before: 6, after: 4 },
           { label: 'Location changes in a day', before: 3, after: 1 },
+          { label: 'Day/night switches in a day', before: 2, after: 1 },
           { label: 'Red flag clashes', before: 0, after: 0 },
+          { label: 'Cost', before: 35, after: 20 },
+        ],
+        // As plan.rs (decision 234).
+        rule: 'location, then set',
+        tried: [
+          { rule: 'location, then set', cost: 20 },
+          { rule: 'location, then day or night, then set', cost: 21 },
+          { rule: 'shared cast', cost: 26 },
         ],
       };
     },

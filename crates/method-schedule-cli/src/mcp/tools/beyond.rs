@@ -563,7 +563,9 @@ fn score_json(x: &Score) -> Value {
         "shoot_days": x.shoot_days,
         "cast_days": x.cast_days,
         "location_changes": x.location_changes,
+        "day_night_switches": x.day_night_switches,
         "red_flag_clashes": x.red_flag_clashes,
+        "cost": x.cost(),
     })
 }
 
@@ -574,8 +576,11 @@ fn suggest_order(ctx: &Ctx, a: &Args) -> ToolResult {
     let sug = suggest(s, b, sb)?;
     Ok(ToolOut {
         summary: format!(
-            "{} scene(s) would move; cast work days {} -> {}.",
-            sug.moved, sug.before.cast_days, sug.after.cast_days
+            "{} scene(s) would move ({}); cost {} -> {}.",
+            sug.moved,
+            sug.rule,
+            sug.before.cost(),
+            sug.after.cost()
         ),
         data: json!({
             "order": sug.order.iter().map(|x| x.0).collect::<Vec<_>>(),
@@ -584,6 +589,8 @@ fn suggest_order(ctx: &Ctx, a: &Args) -> ToolResult {
             "groups": sug.groups,
             "before": score_json(&sug.before),
             "after": score_json(&sug.after),
+            "rule": sug.rule,
+            "tried": sug.tried.iter().map(|(r, c)| json!({"rule": r, "cost": c})).collect::<Vec<_>>(),
         }),
     })
 }

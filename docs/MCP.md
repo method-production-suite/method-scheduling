@@ -719,8 +719,11 @@ when the sub-board has no start date.
 **`suggest_order`** `{path, board?, sub_board?}`: a strip order for the sub-board, not
 applied: `order` (every strip id), `moved` and `pinned` (counts of scene strips: those
 that would change place, and those that stay put, pinned, omitted or one part of a scene
-spanning days), `groups`, and `before` and `after` counts (`shoot_days`, `cast_days`,
-`location_changes`, `red_flag_clashes`).
+spanning days), `groups`, `before` and `after` counts (`shoot_days`, `cast_days`,
+`location_changes`, `day_night_switches`, `red_flag_clashes`, and `cost`, the counts
+weighed into one number), `rule` (the order followed: `location, then set`, `location,
+then day or night, then set`, `shared cast`, or `the order on the board` when none costs
+less) and `tried` (each rule with its cost; decisions.md, entry 234).
 
 **`locations`** `{path}`: every sheet location with its sheet count and, when on the
 map, `latitude`, `longitude` and `utc_offset` as text and `daylight_saving` (`none`,

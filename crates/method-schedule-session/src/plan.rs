@@ -598,6 +598,16 @@ pub struct SuggestionDto {
     pub pinned: usize,
     pub groups: usize,
     pub rows: Vec<ScoreRow>,
+    /// The rule followed, or `the order on the board` when none costs less (decision
+    /// 234), and each rule tried with its cost.
+    pub rule: &'static str,
+    pub tried: Vec<TriedDto>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TriedDto {
+    pub rule: &'static str,
+    pub cost: u32,
 }
 
 fn rows(a: &Score, b: &Score) -> Vec<ScoreRow> {
@@ -618,9 +628,19 @@ fn rows(a: &Score, b: &Score) -> Vec<ScoreRow> {
             after: b.location_changes,
         },
         ScoreRow {
+            label: "Day/night switches in a day",
+            before: a.day_night_switches,
+            after: b.day_night_switches,
+        },
+        ScoreRow {
             label: "Red flag clashes",
             before: a.red_flag_clashes,
             after: b.red_flag_clashes,
+        },
+        ScoreRow {
+            label: "Cost",
+            before: a.cost(),
+            after: b.cost(),
         },
     ]
 }
@@ -636,6 +656,12 @@ pub fn suggestion_view(s: &Schedule, sub: u32) -> Result<SuggestionDto, String> 
         pinned: sug.pinned,
         groups: sug.groups,
         rows: rows(&sug.before, &sug.after),
+        rule: sug.rule,
+        tried: sug
+            .tried
+            .iter()
+            .map(|(rule, cost)| TriedDto { rule, cost: *cost })
+            .collect(),
     })
 }
 
