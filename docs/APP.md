@@ -1310,7 +1310,7 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `rest_data`, `set_turnaround` | `board`; `category`, `value` | `{turnarounds: [{category, name, minimum}], short, unchecked}`; the view |
 | `locks_data`, `lock_schedule`, `delete_lock`, `drift_data` | `board`; `board`, `name`; `name`; `name` | `[{name, made, scenes}]`; the view; the view; `{lock, actors: [{name, board_id, before, after, added, dropped, moved}], unchanged}` |
 | `pin_strips` | `strips`, `pinned` | the view, with a notice |
-| `suggest_order`, `apply_suggested_order` | `sub_board`; `sub_board`, `order` (as previewed) | `{sub_board, sub_board_name, order, moved, pinned, groups, rows: [{label, before, after}]}`; the view (refused when the board changed since) |
+| `suggest_order`, `apply_suggested_order` | `sub_board`; `sub_board`, `order` (as previewed) | `{sub_board, sub_board_name, order, moved, pinned, groups, rows: [{label, before, after}], rule, tried: [{rule, cost}]}` (the cheapest of three orders, or the board's own when none costs less; decisions.md, entry 234); the view (refused when the board changed since) |
 | `export_call_sheet`, `shoot_day_count` | `sub_board`, `day`, `format` (`json`, `csv`); shows the Save dialog; `sub_board` | `{done, file}`; the number of shoot days |
 | `call_sheet_data` | `sub_board`, `day` | the call sheet JSON object (docs/CALLSHEET.md), for Plan > Print Call Sheet (decisions.md, entry 207) |
 

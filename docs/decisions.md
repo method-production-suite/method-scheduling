@@ -5614,3 +5614,21 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   (`· Pink draft, 2026-10-19`), and Script Drafts prints (a row per draft and kind of
   change, through the report pages every printout uses). Colors on strips wait: the board
   colors strips by I/E and day or night already, and a second color code needs a design.
+
+## 234. A cost to compare strip orders (2026-10-26)
+
+- **BYD-06's next step** (ROADMAP M5, auto-schedule): Suggest Strip Order now has one
+  number to compare orders by, the cost: each actor's work day 4, each location change
+  within a day 3, each switch between day and night scenes within a day 1, each red flag
+  clash 20. Shoot days don't count, since a suggestion keeps every day. Plain weights a
+  person can check by hand, not a tuned model.
+- **More than one order**: three are tried, by location then set (the order of decision
+  75), by location then day or night then set (a new grouping rule: dark scenes, night,
+  dusk, evening or dawn, together at each place), and by shared cast alone. The cheapest is
+  suggested, the first on a tie. When none costs less than the order on the board, the
+  board's order is the suggestion and nothing would move, where before a suggestion could
+  make things worse.
+- **Shown**: the dialog names the rule followed and every rule's cost, and its table gains
+  day and night switches and the cost; the command line and the MCP tool say the same.
+- **Not yet**: weights people can set, searching beyond the three orders, and a day's
+  length or a long day in the cost.
