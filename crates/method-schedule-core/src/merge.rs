@@ -2692,7 +2692,8 @@ fn repair_pass(s: &mut Schedule, m: &M, out: &mut Vec<String>) {
         // element, whichever side settles (decision 236).
         let renamed = |k: usize| {
             let x = &s.elements[k];
-            m.b.element(x.id).is_some_and(|be| !same_name(&be.name, &x.name))
+            m.b.element(x.id)
+                .is_some_and(|be| !same_name(&be.name, &x.name))
         };
         let added = |k: usize| m.b.element(s.elements[k].id).is_none();
         let matched = if renamed(j) && added(i) {
@@ -3063,14 +3064,20 @@ pub(crate) mod tests {
         let mut o = b.clone();
         o.rename_element(ada, "ADDIE").unwrap();
         let mut t = b.clone();
-        let addie = t.add_element(t.category_named("Cast").unwrap(), "ADDIE").unwrap();
+        let addie = t
+            .add_element(t.category_named("Cast").unwrap(), "ADDIE")
+            .unwrap();
         let sheet = t.sheets[1].id;
         t.tag(sheet, addie).unwrap();
         for (x, y) in [(&o, &t), (&t, &o)] {
             let m = merge(&b, x, y);
             assert!(m.conflicts.is_empty(), "{:?}", texts(&m));
             assert_eq!(m.fallbacks.len(), 1, "{:?}", m.fallbacks);
-            assert!(m.fallbacks[0].contains("renamed to that name"), "{:?}", m.fallbacks);
+            assert!(
+                m.fallbacks[0].contains("renamed to that name"),
+                "{:?}",
+                m.fallbacks
+            );
             let s = &m.schedule;
             assert_eq!(s.elements.len(), b.elements.len());
             assert_eq!(cast(s, "ADDIE"), ada);
