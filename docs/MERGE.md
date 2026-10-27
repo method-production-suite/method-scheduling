@@ -127,6 +127,9 @@ to put right.
   for theirs (`--theirs`, `merge_with(.., Side::Theirs, ..)`) falls back to theirs
   instead, so it gives what the merge the other way round gives settled for ours
   (decisions.md, entry 174). Below, "ours" is the side the merge settles for:
+  - an element one side renamed to the name of an element the other side added: one
+    element, the renamed one, which takes the added one's tags and links whichever side
+    the merge settles for (entry 236);
   - two categories or two elements in a category with one name: the later one gets ours'
     name back if the merge changed it, else the first does; two that ours never had apart
     join (an element is merged into the first like the Elements tab's Merge);

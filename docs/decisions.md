@@ -5646,3 +5646,16 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   made so far. What Changed against the same file shows the same changes with links.
 - **Not yet**: calendar changes (a date or an event) as places to go; going from inside
   the merge.
+
+## 236. A rename on one side meets the element the other side added (2026-10-27)
+
+- **M4's last S item**: one side renames an element (ADA to ADDIE) while the other adds an
+  element of that new name in the same category, say from a revised script. They are one
+  element now: the renamed one, with the added one's tags and links, the same whichever
+  side the merge settles for. The merge says so in one line.
+- **Before**: with ours renaming, the added one was merged in as "the element of the same
+  name"; with theirs renaming, ours' old name came back and the two stayed apart. The
+  match no longer depends on which side renamed.
+- **Left as it was**: categories and red flag types, which rarely get renamed into a clash,
+  keep the name-back rule; an element added under the old name on the side that renamed
+  is a new element there and stays one.

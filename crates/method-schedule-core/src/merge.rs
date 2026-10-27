@@ -2688,6 +2688,39 @@ fn repair_pass(s: &mut Schedule, m: &M, out: &mut Vec<String>) {
             continue;
         };
         let first = s.elements[j].id;
+        // One side renamed an element to the name of one the other side added: the same
+        // element, whichever side settles (decision 236).
+        let renamed = |k: usize| {
+            let x = &s.elements[k];
+            m.b.element(x.id)
+                .is_some_and(|be| !same_name(&be.name, &x.name))
+        };
+        let added = |k: usize| m.b.element(s.elements[k].id).is_none();
+        let matched = if renamed(j) && added(i) {
+            Some((j, i))
+        } else if renamed(i) && added(j) {
+            Some((i, j))
+        } else {
+            None
+        };
+        if let Some((old, new)) = matched {
+            let (old_id, new_id) = (s.elements[old].id, s.elements[new].id);
+            let (adder, renamer) = if m.o.element(new_id).is_some() {
+                ("ours", "theirs")
+            } else {
+                ("theirs", "ours")
+            };
+            out.push(format!(
+                "{} added by {adder} is the element {renamer} renamed to that name: they are one now",
+                m.element_title(new_id)
+            ));
+            if s.merge_elements(old_id, &[new_id]).is_err() {
+                i += 1;
+            } else {
+                i = j;
+            }
+            continue;
+        }
         let back = |k: usize| {
             let x = &s.elements[k];
             m.kept()
@@ -3020,6 +3053,36 @@ pub(crate) mod tests {
         assert_eq!(m.extensions.of(e1), Some(r#"{"b":1}"#));
         assert_eq!(m.extensions.schedule.as_deref(), Some(r#"{"a":"ours"}"#));
         assert_eq!(m.extensions.objects.len(), 2);
+    }
+
+    #[test]
+    fn a_rename_on_one_side_is_the_element_the_other_side_added() {
+        // Decision 236: ours renames ADA to ADDIE; theirs adds ADDIE and tags a scene with
+        // it. One element, the renamed one, either way round.
+        let b = base();
+        let ada = cast(&b, "ADA");
+        let mut o = b.clone();
+        o.rename_element(ada, "ADDIE").unwrap();
+        let mut t = b.clone();
+        let addie = t
+            .add_element(t.category_named("Cast").unwrap(), "ADDIE")
+            .unwrap();
+        let sheet = t.sheets[1].id;
+        t.tag(sheet, addie).unwrap();
+        for (x, y) in [(&o, &t), (&t, &o)] {
+            let m = merge(&b, x, y);
+            assert!(m.conflicts.is_empty(), "{:?}", texts(&m));
+            assert_eq!(m.fallbacks.len(), 1, "{:?}", m.fallbacks);
+            assert!(
+                m.fallbacks[0].contains("renamed to that name"),
+                "{:?}",
+                m.fallbacks
+            );
+            let s = &m.schedule;
+            assert_eq!(s.elements.len(), b.elements.len());
+            assert_eq!(cast(s, "ADDIE"), ada);
+            assert!(s.sheet(sheet).unwrap().elements.contains(&ada));
+        }
     }
 
     #[test]
