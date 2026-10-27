@@ -18,8 +18,9 @@ section. Everything else on this page goes ahead without waiting.
 - None pending. v0.6.0 was published on 2026-10-26 (call times of their own feeding the
   rest checks, the call sheet's advance schedule, script drafts with their colors and
   dates); methodschedule.com follows it. On main since, for the next release: each sheet's
-  newest draft on the Breakdown tab, Script Drafts printed, and a cost to compare strip
-  orders (D234). For those notes: files using `plan.person_calls` or `plan.drafts` still
+  newest draft on the Breakdown tab, Script Drafts printed, a cost to compare strip
+  orders (D234), What Changed linking each change to where it is (D235), and a rename on
+  one side merged with the element the other side added (D236). For those notes: files using `plan.person_calls` or `plan.drafts` still
   won't open in 0.5.0 or earlier.
 
 **Needs the owner's hands or hardware**
@@ -234,7 +235,6 @@ deferred, the owner, 2026-10-20).
 | Merge UI polish: going to a change from the merge itself (it would drop the picks; What Changed links them since D235), and calendar dates as places to go | S | D26, D235, APP.md "Not yet" |
 | Conflict review: a list of every conflict pick, kept with the file until resolved | M | MERGE.md |
 | Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |
-| A rename on one side matched to the same element on the other | S | D25 note |
 
 **Exit**: two copies edited apart in a shared folder and in git merge with every change
 kept or offered as a pick, in tests and in a live run.
