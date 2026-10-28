@@ -1499,7 +1499,10 @@ function whatChanged(against, backup) {
     const one = scenesBy(model, 'board').find((x) => x.n === '1');
     const go = one ? { kind: 'sheet', sheet: one.sheet, field: 'set' } : null;
     const groups = CANNED_CHANGES.map((g) => (g.group === 'Sheets' && go ? { ...g, changes: g.changes.map((c) => ({ ...c, go })) } : g));
-    return { from: 'harbor-copy.mtsc', to: `${fileName} as it is now`, count: 4, groups };
+    // Decision 237: a calendar date goes to that date.
+    const sb = model.subs[0];
+    groups.splice(3, 0, { group: 'Calendars', changes: [{ kind: 'added', subject: 'calendar', text: `"${sb.name}" calendar (board "${boardName(model)}"): holiday 2026-11-26 added`, go: { kind: 'event', board: model.shown, sub_board: sb.id, date: '2026-11-26' } }] });
+    return { from: 'harbor-copy.mtsc', to: `${fileName} as it is now`, count: 5, groups };
   }
   // A backup from Revert to Backup's list, by its name (src/diffmerge.rs).
   if (against === 'backup') {

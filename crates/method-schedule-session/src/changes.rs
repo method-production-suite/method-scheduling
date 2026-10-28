@@ -16,14 +16,16 @@ pub struct ChangeDto {
     pub subject: &'static str,
     pub text: String,
     /// Where the page can show it (decision 235): set only in What Changed, and only for a
-    /// sheet, element (or its red flag) or scheduled strip still in the window's schedule.
+    /// sheet, element (or its red flag), scheduled strip or calendar date (decision 237)
+    /// still in the window's schedule.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub go: Option<GoDto>,
 }
 
 /// A place to show, in the shape of a Find result: `kind` `sheet` (with `sheet` and the
-/// first changed `field`), `element` (with `category`, `element`) or `strip` (with
-/// `board`, `sub_board`, `strip`).
+/// first changed `field`), `element` (with `category`, `element`), `strip` (with
+/// `board`, `sub_board`, `strip`) or `event`, a calendar date (with `board`, `sub_board`,
+/// `date`), the kind Find gives an event.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct GoDto {
     pub kind: &'static str,
@@ -41,6 +43,8 @@ pub struct GoDto {
     pub sub_board: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub strip: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
 }
 
 /// Where change `c` can be shown in `here`, the schedule in the window.
@@ -54,6 +58,7 @@ fn go(here: &Schedule, c: &Change) -> Option<GoDto> {
         board: None,
         sub_board: None,
         strip: None,
+        date: None,
     };
     match c.subject {
         Subject::Sheet(id) => here.sheet(id).map(|_| GoDto {
@@ -79,6 +84,16 @@ fn go(here: &Schedule, c: &Change) -> Option<GoDto> {
                 board: Some(b.0),
                 sub_board: Some(sb.id.0),
                 strip: Some(id.0),
+                ..none
+            })
+        }
+        Subject::Calendar(b, sb, Some(d)) => {
+            here.board(b)?.sub_boards.iter().find(|x| x.id == sb)?;
+            Some(GoDto {
+                kind: "event",
+                board: Some(b.0),
+                sub_board: Some(sb.0),
+                date: Some(d.to_string()),
                 ..none
             })
         }
@@ -176,6 +191,9 @@ mod tests {
                 },
             )
             .unwrap();
+        let day = method_schedule_core::Date::from_ymd(2027, 3, 3).unwrap();
+        newer.boards[0].sub_boards[0].calendar.holidays.push(day);
+        newer.boards[0].sub_boards[0].calendar.weekly_off.clear();
         let w = compare(&older, &newer, "a".into(), "b".into());
         let all: Vec<&ChangeDto> = w.groups.iter().flat_map(|g| &g.changes).collect();
         let find = |subject: &str, kind: &str| {
@@ -199,6 +217,15 @@ mod tests {
             (strip.kind, strip.sub_board, strip.strip),
             ("strip", Some(sb.0), Some(st.0))
         );
+        // Decision 237: a date on a calendar goes to that date; the weekly days off don't.
+        let cal: Vec<_> = all.iter().filter(|c| c.subject == "calendar").collect();
+        assert_eq!(cal.len(), 2, "{cal:?}");
+        let date = cal.iter().find_map(|c| c.go.as_ref()).unwrap();
+        assert_eq!(
+            (date.kind, date.sub_board, date.date.as_deref()),
+            ("event", Some(sb.0), Some("2027-03-03"))
+        );
+        assert_eq!(cal.iter().filter(|c| c.go.is_some()).count(), 1);
         // The merge's list has no links: leaving it would drop the picks.
         assert!(groups(&diff(&older, &newer))
             .iter()

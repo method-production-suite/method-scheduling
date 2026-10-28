@@ -272,7 +272,8 @@ newer), matched by id (docs/MERGE.md). Returns both files' `revision` (`revision
 `removed`, `changed`, `moved`), `subject` (`kind`: `title`, `setup` (production info,
 report list, code letters), `strip_colors`, `layouts` (the layout library), `category`,
 `red_flag_type`, `element`, `red_flag` (with `element` and `red_flag`), `sheet`, `board`,
-`sub_board`, `calendar` or `strip`, with the ids it needs), `fields`
+`sub_board`, `calendar` (with the `date` it is about, null for the weekly days off) or
+`strip`, with the ids it needs), `fields`
 (`field`, `before`, `after`, as text) and `text`, one plain sentence. Strips that changed
 place are listed one by one.
 
