@@ -1154,7 +1154,9 @@ fn subject_json(subject: &Subject) -> Value {
         Subject::Sheet(s) => json!({"kind": "sheet", "sheet": s.0}),
         Subject::Board(b) => json!({"kind": "board", "board": b.0}),
         Subject::SubBoard(b, s) => json!({"kind": "sub_board", "board": b.0, "sub_board": s.0}),
-        Subject::Calendar(b, s) => json!({"kind": "calendar", "board": b.0, "sub_board": s.0}),
+        Subject::Calendar(b, s, d) => {
+            json!({"kind": "calendar", "board": b.0, "sub_board": s.0, "date": d.map(|d| d.to_string())})
+        }
         Subject::Strip(b, s) => json!({"kind": "strip", "board": b.0, "strip": s.0}),
     }
 }

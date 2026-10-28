@@ -1289,7 +1289,7 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `replace_text` | `query` (as above), `with`, `picks` (the checked results' keys) | the view, with a notice saying how many places changed |
 | `conflicts_view` | `board` | `{board, board_name, count, conflicts, clash_count, event_clashes, undated, truncated}`: a conflict is `{element, name, category, date, weekday, bookings}`, a booking `{sub_board, sub_board_name, day, sheets: [{sheet, scene, strip}]}`, an event clash adds `events: [{sub_board, sub_board_name, index, name}]`; at most 1,000 of each |
 | `explain_count` | `sub_board`, `element` | the Explain panel for that element on the sub-board: name, category, totals, the summary sentences, `gaps` (`{after, before, days, outcome, text}`) and `days` (`{date, code, counted, text}`) |
-| `what_changed` | `against` (`file`: an Open dialog; `saved`: the schedule's own file on disk) | `{from, to, count, groups: [{group, changes: [{kind, subject, text, go}]}]}`, or null when cancelled; `go`, where a change still in the window is (a Find result's shape: `kind` `sheet`, `element` or `strip`), is left out otherwise and in the merge's list (decisions.md, entry 235) |
+| `what_changed` | `against` (`file`: an Open dialog; `saved`: the schedule's own file on disk) | `{from, to, count, groups: [{group, changes: [{kind, subject, text, go}]}]}`, or null when cancelled; `go`, where a change still in the window is (a Find result's shape: `kind` `sheet`, `element`, `strip`, or `event` with `sub_board` and `date` for a calendar date or event), is left out otherwise and in the merge's list (decisions.md, entries 235 and 237) |
 | `merge_pick_file` | shows the Open dialog | `{token, name}`, or null when cancelled |
 | `merge_preview` | `token`, `base` (`{kind: "auto"}`, `{kind: "disk"}`, `{kind: "last_read"}` or `{kind: "backup", name}`), `picks` (`{key: "ours" \| "theirs"}`) | `{theirs, ours, base, base_label, base_reason, base_clear, bases, conflicts, count, changes, renumbered, fallbacks, problem}`; a conflict is `{key, what, base, ours, theirs, taken, text}` |
 | `merge_apply` | `token`, `base`, `picks` | the view, with a notice saying how the conflicts were settled |
@@ -1605,8 +1605,9 @@ app's key equivalents (behavior note 19).
   text (the writer has it; no export offers it yet).
 - **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
   and a find bar per tab.
-- **More of What Changed and merging**: a click on a change going to its sheet, element,
-  strip or date; What Changed against a chosen backup; picking any file as a merge base;
+- **More of What Changed and merging**: going to a change from inside the merge itself
+  (What Changed links sheets, elements, strips and calendar dates, decisions.md entries
+  235 and 237); picking any file as a merge base;
   the changes a merge brings in shown per conflict
   pick side by side.
 - **Beyond the reference app**: daylight saving rules other than the US and Canada's, the EU's,

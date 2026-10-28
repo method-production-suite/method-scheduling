@@ -5659,3 +5659,15 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Left as it was**: categories and red flag types, which rarely get renamed into a clash,
   keep the name-back rule; an element added under the old name on the side that renamed
   is a new element there and stays one.
+
+## 237. Calendar changes go to their date (2026-10-28)
+
+- **M4's merge UI polish, second part**: in What Changed, a calendar change on a sub-board
+  still in the window is a link to its date on the Calendar tab, the way Find goes to an
+  event: a date marked (day off, holiday, company travel, back to working) goes to that
+  date, an event added or removed to its first day, a prep start or wrap end to the new
+  date (the old one when it was cleared). The weekly days off have no date and no link.
+- **The engine says which date**: the diff's calendar subject carries the date
+  (`Subject::Calendar(board, sub_board, date)`), so the MCP `diff` tool's calendar
+  subjects gain a `date` (null for the weekly days off). Additive; nothing else reads it.
+- **Not yet**: going from inside the merge, which would drop the picks made so far.

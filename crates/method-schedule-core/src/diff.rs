@@ -73,8 +73,9 @@ pub enum Subject {
     Sheet(SheetId),
     Board(BoardId),
     SubBoard(BoardId, SubBoardId),
-    /// A date or an event on a sub-board's calendar, or its weekly days off.
-    Calendar(BoardId, SubBoardId),
+    /// A date or an event on a sub-board's calendar, or its weekly days off, with the
+    /// date it is about (an event's first day; none for the weekly days off).
+    Calendar(BoardId, SubBoardId, Option<crate::Date>),
     Strip(BoardId, StripId),
 }
 
@@ -1445,7 +1446,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
         n.sub_board(board, b.id),
         n.board(board)
     );
-    let subject = Subject::Calendar(board, b.id);
+    let at = |d: Option<crate::Date>| Subject::Calendar(board, b.id, d);
     let (ca, cb) = (&a.calendar, &b.calendar);
     if ca.weekly_off != cb.weekly_off {
         let fc = FieldChange {
@@ -1460,7 +1461,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
         };
         out.push(Change {
             kind: ChangeKind::Changed,
-            subject,
+            subject: at(None),
             text: format!("{head}: {}", fc.text),
             fields: vec![fc],
         });
@@ -1481,7 +1482,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
         };
         out.push(Change {
             kind: ChangeKind::Changed,
-            subject,
+            subject: at(y.or(x)),
             text: format!("{head}: {}", fc.text),
             fields: vec![fc],
         });
@@ -1512,7 +1513,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
         };
         out.push(Change {
             kind,
-            subject,
+            subject: at(Some(d)),
             fields: vec![fc],
             text,
         });
@@ -1522,7 +1523,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
     for ev in new {
         out.push(Change {
             kind: ChangeKind::Added,
-            subject,
+            subject: at(Some(ev.from)),
             fields: Vec::new(),
             text: format!("{head}: event {} added", event_text(ev, name)),
         });
@@ -1530,7 +1531,7 @@ fn calendar(n: &Names, board: BoardId, a: &SubBoard, b: &SubBoard, out: &mut Vec
     for ev in gone {
         out.push(Change {
             kind: ChangeKind::Removed,
-            subject,
+            subject: at(Some(ev.from)),
             fields: Vec::new(),
             text: format!("{head}: event {} removed", event_text(ev, name)),
         });
