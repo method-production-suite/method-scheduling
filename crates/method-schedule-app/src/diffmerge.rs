@@ -39,10 +39,6 @@ use crate::safety_app::Safety;
 use crate::session::{self, read_schedule};
 use crate::view::View;
 
-/// Most picks a merge takes (one per conflict).
-const MAX_PICKS: usize = 50_000;
-/// Longest conflict key the page may send back.
-const MAX_KEY: usize = 400;
 /// Files picked for merging kept at hand (the newest).
 const FILES_KEPT: usize = 8;
 
@@ -494,30 +490,6 @@ fn not_saved() -> String {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct ConflictDto {
-    pub key: String,
-    pub what: String,
-    pub base: Option<String>,
-    pub ours: String,
-    pub theirs: String,
-    /// `"ours"` or `"theirs"`.
-    pub taken: &'static str,
-    pub text: String,
-}
-
-fn conflict_dto(c: &method_schedule_core::merge::Conflict) -> ConflictDto {
-    ConflictDto {
-        key: c.key.clone(),
-        what: c.what.clone(),
-        base: c.base.clone(),
-        ours: c.ours.clone(),
-        theirs: c.theirs.clone(),
-        taken: c.taken.key(),
-        text: c.text.clone(),
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct MergeDto {
     /// Theirs' file name, and ours' (the window's).
     pub theirs: String,
@@ -544,23 +516,6 @@ pub struct MergeDto {
     pub problem: Option<String>,
 }
 
-/// The page's picks: conflict key to `"ours"` or `"theirs"`.
-pub fn read_picks(picks: &BTreeMap<String, String>) -> Result<BTreeMap<String, Side>, String> {
-    if picks.len() > MAX_PICKS {
-        return Err("Too many choices.".into());
-    }
-    picks
-        .iter()
-        .map(|(k, v)| {
-            if k.len() > MAX_KEY {
-                return Err("That choice isn't one of the conflicts.".to_string());
-            }
-            let side = Side::from_key(v).ok_or_else(|| format!("\"{v}\" isn't ours or theirs."))?;
-            Ok((k.clone(), side))
-        })
-        .collect()
-}
-
 /// Applies the merge to the open schedule as one undo step, worked out on the schedule as
 /// it is now. Returns the notice to show.
 pub fn apply(
@@ -573,53 +528,13 @@ pub fn apply(
     let theirs = Arc::clone(&inputs.theirs.schedule);
     let mut s = state.lock();
     let before = s.schedule().clone();
-    let m: Merged = s.edit(|x| {
-        let mut m = merge_with(&base, x, &theirs, Side::Ours, picks);
-        // Every conflict stays listed for review until marked done (decision 238).
-        method_schedule_core::plan::keep_conflicts(
-            &mut m.schedule,
-            &m.conflicts,
-            method_schedule_session::clock::today(),
-        );
-        *x = m.schedule.clone();
-        Ok(m)
-    })?;
+    let m: Merged = s.edit(|x| Ok(merge_into(&base, x, &theirs, picks)))?;
     if let Some(stamp) = inputs.theirs.disk {
         // Theirs is in now: the file's version is settled, and the merge is saved into it
         // as any change is (the guard still refuses a file changed again since).
         s.took_disk(stamp, Some(theirs));
     }
     Ok(merge_notice(&inputs.theirs.name, &m, before == m.schedule))
-}
-
-fn merge_notice(theirs: &str, m: &Merged, unchanged: bool) -> String {
-    if unchanged {
-        return format!("Nothing to merge: this schedule already has what it takes from {theirs}.");
-    }
-    let n = m.conflicts.len();
-    let mut out = format!("Merged the changes from {theirs}.");
-    if n > 0 {
-        let t = m
-            .conflicts
-            .iter()
-            .filter(|c| c.taken == Side::Theirs)
-            .count();
-        let word = if n == 1 { "conflict" } else { "conflicts" };
-        out.push_str(&format!(
-            " {n} {word}: {} kept yours, {t} took theirs, listed under File > Merge \
-             Conflicts to Review until you mark them done.",
-            n - t
-        ));
-    }
-    if !m.fallbacks.is_empty() {
-        let f = m.fallbacks.len();
-        out.push_str(&format!(
-            " {f} {} kept yours so the schedule hangs together.",
-            if f == 1 { "part" } else { "parts" }
-        ));
-    }
-    out.push_str(" Undo takes the whole merge back.");
-    out
 }
 
 // ---------------------------------------------------------------------------

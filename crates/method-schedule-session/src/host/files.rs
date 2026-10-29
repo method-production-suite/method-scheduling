@@ -5,6 +5,7 @@
 //! kept by the host in its picture store ([`Host::put_image`]), by the name the schedule
 //! stores. Method Budget's host has the same shapes.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -13,13 +14,18 @@ use serde_json::Value;
 use method_schedule_core::fountain;
 
 use super::{args, finish, reply, DocState, Error, Host, W};
-use crate::changes::compare;
+use crate::changes::{
+    compare, conflict_dto, groups, merge_into, merge_notice, read_picks, ConflictDto, GroupDto,
+};
 use crate::commands::files;
 use crate::export::ExportOutcome;
 use crate::plan::{revision_preview, upper, RevisionDto};
 use crate::session::{self, Session};
 use crate::{elements, split, templates};
+use method_schedule_core::diff::diff;
+use method_schedule_core::merge::{merge_with, Side};
 use method_schedule_core::revise::{revise, revision_text};
+use method_schedule_core::Schedule;
 
 /// The commands here, each taking a file (`file`) or giving files back (`downloads`).
 pub(super) const COMMANDS: &[&str] = &[
@@ -40,6 +46,8 @@ pub(super) const COMMANDS: &[&str] = &[
     "revise_pick",
     "revise_apply",
     "what_changed",
+    "merge_preview",
+    "merge_apply",
     "add_element_image",
     "add_sheet_image",
     "element_image",
@@ -64,6 +72,7 @@ pub(super) const READS: &[&str] = &[
     "sheet_image",
     "revise_pick",
     "what_changed",
+    "merge_preview",
 ];
 
 /// A file the person picked, as a host hands it in where the desktop shows an Open
@@ -219,6 +228,49 @@ struct ImageAtArgs {
     at: usize,
 }
 
+/// `merge_preview` and `merge_apply` (decision 239): theirs in `file`, the version both
+/// copies started from in `base_file` (`base: "file"`, the default) or the schedule as last
+/// opened or saved here (`base: "saved"`), and the picks for the conflicts by key.
+#[derive(Deserialize)]
+struct MergeArgs {
+    file: FileIn,
+    #[serde(default)]
+    base: Option<String>,
+    #[serde(default)]
+    base_file: Option<FileIn>,
+    #[serde(default)]
+    picks: BTreeMap<String, String>,
+    /// `merge_apply`: theirs' pictures, picked with it, as `open_schedule` takes them.
+    #[serde(default)]
+    pictures: Vec<FileIn>,
+}
+
+/// What a merge would do to the schedule in front, nothing changed yet: the desktop's
+/// merge preview without its list of backups to pick the base from.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct HostMergeDto {
+    /// Theirs' file name, and the schedule in front's.
+    pub theirs: String,
+    pub ours: String,
+    /// The base: its file name, or "NAME as last saved".
+    pub base: String,
+    pub conflicts: Vec<ConflictDto>,
+    /// What the merge changes in the schedule in front, grouped.
+    pub count: usize,
+    pub changes: Vec<GroupDto>,
+    /// Things of theirs given new ids.
+    pub renumbered: usize,
+    /// Where the merge fell back to ours so the result hangs together.
+    pub fallbacks: Vec<String>,
+}
+
+fn too_large(f: &FileIn) -> Result<(), Error> {
+    if f.bytes.len() > MAX_FILE_BYTES {
+        return Err(Error::Refused(format!("{} is too large to open.", f.name)));
+    }
+    Ok(())
+}
+
 fn file_arg(command: &str, a: &Value) -> Result<FileArg, Error> {
     let f: FileArg = args(command, a)?;
     if f.file.bytes.len() > MAX_FILE_BYTES {
@@ -298,6 +350,58 @@ impl Host {
         Ok(name)
     }
 
+    /// A schedule's pictures, picked with it, go in the store under the paths it stores,
+    /// matched by file name; a picked file it doesn't use is left out.
+    fn take_pictures(&mut self, schedule: &Schedule, pictures: &[FileIn]) {
+        for stored in stored_pictures(schedule) {
+            let name = picture_file_name(&stored);
+            if let Some(p) = pictures
+                .iter()
+                .find(|p| Path::new(&p.name).file_name().and_then(|n| n.to_str()) == Some(name))
+            {
+                if elements::image_data_url(&p.bytes).is_some() {
+                    self.images.insert(stored.clone(), p.bytes.clone());
+                }
+            }
+        }
+    }
+
+    /// The base and theirs of a merge, read from the files handed in, with the base's label.
+    fn merge_inputs(
+        &self,
+        m: &MergeArgs,
+        doc: Option<u32>,
+        name: &str,
+    ) -> Result<(Schedule, String, Schedule, BTreeMap<String, Side>), Error> {
+        too_large(&m.file)?;
+        let picks = read_picks(&m.picks)?;
+        let theirs = session::parse_schedule(&m.file.bytes, Path::new(&m.file.name))?;
+        let (base, label) = match m.base.as_deref().unwrap_or("file") {
+            "file" => {
+                let f = m.base_file.as_ref().ok_or(
+                    "Pick the version both copies started from: a merge needs it to tell \
+                     who changed what.",
+                )?;
+                too_large(f)?;
+                (
+                    session::parse_schedule(&f.bytes, Path::new(&f.name))?,
+                    f.name.clone(),
+                )
+            }
+            "saved" => {
+                let id = doc.or(self.front).unwrap_or(0);
+                let base = self
+                    .saved
+                    .get(&id)
+                    .cloned()
+                    .ok_or("This schedule hasn't been opened from or saved to a file yet.")?;
+                (base, format!("{name} as last saved"))
+            }
+            _ => return Err("Unknown base.".into()),
+        };
+        Ok((base, label, theirs, picks))
+    }
+
     /// Runs one of [`COMMANDS`] on `state` (the schedule in front, or `doc`), or `None`
     /// for any other command.
     pub(super) fn run_file(
@@ -333,18 +437,7 @@ impl Host {
                 "open_schedule" => {
                     let f = file_arg(command, a)?;
                     let schedule = session::parse_schedule(&f.file.bytes, Path::new(&f.file.name))?;
-                    // Its pictures, picked with it, go in the store under the paths it
-                    // stores, matched by file name; a picked file it doesn't use is left out.
-                    for stored in stored_pictures(&schedule) {
-                        let name = picture_file_name(&stored);
-                        if let Some(p) = f.pictures.iter().find(|p| {
-                            Path::new(&p.name).file_name().and_then(|n| n.to_str()) == Some(name)
-                        }) {
-                            if elements::image_data_url(&p.bytes).is_some() {
-                                self.images.insert(stored.clone(), p.bytes.clone());
-                            }
-                        }
-                    }
+                    self.take_pictures(&schedule, &f.pictures);
                     let s = Session::with_schedule(schedule, Some(f.file.name.clone().into()));
                     reply(Ok(self.add_saved_doc(s)?))
                 }
@@ -531,6 +624,41 @@ impl Host {
                         from,
                         format!("{name} as it is now"),
                     )))
+                }
+                "merge_preview" => {
+                    let m: MergeArgs = args(command, a)?;
+                    let doc = args::<super::DocArg>(command, a)?.doc;
+                    let state = need()?;
+                    let (ours, name) = {
+                        let s = state.lock();
+                        (s.schedule().clone(), s.display_name())
+                    };
+                    let (base, label, theirs, picks) = self.merge_inputs(&m, doc, &name)?;
+                    let merged = merge_with(&base, &ours, &theirs, Side::Ours, &picks);
+                    let d = diff(&ours, &merged.schedule);
+                    reply(Ok(HostMergeDto {
+                        theirs: m.file.name,
+                        ours: name,
+                        base: label,
+                        conflicts: merged.conflicts.iter().map(conflict_dto).collect(),
+                        count: d.changes.len(),
+                        changes: groups(&d),
+                        renumbered: merged.renumbered,
+                        fallbacks: merged.fallbacks,
+                    }))
+                }
+                "merge_apply" => {
+                    let m: MergeArgs = args(command, a)?;
+                    let doc = args::<super::DocArg>(command, a)?.doc;
+                    let state = need()?;
+                    let name = state.lock().display_name();
+                    let (base, _, theirs, picks) = self.merge_inputs(&m, doc, &name)?;
+                    self.take_pictures(&theirs, &m.pictures);
+                    let mut s = state.lock();
+                    let before = s.schedule().clone();
+                    let merged = s.edit(|x| Ok(merge_into(&base, x, &theirs, &picks)))?;
+                    let notice = merge_notice(&m.file.name, &merged, before == merged.schedule);
+                    reply(finish(&W, &s, Some(notice)))
                 }
                 "export_drift" => {
                     let r: DriftArgs = args(command, a)?;
@@ -858,6 +986,80 @@ mod tests {
         assert!(h
             .dispatch("what_changed", &json!({ "against": "saved" }))
             .is_err());
+    }
+
+    /// Decision 239: a merge in the browser takes theirs and the base as files, previews,
+    /// and applies the picks as one undo step, keeping the conflicts for review.
+    #[test]
+    fn a_merge_takes_theirs_and_the_base_as_files() {
+        let fs = method_schedule_core::sample::field_station();
+        let base = method_schedule_format::to_string(&fs);
+        let mut theirs = fs.clone();
+        theirs.boards[0].name = "B unit".into();
+        theirs.sheets[0].set = "NET LOFT".into();
+        let theirs = method_schedule_format::to_string(&theirs);
+        let mut h = Host::new();
+        let board = h.open_mtsc(&base, Some("ours.mtsc")).unwrap().view.board.id;
+        h.dispatch(
+            "rename_board",
+            &json!({ "board": board, "name": "Second unit" }),
+        )
+        .unwrap();
+        let a = json!({
+            "file": file("theirs.mtsc", theirs.as_bytes()),
+            "base_file": file("base.mtsc", base.as_bytes()),
+        });
+        let p = h.dispatch("merge_preview", &a).unwrap();
+        assert_eq!(p["theirs"], "theirs.mtsc");
+        assert_eq!(p["base"], "base.mtsc");
+        let conflicts = p["conflicts"].as_array().unwrap();
+        assert_eq!(conflicts.len(), 1, "{p}");
+        assert_eq!(conflicts[0]["taken"], "ours");
+        assert!(p["count"].as_u64().unwrap() >= 1, "{p}");
+        let key = conflicts[0]["key"].as_str().unwrap().to_string();
+
+        // The schedule as opened is a base too, and the preview changed nothing.
+        let saved = h
+            .dispatch(
+                "merge_preview",
+                &json!({ "file": a["file"], "base": "saved" }),
+            )
+            .unwrap();
+        assert_eq!(saved["base"], "ours.mtsc as last saved");
+        assert_eq!(saved["conflicts"], p["conflicts"]);
+        let unchanged = h.save_mtsc(None).unwrap().text;
+        assert!(unchanged.contains("Second unit"));
+
+        let mut take = a.clone();
+        take["picks"] = json!({ key.clone(): "theirs" });
+        let v = h.dispatch("merge_apply", &take).unwrap();
+        let notice = v["notice"].as_str().unwrap();
+        assert!(
+            notice.starts_with("Merged the changes from theirs.mtsc."),
+            "{notice}"
+        );
+        assert!(
+            notice.contains("1 conflict: 0 kept yours, 1 took theirs"),
+            "{notice}"
+        );
+        let text = h.save_mtsc(None).unwrap().text;
+        assert!(text.contains("B unit") && text.contains("NET LOFT"));
+        let kept = h.dispatch("conflicts_data", &json!({})).unwrap();
+        assert_eq!(kept[0]["key"], key.as_str());
+        assert_eq!(kept[0]["taken"], "theirs");
+        h.dispatch("undo", &json!({})).unwrap();
+        assert!(h.save_mtsc(None).unwrap().text.contains("Second unit"));
+
+        // Refusals: no base, a pick that is neither side, and editing while read-only.
+        assert!(h
+            .dispatch("merge_preview", &json!({ "file": a["file"] }))
+            .is_err());
+        let mut bad = a.clone();
+        bad["picks"] = json!({ key: "both" });
+        assert!(h.dispatch("merge_apply", &bad).is_err());
+        h.set_read_only(true);
+        assert!(h.dispatch("merge_preview", &a).is_ok());
+        assert!(h.dispatch("merge_apply", &a).is_err());
     }
 
     #[test]

@@ -5693,3 +5693,20 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   first.
 - **Not yet**: taking the other value from the list itself; keys of strips and boards as
   places to go.
+
+## 239. The browser host merges with the base handed in (2026-10-29)
+
+- **Entry 226's contract addition**, now a partner has asked for it: `merge_preview` and
+  `merge_apply` run in the browser host. Theirs comes in as `file`, and the version both
+  copies started from as `base_file` (`base: "file"`, the default) or the schedule as last
+  opened or saved in that host (`base: "saved"`, the fallback the desktop uses when no
+  backup will do). Picks are the desktop's: `{key: "ours" | "theirs"}`, the rest kept ours.
+- **No token**: each call hands both files in again, as `what_changed` does, so the preview
+  and the apply read the same bytes the host was given, and the host keeps nothing between
+  them. Applying is one undo step and keeps every conflict for review (entry 238);
+  `merge_apply` also takes theirs' pictures in `pictures`, as `open_schedule` does.
+- **The same code as the desktop**: the picks' limits, the merge into the open schedule and
+  the notice moved into method-schedule-session, so the two can't drift apart.
+- **No `COMMANDS_VERSION` change**: two new commands, nothing a caller already sends
+  behaves differently. The merge picker (`merge_pick_file`) stays desktop only, and the
+  page in a browser doesn't offer Merge Changes From yet: a host builds its own picker.

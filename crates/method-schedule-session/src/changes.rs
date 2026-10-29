@@ -2,9 +2,12 @@
 //! page (decisions.md, the diff and merge entries). The desktop picks the older schedule
 //! from a file or the disk; a host hands it in.
 
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 
 use method_schedule_core::diff::{diff, Change, Diff, Subject};
+use method_schedule_core::merge::{merge_with, Merged, Side};
 use method_schedule_core::model::{CategoryId, ElementId, SheetId, StripKind};
 use method_schedule_core::Schedule;
 
@@ -235,6 +238,105 @@ pub fn compare(older: &Schedule, newer: &Schedule, from: String, to: String) -> 
         count: d.changes.len(),
         groups: grouped(&d, Some(newer)),
     }
+}
+
+// Merging (the desktop's File > Merge Changes From, and the browser host's merge_preview
+// and merge_apply, decision 239).
+
+/// Most picks a merge takes (one per conflict).
+const MAX_PICKS: usize = 50_000;
+/// Longest conflict key the page may send back.
+const MAX_KEY: usize = 400;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ConflictDto {
+    pub key: String,
+    pub what: String,
+    pub base: Option<String>,
+    pub ours: String,
+    pub theirs: String,
+    /// `"ours"` or `"theirs"`.
+    pub taken: &'static str,
+    pub text: String,
+}
+
+/// A merge conflict as the page lists it.
+pub fn conflict_dto(c: &method_schedule_core::merge::Conflict) -> ConflictDto {
+    ConflictDto {
+        key: c.key.clone(),
+        what: c.what.clone(),
+        base: c.base.clone(),
+        ours: c.ours.clone(),
+        theirs: c.theirs.clone(),
+        taken: c.taken.key(),
+        text: c.text.clone(),
+    }
+}
+
+/// The page's picks: conflict key to `"ours"` or `"theirs"`.
+pub fn read_picks(picks: &BTreeMap<String, String>) -> Result<BTreeMap<String, Side>, String> {
+    if picks.len() > MAX_PICKS {
+        return Err("Too many choices.".into());
+    }
+    picks
+        .iter()
+        .map(|(k, v)| {
+            if k.len() > MAX_KEY {
+                return Err("That choice isn't one of the conflicts.".to_string());
+            }
+            let side = Side::from_key(v).ok_or_else(|| format!("\"{v}\" isn't ours or theirs."))?;
+            Ok((k.clone(), side))
+        })
+        .collect()
+}
+
+/// What a finished merge from `theirs` says, `unchanged` when it changed nothing.
+pub fn merge_notice(theirs: &str, m: &Merged, unchanged: bool) -> String {
+    if unchanged {
+        return format!("Nothing to merge: this schedule already has what it takes from {theirs}.");
+    }
+    let n = m.conflicts.len();
+    let mut out = format!("Merged the changes from {theirs}.");
+    if n > 0 {
+        let t = m
+            .conflicts
+            .iter()
+            .filter(|c| c.taken == Side::Theirs)
+            .count();
+        let word = if n == 1 { "conflict" } else { "conflicts" };
+        out.push_str(&format!(
+            " {n} {word}: {} kept yours, {t} took theirs, listed under File > Merge \
+             Conflicts to Review until you mark them done.",
+            n - t
+        ));
+    }
+    if !m.fallbacks.is_empty() {
+        let f = m.fallbacks.len();
+        out.push_str(&format!(
+            " {f} {} kept yours so the schedule hangs together.",
+            if f == 1 { "part" } else { "parts" }
+        ));
+    }
+    out.push_str(" Undo takes the whole merge back.");
+    out
+}
+
+/// Merges `theirs` into `ours` against `base` with `picks` (the rest keep ours), keeping
+/// every conflict in the schedule for review until marked done (decision 238).
+pub fn merge_into(
+    base: &Schedule,
+    ours: &mut Schedule,
+    theirs: &Schedule,
+    picks: &BTreeMap<String, Side>,
+) -> Merged {
+    let mut m = merge_with(base, ours, theirs, Side::Ours, picks);
+    method_schedule_core::plan::keep_conflicts(
+        &mut m.schedule,
+        &m.conflicts,
+        crate::clock::today(),
+    );
+    *ours = m.schedule.clone();
+    m
 }
 
 #[cfg(test)]

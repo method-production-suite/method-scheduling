@@ -191,7 +191,9 @@ STANDARDS.md); sharing them saves most of phase 2's writing once.
   `setReadOnly`, `hostInfo`, `commands()`; or host the page unchanged with the shim.
 - `.mtsc` text in and out (docs/FORMAT.md). Where schedules are kept is the partner's: the
   host keeps nothing beyond the tab.
-- Sharing is their server's; nothing of our file-based merge is in the browser build.
+- Sharing is their server's. A merge runs in the browser host when the host hands in theirs
+  and the version both started from: `merge_preview` and `merge_apply` with `file`,
+  `base_file` (or `base: "saved"`) and `picks` (decisions.md, entry 239).
 - The exchange file for Method Budget (docs/EXCHANGE.md) and call sheet data
   (docs/CALLSHEET.md) come out as downloads, the same bytes as the desktop's.
 - Clean room both ways: the partner sends no code to this repository, and nothing derived
