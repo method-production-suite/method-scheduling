@@ -5696,7 +5696,7 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 
 ## 239. The browser host merges with the base handed in (2026-10-29)
 
-- **Entry 226's contract addition**, now a partner has asked for it: `merge_preview` and
+- **Entry 226's contract addition**, now the web-based conversion has asked for it: `merge_preview` and
   `merge_apply` run in the browser host. Theirs comes in as `file`, and the version both
   copies started from as `base_file` (`base: "file"`, the default) or the schedule as last
   opened or saved in that host (`base: "saved"`, the fallback the desktop uses when no
