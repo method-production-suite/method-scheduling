@@ -228,6 +228,10 @@ method-schedule explain FILE ELEMENT [--category CAT]
   were settled** (the merged file is written either way, so it can be checked); exit 1 too
   for an error, with nothing written. `--theirs` settles conflicts for theirs instead.
 - `method-schedule merge-driver` is the same merge for git: it writes the result over `OURS`.
+- Every conflict either one settles is kept in the merged file (`plan.conflicts`,
+  docs/FORMAT.md) until someone marks it done in the app's File > Merge Conflicts to Review,
+  so a merge git ran for you leaves the list with the file (decisions.md, entry 238). The
+  report ends with a line saying so.
 - `method-schedule explain` explains an element on the first board's first sub-board (it needs a
   start date). Names ignore case; a name in more than one category needs `--category`.
 

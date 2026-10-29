@@ -161,11 +161,14 @@ its badge.
 - **Merge Changes From** brings what changed in another copy of the schedule into yours,
   against the version you both started from. Where you both changed the same thing, you
   pick yours or theirs. The result always hangs together.
+- **Merge Conflicts to Review** (File menu) keeps every conflict a merge settled, with the
+  file, until you mark it done: what it was, both values and which was kept. Click one to
+  go to it; change it there if the other value was right.
 - **With git**, `method-schedule merge-driver` does the same merge for every schedule file
   in a repository. Set it up once with `method-schedule git-setup` in the repository (or
   `method-schedule git-setup --global` for all of them), and a merge either goes through or
   marks the file for you to settle. The file stays a schedule either way: open it, check
-  the listed conflicts, then `git add` it.
+  the conflicts under File > Merge Conflicts to Review, then `git add` it.
 
 ## The budget exchange file
 

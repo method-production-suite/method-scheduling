@@ -225,6 +225,20 @@ pub fn set_person_call<R: Runtime>(
     )
 }
 
+/// Marks merge conflicts done (decision 238): those with `keys`, or every one.
+#[tauri::command]
+pub fn settle_conflicts<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    keys: Option<Vec<String>>,
+) -> CmdResult {
+    method_schedule_session::commands::plan::settle_conflicts(
+        &crate::app::Win(&window),
+        &*state,
+        keys,
+    )
+}
+
 /// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
 /// finished it.
 #[tauri::command]
@@ -254,6 +268,12 @@ pub fn set_long_day<R: Runtime>(window: WebviewWindow<R>, state: Doc, value: Str
 #[tauri::command]
 pub fn drafts_data(state: Doc) -> CmdResult<Vec<DraftDto>> {
     method_schedule_session::commands::plan::drafts_data(&*state)
+}
+
+/// The merge conflicts kept for review (decision 238).
+#[tauri::command]
+pub fn conflicts_data(state: Doc) -> CmdResult<Vec<method_schedule_session::changes::ReviewDto>> {
+    method_schedule_session::commands::plan::conflicts_data(&*state)
 }
 
 #[tauri::command]

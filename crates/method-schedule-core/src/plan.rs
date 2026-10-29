@@ -49,7 +49,45 @@ pub struct Plan {
     pub person_calls: Vec<PersonCall>,
     /// Each script draft a revision merged, oldest first (decision 233).
     pub drafts: Vec<Draft>,
+    /// Merge conflicts settled one way and not yet looked at, kept with the file until
+    /// someone marks them done (decision 238).
+    pub conflicts: Vec<ReviewConflict>,
 }
+
+/// A merge conflict kept for review (decision 238): what [`crate::merge::Conflict`] said,
+/// with the date of the merge. `ours` is the copy merged into.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewConflict {
+    /// The merge's key: `sheet:12:set`, `element:5:name`. Unique in the list.
+    pub key: String,
+    pub what: String,
+    pub base: Option<String>,
+    pub ours: String,
+    pub theirs: String,
+    /// The side the merge took.
+    pub taken: crate::merge::Side,
+    pub date: Option<Date>,
+}
+
+impl ReviewConflict {
+    /// In plain words, as the merge said it, with the side taken.
+    pub fn text(&self) -> String {
+        let was = self
+            .base
+            .as_ref()
+            .map_or(String::new(), |b| format!(", was {b}"));
+        format!(
+            "{}: ours {}, theirs {}{was}; {} kept",
+            self.what,
+            self.ours,
+            self.theirs,
+            self.taken.key()
+        )
+    }
+}
+
+/// The most conflicts the review list keeps.
+pub const MAX_REVIEW_CONFLICTS: usize = 10_000;
 
 /// A script draft merged by a revision (decision 233): its color, when, and what it did.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -273,7 +311,6 @@ impl Plan {
         self.omitted.contains(&sheet)
     }
 
-    /// Element `element`'s own call and wrap on the day closed by `day`, if set.
     /// The newest draft that changed or added `sheet` (decision 233).
     pub fn revised_in(&self, sheet: SheetId) -> Option<&Draft> {
         self.drafts
@@ -282,6 +319,7 @@ impl Plan {
             .find(|d| d.changed.contains(&sheet) || d.added.contains(&sheet))
     }
 
+    /// Element `element`'s own call and wrap on the day closed by `day`, if set.
     pub fn person_call(&self, day: StripId, element: ElementId) -> Option<&PersonCall> {
         self.person_calls
             .iter()
@@ -430,6 +468,19 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
         }
         if p.locks[..i].iter().any(|o| same_name(&o.name, &l.name)) {
             return broken(format!("two locks are named {:?}", l.name));
+        }
+    }
+    if p.conflicts.len() > MAX_REVIEW_CONFLICTS {
+        return broken(format!(
+            "more than {MAX_REVIEW_CONFLICTS} merge conflicts to review"
+        ));
+    }
+    for (i, c) in p.conflicts.iter().enumerate() {
+        if c.key.trim().is_empty() || c.key.chars().any(char::is_control) {
+            return broken("a merge conflict's key is one line".to_string());
+        }
+        if p.conflicts[..i].iter().any(|o| o.key == c.key) {
+            return broken(format!("two merge conflicts are {:?}", c.key));
         }
     }
     for (i, d) in p.drafts.iter().enumerate() {
@@ -619,6 +670,43 @@ pub fn record_shot(
     }
     tidy(s);
     Ok(())
+}
+
+/// Adds `conflicts`, from a merge on `date`, to the review list (decision 238): one with a
+/// key already listed takes its place. Returns how many were added.
+pub fn keep_conflicts(
+    s: &mut Schedule,
+    conflicts: &[crate::merge::Conflict],
+    date: Option<Date>,
+) -> usize {
+    let p = &mut s.plan;
+    for c in conflicts {
+        p.conflicts.retain(|x| x.key != c.key);
+        p.conflicts.push(ReviewConflict {
+            key: c.key.clone(),
+            what: c.what.clone(),
+            base: c.base.clone(),
+            ours: c.ours.clone(),
+            theirs: c.theirs.clone(),
+            taken: c.taken,
+            date,
+        });
+    }
+    let over = p.conflicts.len().saturating_sub(MAX_REVIEW_CONFLICTS);
+    p.conflicts.drain(..over);
+    conflicts.len().min(MAX_REVIEW_CONFLICTS)
+}
+
+/// Marks the conflicts with these keys done: they leave the review list. Every key when
+/// `keys` is none. Returns how many left.
+pub fn settle_conflicts(s: &mut Schedule, keys: Option<&[String]>) -> usize {
+    let p = &mut s.plan;
+    let before = p.conflicts.len();
+    match keys {
+        Some(k) => p.conflicts.retain(|x| !k.contains(&x.key)),
+        None => p.conflicts.clear(),
+    }
+    before - p.conflicts.len()
 }
 
 /// Sets element `element`'s own call and wrap on the day closed by `day` (decision 231):
@@ -940,6 +1028,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     }
     if a.drafts != b.drafts {
         out.push("script drafts changed".to_string());
+    }
+    if a.conflicts != b.conflicts {
+        out.push("merge conflicts to review changed".to_string());
     }
     if a.omitted != b.omitted {
         out.push("omitted scenes changed".to_string());

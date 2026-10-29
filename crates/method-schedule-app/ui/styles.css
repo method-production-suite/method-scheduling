@@ -991,6 +991,7 @@ table.cal-month { width: 100%; border-collapse: collapse; table-layout: fixed; b
 .dm-go { text-align: left; font-size: inherit; padding: 0; }
 .dm-label { color: var(--muted); }
 .dm-sides { display: flex; gap: 16px; margin-top: 4px; }
+.dm-kept { flex: 1; color: var(--muted); align-self: center; }
 .dm-side { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
 /* Find and Replace (find.js): a panel at the right, across every tab. */

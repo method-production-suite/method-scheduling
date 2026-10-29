@@ -1326,8 +1326,13 @@ fn merge_cmd(args: &[String]) -> Result<MergeOut, String> {
     let base = load(files[0]).map_err(named)?;
     let ours = load(files[1]).map_err(named)?;
     let theirs = load(files[2]).map_err(named)?;
-    let m = merge_with(&base, &ours, &theirs, side, &BTreeMap::new());
-    let report = merge_report(&m, side);
+    let mut m = merge_with(&base, &ours, &theirs, side, &BTreeMap::new());
+    // The conflicts stay in the file until someone looks at them (decision 238).
+    method_schedule_core::plan::keep_conflicts(&mut m.schedule, &m.conflicts, today());
+    let mut report = merge_report(&m, side);
+    if !m.conflicts.is_empty() {
+        report.push_str("the conflicts are kept in the file for review (Merge Conflicts to Review in the app)\n");
+    }
     let conflicts = !m.conflicts.is_empty();
     if driver {
         save(files[1], &m.schedule)?;
@@ -2674,6 +2679,15 @@ mod tests {
         let merged = load(&ours).unwrap();
         assert_eq!(merged.sheets[0].set, "BOATHOUSE");
         assert_eq!(merged.sheets[1].synopsis, "Storm.");
+        // Decision 238: the conflict stays in the file for review.
+        let kept = &merged.plan.conflicts;
+        assert_eq!(kept.len(), 1, "{kept:?}");
+        assert_eq!(kept[0].key, format!("sheet:{}:set", s.sheets[0].id.0));
+        assert!(
+            m.stderr.contains("kept in the file for review"),
+            "{}",
+            m.stderr
+        );
         // No common base: refused, ours untouched.
         let empty = base.replace("show.json", "empty.json");
         fs::write(&empty, "").unwrap();

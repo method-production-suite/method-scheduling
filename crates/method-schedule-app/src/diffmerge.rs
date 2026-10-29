@@ -574,7 +574,13 @@ pub fn apply(
     let mut s = state.lock();
     let before = s.schedule().clone();
     let m: Merged = s.edit(|x| {
-        let m = merge_with(&base, x, &theirs, Side::Ours, picks);
+        let mut m = merge_with(&base, x, &theirs, Side::Ours, picks);
+        // Every conflict stays listed for review until marked done (decision 238).
+        method_schedule_core::plan::keep_conflicts(
+            &mut m.schedule,
+            &m.conflicts,
+            method_schedule_session::clock::today(),
+        );
         *x = m.schedule.clone();
         Ok(m)
     })?;
@@ -600,7 +606,8 @@ fn merge_notice(theirs: &str, m: &Merged, unchanged: bool) -> String {
             .count();
         let word = if n == 1 { "conflict" } else { "conflicts" };
         out.push_str(&format!(
-            " {n} {word}: {} kept yours, {t} took theirs.",
+            " {n} {word}: {} kept yours, {t} took theirs, listed under File > Merge \
+             Conflicts to Review until you mark them done.",
             n - t
         ));
     }

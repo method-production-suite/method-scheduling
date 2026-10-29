@@ -5263,6 +5263,7 @@ impl Schedule {
         t.plan.days_shot.clear();
         t.plan.person_calls.clear();
         t.plan.drafts.clear();
+        t.plan.conflicts.clear();
         t.plan.scenes_shot.clear();
         t.plan.pinned.clear();
         t.plan.omitted.clear();

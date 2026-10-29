@@ -105,6 +105,7 @@ pub const COMMANDS: &[&str] = &[
     "push_past_wrap",
     "set_call_time",
     "set_person_call",
+    "settle_conflicts",
     "set_shot",
     "set_long_day",
     "locations_data",
@@ -112,6 +113,7 @@ pub const COMMANDS: &[&str] = &[
     "rest_data",
     "set_turnaround",
     "drafts_data",
+    "conflicts_data",
     "locks_data",
     "lock_schedule",
     "delete_lock",
@@ -156,6 +158,7 @@ pub const READS: &[&str] = &[
     "locations_data",
     "rest_data",
     "drafts_data",
+    "conflicts_data",
     "locks_data",
     "drift_data",
     "suggest_order",
@@ -1904,6 +1907,21 @@ mod plan_cmds {
             }
             "locations_data" => to_reply(crate::commands::plan::locations_data(state)),
             "drafts_data" => to_reply(crate::commands::plan::drafts_data(state)),
+            "conflicts_data" => to_reply(crate::commands::plan::conflicts_data(state)),
+            "settle_conflicts" => {
+                #[derive(Deserialize)]
+                struct A {
+                    #[serde(default)]
+                    keys: Option<Vec<String>>,
+                }
+                let A { keys } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::settle_conflicts(
+                    &window, state, keys,
+                ))
+            }
             "set_location" => {
                 #[derive(Deserialize)]
                 struct A {

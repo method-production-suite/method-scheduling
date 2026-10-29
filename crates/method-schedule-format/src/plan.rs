@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, SceneShot,
-    Turnaround, DEFAULT_LONG_DAY, MAX_WRAP,
+    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, ReviewConflict,
+    SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -43,6 +43,23 @@ pub(crate) struct FilePlan {
     person_calls: Vec<FilePersonCall>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     drafts: Vec<FileDraft>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    conflicts: Vec<FileConflict>,
+}
+
+/// A merge conflict kept for review (decision 238).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileConflict {
+    key: String,
+    what: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    base: Option<String>,
+    ours: String,
+    theirs: String,
+    taken: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    date: Option<String>,
 }
 
 /// A script draft a revision merged (decision 233).
@@ -157,6 +174,19 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
     }
     let ids = |v: &[SheetId]| v.iter().map(|x| x.0).collect::<Vec<_>>();
     Some(FilePlan {
+        conflicts: p
+            .conflicts
+            .iter()
+            .map(|c| FileConflict {
+                key: c.key.clone(),
+                what: c.what.clone(),
+                base: c.base.clone(),
+                ours: c.ours.clone(),
+                theirs: c.theirs.clone(),
+                taken: c.taken.key().to_string(),
+                date: c.date.map(|x| x.to_string()),
+            })
+            .collect(),
         drafts: p
             .drafts
             .iter()
@@ -401,6 +431,29 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             added: ids(d.added),
             omitted: ids(d.omitted),
             color: d.color,
+        });
+    }
+    for c in f.conflicts {
+        if c.key.trim().is_empty() || p.conflicts.iter().any(|o| o.key == c.key) {
+            return Err(bad(format!(
+                "merge conflict {:?} is empty or listed twice",
+                c.key
+            )));
+        }
+        let taken = method_schedule_core::merge::Side::from_key(&c.taken).ok_or_else(|| {
+            bad(format!(
+                "merge conflict {:?} took {:?}, not \"ours\" or \"theirs\"",
+                c.key, c.taken
+            ))
+        })?;
+        p.conflicts.push(ReviewConflict {
+            date: c.date.as_deref().map(date).transpose()?,
+            key: c.key,
+            what: c.what,
+            base: c.base,
+            ours: c.ours,
+            theirs: c.theirs,
+            taken,
         });
     }
     for x in f.person_calls {

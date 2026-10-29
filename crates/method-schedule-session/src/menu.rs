@@ -107,6 +107,7 @@ pub const FILE: &[Entry] = &[
     plain("file.what_changed", "What Changed\u{2026}"),
     plain("file.what_changed_saved", "What Changed Since Saved"),
     plain("file.merge", "Merge Changes From\u{2026}"),
+    plain("file.review_conflicts", "Merge Conflicts to Review\u{2026}"),
     SEP,
     item("file.export", "Export\u{2026}", "mod+e"),
     plain("file.export_budget", "Export for Budget\u{2026}"),

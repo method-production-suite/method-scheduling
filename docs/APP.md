@@ -814,6 +814,12 @@ flag on KIT for 2027-03-02 marks scene 3, that date and KIT's cell.
   status line says how the conflicts were settled. The result always passes the
   schedule's check. A schedule never saved can't merge (it has no base), and the file
   can't merge from itself (decisions.md, entry 26).
+- **Merge Conflicts to Review…** (File menu) lists every conflict a merge settled, from
+  this dialog or from `method-schedule merge` and the git merge driver, kept with the file
+  until marked done (decisions.md, entry 238): what it was about (a link to the sheet,
+  element or category when it is still there), Yours, Theirs and Was, which side was kept
+  and when. **Done** takes one off the list and **All Done** every one, each a change Undo
+  takes back. To use the other value, go to it and change it there.
 
 ### Saving and recovery
 
@@ -1300,6 +1306,8 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `import_script_tags` | shows the Open dialog (`.fdx`) | the view with a notice, or null when cancelled (Plan menu; decisions.md, IMP-04) |
 | `revise_pick` | `tags`; shows the Open dialog | `{token, file, matched, changed, added, omitted, lines}`, the revision worked out on a copy, or null when cancelled |
 | `revise_apply` | `token` | the view: the revision merged as one undo step, recorded as the next draft when it changed anything; an omitted scene's strip (and its report lines) carry `omitted` and are drawn struck |
+| `conflicts_data` | | `[{key, what, base, ours, theirs, taken, date, go}]`, the merge conflicts kept for review, oldest first; `go` as What Changed's, left out for something no longer there (decisions.md, entry 238) |
+| `settle_conflicts` | `keys` (none for every one) | The view; the conflicts with those keys leave the review list (entry 238) |
 | `drafts_data` | | `[{color, date, changed, added, omitted}]`, every script draft merged, oldest first; the scene lists are names such as `Scene 12, INT. BOAT` (Plan > Script Drafts; decisions.md, entry 233) |
 | `timeline_data` | `sub_board`, `strip` (may be null) | `{sub_board, sub_board_name, long_day, days, focus}`: each day `{number, date, day (its day break), call, wrap, length, sun, entries: [{strip, kind, text, start, end, untimed, warnings}], warnings}`; `focus` the day holding `strip`; each day also `past_wrap` (what runs past its wrap, in words, empty when nothing does), `push` (those strips, empty on the last day) and `next` (decisions.md, entry 192), and `people`: `[{element, name, call, wrap}]`, who works the day with their own call and wrap, empty for the company's (entry 231) |
 | `push_past_wrap` | `sub_board`, `day`, `strips` (the day's `push` as previewed) | the view, with a notice: the strips moved to the start of the next day as one undo step (refused when the day changed since) |
