@@ -21,8 +21,8 @@ section. Everything else on this page goes ahead without waiting.
   newest draft on the Breakdown tab, Script Drafts printed, a cost to compare strip
   orders (D234), What Changed linking each change to where it is (D235), a rename on
   one side merged with the element the other side added (D236), calendar changes
-  linking to their date (D237), and merge conflicts kept with the file for review
-  (D238). For those notes: files using `plan.person_calls` or `plan.drafts` still won't
+  linking to their date (D237), merge conflicts kept with the file for review
+  (D238), and merging in the browser host with the base handed in (D239). For those notes: files using `plan.person_calls` or `plan.drafts` still won't
   open in 0.5.0 or earlier, and files with `plan.conflicts` not in 0.6.0 or earlier.
 
 **Needs the owner's hands or hardware**
@@ -50,9 +50,9 @@ saying it hasn't been tested by a person yet. The Windows hand checks (the same 
 Linux's, plus SmartScreen on the unsigned installer) wait until the owner says otherwise.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
-- **Merge in the browser host** (D226), built on the recommendation: the browser host offers
-  Revise and What Changed but not Merge, which needs a common version from backups a browser
-  doesn't keep. Reverse it and the host takes the base schedule as a third file.
+- **Merge in the browser host** (D226, D239): settled. A partner asked, so the host now
+  takes the base schedule as a file beside theirs (`merge_preview`, `merge_apply`); the
+  page in a browser still offers no merge picker of its own.
 - **Unknown keys in a schedule file** (D224, D227): **approved by the owner** (2026-10-20,
   with the v0.4.0 go-ahead). The reader stays strict, and one reserved `extensions` object
   (at the top level and on the schedule, categories, red flag types, elements, sheets,
