@@ -5,7 +5,7 @@
 use serde::Serialize;
 
 use method_schedule_core::diff::{diff, Change, Diff, Subject};
-use method_schedule_core::model::StripKind;
+use method_schedule_core::model::{CategoryId, ElementId, SheetId, StripKind};
 use method_schedule_core::Schedule;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -32,7 +32,7 @@ pub struct GoDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sheet: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub field: Option<&'static str>,
+    pub field: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -64,7 +64,7 @@ fn go(here: &Schedule, c: &Change) -> Option<GoDto> {
         Subject::Sheet(id) => here.sheet(id).map(|_| GoDto {
             kind: "sheet",
             sheet: Some(id.0),
-            field: c.fields.first().map(|f| f.field),
+            field: c.fields.first().map(|f| f.field.to_string()),
             ..none
         }),
         Subject::Element(id) | Subject::RedFlag(id, _) => here.element(id).map(|e| GoDto {
@@ -97,6 +97,86 @@ fn go(here: &Schedule, c: &Change) -> Option<GoDto> {
                 ..none
             })
         }
+        _ => None,
+    }
+}
+
+/// A merge conflict kept for review (decision 238), with where it is when that is still in
+/// the schedule.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ReviewDto {
+    pub key: String,
+    pub what: String,
+    pub base: Option<String>,
+    pub ours: String,
+    pub theirs: String,
+    /// `ours` or `theirs`.
+    pub taken: &'static str,
+    pub date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub go: Option<GoDto>,
+}
+
+/// The merge conflicts kept for review, oldest first.
+pub fn review_view(s: &Schedule) -> Vec<ReviewDto> {
+    s.plan
+        .conflicts
+        .iter()
+        .map(|c| ReviewDto {
+            key: c.key.clone(),
+            what: c.what.clone(),
+            base: c.base.clone(),
+            ours: c.ours.clone(),
+            theirs: c.theirs.clone(),
+            taken: c.taken.key(),
+            date: c.date.map(|d| d.to_string()),
+            go: go_key(s, &c.key),
+        })
+        .collect()
+}
+
+/// Where a merge conflict's key (`sheet:12:set`, `element:5:name`, `red_flag:7:dates`,
+/// `category:2:name`) is in `s`: a sheet, an element or a category still there.
+fn go_key(s: &Schedule, key: &str) -> Option<GoDto> {
+    let mut parts = key.split(':');
+    let kind = parts.next()?;
+    let id: u32 = parts.next()?.parse().ok()?;
+    let rest = parts.next();
+    let none = GoDto {
+        kind: "",
+        sheet: None,
+        field: None,
+        category: None,
+        element: None,
+        board: None,
+        sub_board: None,
+        strip: None,
+        date: None,
+    };
+    let element = |e: &method_schedule_core::model::Element| GoDto {
+        kind: "element",
+        category: Some(e.category.0),
+        element: Some(e.id.0),
+        ..none.clone()
+    };
+    match kind {
+        "sheet" => s.sheet(SheetId(id)).map(|_| GoDto {
+            kind: "sheet",
+            sheet: Some(id),
+            field: rest.map(str::to_string),
+            ..none.clone()
+        }),
+        "element" => s.element(ElementId(id)).map(element),
+        "red_flag" => s
+            .elements
+            .iter()
+            .find(|e| e.red_flags.iter().any(|f| f.id.0 == id))
+            .map(element),
+        "category" => s.category(CategoryId(id)).map(|c| GoDto {
+            kind: "category",
+            category: Some(c.id.0),
+            ..none.clone()
+        }),
         _ => None,
     }
 }
@@ -203,7 +283,7 @@ mod tests {
         };
         let sheet = find("sheet", "changed").go.as_ref().unwrap();
         assert_eq!(
-            (sheet.kind, sheet.sheet, sheet.field),
+            (sheet.kind, sheet.sheet, sheet.field.as_deref()),
             ("sheet", Some(h.0), Some("set"))
         );
         let el = find("element", "changed").go.as_ref().unwrap();
@@ -226,6 +306,37 @@ mod tests {
             ("event", Some(sb.0), Some("2027-03-03"))
         );
         assert_eq!(cal.iter().filter(|c| c.go.is_some()).count(), 1);
+        // Decision 238: merge conflicts kept for review link to what is still there.
+        let mut kept = newer.clone();
+        let keys = [
+            format!("sheet:{}:set", h.0),
+            format!("element:{}:name", gone.0),
+            format!("category:{}:name", cast.0),
+        ];
+        let conflicts: Vec<_> = keys
+            .iter()
+            .map(|key| method_schedule_core::merge::Conflict {
+                key: key.clone(),
+                what: "x".into(),
+                base: None,
+                ours: "a".into(),
+                theirs: "b".into(),
+                taken: method_schedule_core::merge::Side::Ours,
+                text: String::new(),
+            })
+            .collect();
+        method_schedule_core::plan::keep_conflicts(&mut kept, &conflicts, None);
+        let r = review_view(&kept);
+        assert_eq!(r.len(), 3);
+        let g = r[0].go.as_ref().unwrap();
+        assert_eq!(
+            (g.kind, g.sheet, g.field.as_deref()),
+            ("sheet", Some(h.0), Some("set"))
+        );
+        assert!(r[1].go.is_none(), "deleted");
+        assert_eq!(r[2].go.as_ref().unwrap().kind, "category");
+        method_schedule_core::plan::settle_conflicts(&mut kept, Some(&keys[..1]));
+        assert_eq!(review_view(&kept).len(), 2);
         // The merge's list has no links: leaving it would drop the picks.
         assert!(groups(&diff(&older, &newer))
             .iter()

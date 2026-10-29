@@ -237,6 +237,7 @@ by the next plan edit; they are never an error.
 | `days_shot` | array of [day shot](#day-shot) | empty | Each shoot day as it was shot, written back by a production report (decisions.md, entry 224). One per day break. |
 | `scenes_shot` | array of [scene shot](#scene-shot) | empty | What was shot of each scene on each day (entry 224). One per scene and day. |
 | `drafts` | array of [draft](#draft) | empty | Each script draft a revision merged, oldest first (entry 233). |
+| `conflicts` | array of [merge conflict](#merge-conflict) | empty | Conflicts merges settled one way, kept until someone marks them done (entry 238). |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
 
 #### Location
@@ -286,6 +287,21 @@ refuses the file, as it refuses any unknown key.
 
 A revision that changes nothing records no draft. Sheets since deleted leave the lists at
 the next plan edit; the draft stays.
+
+#### Merge conflict
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `key` | string | | The merge's key for it (`sheet:12:set`, `element:5:name`), one line. Unique in the list. |
+| `what` | string | | What it is about, as the merge said: `Scene 4 set`. |
+| `base` | string | none | The value in the version both copies started from, when it had one. |
+| `ours` | string | | The value in the copy merged into. |
+| `theirs` | string | | The value in the copy merged from. |
+| `taken` | string | | `ours` or `theirs`: the side the merge kept. |
+| `date` | date | none | When it was merged. |
+
+Values are as the merge shows them (quoted names, `1 3/8` for pages). A later merge with a
+conflict under the same key replaces it. At most 10,000; the oldest go first.
 
 #### Person call
 

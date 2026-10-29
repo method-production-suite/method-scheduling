@@ -20,9 +20,10 @@ section. Everything else on this page goes ahead without waiting.
   dates); methodschedule.com follows it. On main since, for the next release: each sheet's
   newest draft on the Breakdown tab, Script Drafts printed, a cost to compare strip
   orders (D234), What Changed linking each change to where it is (D235), a rename on
-  one side merged with the element the other side added (D236), and calendar changes
-  linking to their date (D237). For those notes: files using `plan.person_calls` or `plan.drafts` still
-  won't open in 0.5.0 or earlier.
+  one side merged with the element the other side added (D236), calendar changes
+  linking to their date (D237), and merge conflicts kept with the file for review
+  (D238). For those notes: files using `plan.person_calls` or `plan.drafts` still won't
+  open in 0.5.0 or earlier, and files with `plan.conflicts` not in 0.6.0 or earlier.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
@@ -234,7 +235,6 @@ deferred, the owner, 2026-10-20).
 | Item | Size | Refs |
 |---|---|---|
 | Merge UI polish: going to a change from the merge itself (it would drop the picks; What Changed links them since D235, calendar dates since D237) | S | D26, D235, D237, APP.md "Not yet" |
-| Conflict review: a list of every conflict pick, kept with the file until resolved | M | MERGE.md |
 | Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |
 
 **Exit**: two copies edited apart in a shared folder and in git merge with every change

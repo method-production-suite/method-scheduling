@@ -355,6 +355,18 @@ pub(crate) fn everything() -> Schedule {
         added: vec![last],
         omitted: Vec::new(),
     });
+    // A merge conflict kept for review (decision 238).
+    s.plan
+        .conflicts
+        .push(method_schedule_core::plan::ReviewConflict {
+            key: format!("sheet:{}:set", s.sheets[0].id.0),
+            what: "Scene 1 set".into(),
+            base: Some("\"SHED\"".into()),
+            ours: "\"LOFT\"".into(),
+            theirs: "\"BARN\"".into(),
+            taken: method_schedule_core::merge::Side::Theirs,
+            date: "2027-02-11".parse().ok(),
+        });
     // Additions from another app on every object that keeps them (decision 224).
     let x = &mut s.extensions;
     x.file = Some(r#"{"org.example.sync":{"rev":7}}"#.to_string());

@@ -1581,6 +1581,17 @@ impl M<'_> {
                     None => format!("{} scenes changed", d.changed.len()),
                 },
             ),
+            // Kept conflicts come and go whole: one marked done on either side stays done.
+            conflicts: merge_keyed(
+                cx,
+                "plan:conflict",
+                &b.conflicts,
+                &o.conflicts,
+                &t.conflicts,
+                |c| c.key.clone(),
+                |c| format!("The conflict to review on {}", c.what),
+                |c| c.text(),
+            ),
             pinned: merge_ids(cx, Some(&b.pinned), &o.pinned, &t.pinned),
             omitted: merge_ids(cx, Some(&b.omitted), &o.omitted, &t.omitted),
         }

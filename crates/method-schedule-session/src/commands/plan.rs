@@ -113,6 +113,25 @@ pub fn drafts_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<DraftDto>> {
     Ok(drafts_view(state.lock().schedule()))
 }
 
+/// The `conflicts_data` command: the merge conflicts kept for review (decision 238).
+pub fn conflicts_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<crate::changes::ReviewDto>> {
+    Ok(crate::changes::review_view(state.lock().schedule()))
+}
+
+/// Marks merge conflicts done (decision 238): those with `keys`, or every one.
+pub fn settle_conflicts<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    keys: Option<Vec<String>>,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| {
+        p::settle_conflicts(x, keys.as_deref());
+        Ok(())
+    })?;
+    finish(&window, &s, None)
+}
+
 /// The `locations_data` command.
 pub fn locations_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<LocationDto>> {
     Ok(locations_view(state.lock().schedule()))

@@ -5671,3 +5671,25 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   (`Subject::Calendar(board, sub_board, date)`), so the MCP `diff` tool's calendar
   subjects gain a `date` (null for the weekly days off). Additive; nothing else reads it.
 - **Not yet**: going from inside the merge, which would drop the picks made so far.
+
+## 238. Merge conflicts kept with the file until reviewed (2026-10-29)
+
+- **M4's conflict review**: every conflict a merge settles is kept in the schedule file
+  (`plan.conflicts`, docs/FORMAT.md): its key, what it was about, ours, theirs, the base,
+  the side taken and the date. Merge Changes From, the outside-change merge,
+  `method-schedule merge` and the git merge driver all keep them, so a merge git ran with
+  nobody watching still leaves its list with the file. A later conflict under the same key
+  replaces the old one.
+- **File > Merge Conflicts to Review** lists them, each a link to its sheet, element or
+  category when that is still there, with Done for one and All Done for every one (each an
+  undoable change). Keeping the other value is done where the thing is: the list records,
+  it doesn't re-run the merge.
+- **The engine's merge is unchanged**: the callers add the conflicts after it, so a merge
+  settled for theirs still gives what the merge the other way round gives (entry 174).
+  Kept lists merge like any keyed list of the plan: one marked done on either side stays
+  done, one kept on either side stays.
+- **Format**: an additive key. Files with conflicts to review won't open in 0.6.0 or
+  earlier, as with entry 233's drafts; mark them done (or open them in a newer version)
+  first.
+- **Not yet**: taking the other value from the list itself; keys of strips and boards as
+  places to go.

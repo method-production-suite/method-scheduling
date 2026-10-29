@@ -27,7 +27,7 @@ import { createElements } from './elements.js';
 import { createCalendar } from './calendar.js';
 import { createReports, EXPORTABLE } from './reports.js';
 import { exportReport, exportBudget } from './export.js';
-import { whatChanged, mergeChanges } from './diffmerge.js';
+import { whatChanged, mergeChanges, reviewConflicts } from './diffmerge.js';
 import { createFind } from './find.js';
 import { createConflicts } from './conflicts.js';
 import { createRedFlags, manageTypes, paintFlagTypes, flagDialog } from './redflags.js';
@@ -1966,6 +1966,7 @@ const COMMANDS = {
   'file.what_changed': () => whatChanged('file', say, null, (h) => goToHit(h, { keepFocus: false })),
   'file.what_changed_saved': () => whatChanged('saved', say, null, (h) => goToHit(h, { keepFocus: false })),
   'file.merge': () => mergeChanges(say, show),
+  'file.review_conflicts': () => reviewConflicts(say, command, (h) => goToHit(h, { keepFocus: false })),
   'file.revert_backup': () => outside.revertToBackup(),
   'edit.undo': () => apply(invoke('undo')),
   'edit.redo': () => apply(invoke('redo')),

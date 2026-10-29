@@ -364,6 +364,24 @@ export function planFakes(ctx) {
     set_location: ({ name, latitude, longitude, utc_offset, daylight_saving }) => {
       return planEdit((m, plan) => placeLocation(plan, name, latitude, longitude, utc_offset, daylight_saving));
     },
+    // As changes.rs review_view (decision 238): two conflicts kept from a merge, the first
+    // on a category still there (a link), the second on a sheet since deleted.
+    conflicts_data: () => {
+      const m = model();
+      const plan = planOf(m);
+      if (!plan.conflicts) {
+        const c = m.categories[0];
+        plan.conflicts = [
+          { key: `category:${c.id}:name`, what: `Category "${c.name}" name`, base: `"${c.name}"`, ours: `"${c.name}"`, theirs: '"Actors"', taken: 'ours', date: '2026-10-29', go: { kind: 'category', category: c.id } },
+          { key: 'sheet:999:set', what: 'Scene 9 set', base: '"SHED"', ours: '"LOFT"', theirs: '"BARN"', taken: 'theirs', date: '2026-10-29' },
+        ];
+      }
+      return plan.conflicts;
+    },
+    settle_conflicts: ({ keys }) =>
+      planEdit((m, plan) => {
+        plan.conflicts = keys ? (plan.conflicts || []).filter((c) => !keys.includes(c.key)) : [];
+      }),
     // As plan.rs drafts_view (decision 233): a fixed history for the page.
     drafts_data: () => [
       { color: 'Blue', date: '2026-10-12', changed: ['Scene 3, EXT. HARBOR WALL'], added: ['Scene 3A, INT/EXT. KIT\'S TRUCK'], omitted: [] },

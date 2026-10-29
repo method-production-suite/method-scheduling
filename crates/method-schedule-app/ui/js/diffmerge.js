@@ -99,6 +99,85 @@ function conflictNode(c, onPick) {
   );
 }
 
+/**
+ * File > Merge Conflicts to Review (entry 238): every conflict a merge settled one way, kept
+ * with the file until marked done. A conflict on a sheet, element or category still in the
+ * schedule is a link that shows it. `run(promise)` applies a command's view; `go(where)`
+ * shows a place, as Find does.
+ */
+export async function reviewConflicts(say, run, go) {
+  let list;
+  try {
+    list = await invoke('conflicts_data');
+  } catch (e) {
+    say(e, true);
+    return;
+  }
+  await customDialog((close) => {
+    const body = el('ul', { class: 'dm-conflicts' });
+    const count = el('p', { class: 'dm-count' });
+    const error = errorLine();
+    const allDone = el('button', { class: 'btn', text: 'All Done', attrs: { type: 'button' } });
+    const draw = () => {
+      count.textContent = list.length ? `${plural(list.length, 'conflict', 'conflicts')} to review.` : 'No conflicts to review.';
+      allDone.disabled = !list.length;
+      body.replaceChildren(...list.map(item));
+    };
+    const shout = (t) => {
+      error.textContent = t;
+      error.hidden = !t;
+    };
+    const settle = async (keys) => {
+      shout('');
+      try {
+        await run(invoke('settle_conflicts', { keys }));
+      } catch (e) {
+        shout(String(e));
+        return;
+      }
+      list = keys ? list.filter((c) => !keys.includes(c.key)) : [];
+      draw();
+    };
+    const col = (label, value, cls) => el('div', { class: `dm-value ${cls}` }, el('span', { class: 'dm-label', text: label }), el('span', { text: value }));
+    function item(c) {
+      const what = c.go
+        ? el('button', { class: 'cf-link dm-go', text: c.what, attrs: { type: 'button', title: 'Show it' }, on: { click: () => close(null) || go(c.go) } })
+        : el('span', { text: c.what });
+      const kept = `Kept ${c.taken === 'theirs' ? 'theirs' : 'yours'}${c.date ? `, merged ${c.date}` : ''}.`;
+      return el(
+        'li',
+        { class: 'dm-conflict', data: { key: c.key } },
+        el('div', { class: 'dm-what' }, what),
+        el(
+          'div',
+          { class: 'dm-cols' },
+          col('Yours', c.ours, 'v-ours'),
+          col('Theirs', c.theirs, 'v-theirs'),
+          c.base !== null && c.base !== undefined ? col('Was', c.base, 'v-base') : null,
+        ),
+        el(
+          'div',
+          { class: 'dm-sides' },
+          el('span', { class: 'dm-kept', text: kept }),
+          el('button', { class: 'btn', text: 'Done', attrs: { type: 'button', title: 'Take it off the list' }, on: { click: () => settle([c.key]) } }),
+        ),
+      );
+    }
+    allDone.addEventListener('click', () => settle(null));
+    draw();
+    return el(
+      'div',
+      { class: 'modal modal-wider', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'rc-title' } },
+      el('h2', { class: 'modal-title', text: 'Merge Conflicts to Review', attrs: { id: 'rc-title' } }),
+      el('p', { class: 'modal-message', text: 'Each conflict a merge settled one way stays here, with the file, until you mark it done. Click one to see it; change it there if the other value was right.' }),
+      count,
+      el('div', { class: 'dm-body' }, body),
+      error,
+      el('div', { class: 'modal-actions' }, allDone, el('button', { class: 'btn btn-primary', text: 'Close', attrs: { type: 'button', 'data-autofocus': true }, on: { click: () => close(null) } })),
+    );
+  });
+}
+
 /** File > Merge Changes From: pick the file, preview, apply. `show(view)` draws the result. */
 export async function mergeChanges(say, show) {
   let picked;
