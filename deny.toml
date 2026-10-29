@@ -13,15 +13,6 @@ ignore = [
     { id = "RUSTSEC-2025-0081", reason = "unic-char-property: via urlpattern in tauri-utils" },
     { id = "RUSTSEC-2025-0098", reason = "unic-ucd-version: via urlpattern in tauri-utils" },
     { id = "RUSTSEC-2025-0100", reason = "unic-ucd-ident: via urlpattern in tauri-utils" },
-    # rustls 0.23.45, reached only through the updater's HTTPS client (reqwest via
-    # tauri-plugin-updater's rustls-tls), with rustls's ring, std and tls12 features
-    # and the ring provider the updater installs. None of the four applies, checked
-    # against each advisory on 2026-10-18 (also true of the published 0.1.0, same lock);
-    # take 0.23.46 when it clears the crate cooldown.
-    { id = "RUSTSEC-2026-0346", reason = "Debug of client session values: only custom ClientSessionStore impls that format them; reqwest uses rustls's built-in cache and nothing here implements one" },
-    { id = "RUSTSEC-2026-0347", reason = "data sent after an ECH rejection: only with EchMode::Enable, which nothing in reqwest, hyper-rustls, the updater or this code sets" },
-    { id = "RUSTSEC-2026-0348", reason = "Brotli certificate decompression: only with rustls's brotli feature, which is not enabled (ring, std, tls12 only)" },
-    { id = "RUSTSEC-2026-0349", reason = "downgrade from X25519MLKEM768: the ring provider offers only X25519, P-256 and P-384, so there is no post-quantum group to downgrade from" },
 ]
 
 [licenses]
