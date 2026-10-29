@@ -15,15 +15,14 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None pending. v0.6.0 was published on 2026-10-26 (call times of their own feeding the
-  rest checks, the call sheet's advance schedule, script drafts with their colors and
-  dates); methodschedule.com follows it. On main since, for the next release: each sheet's
-  newest draft on the Breakdown tab, Script Drafts printed, a cost to compare strip
-  orders (D234), What Changed linking each change to where it is (D235), a rename on
-  one side merged with the element the other side added (D236), calendar changes
-  linking to their date (D237), merge conflicts kept with the file for review
-  (D238), and merging in the browser host with the base handed in (D239). For those notes: files using `plan.person_calls` or `plan.drafts` still won't
-  open in 0.5.0 or earlier, and files with `plan.conflicts` not in 0.6.0 or earlier.
+- **v0.7.0**: the owner said yes on 2026-10-29 to tagging 5a466f6, which still carries
+  version 0.6.0, so the tag can't go there. This release PR moves the version to 0.7.0 and
+  adds the notes (docs/releases/0.7.0.md): conflicts kept for review (D238), What Changed's
+  links (D235, D237), a rename meeting a new element (D236), the browser merge (D239), the
+  strip order cost (D234) and drafts on Breakdown and printed. After it merges and the
+  rehearsal passes, the tag waits for the owner's yes naming its merge commit. Files with
+  `plan.conflicts` won't open in 0.6.0 or earlier; files using `plan.person_calls` or
+  `plan.drafts` won't open in 0.5.0 or earlier. v0.6.0 was published on 2026-10-26.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
