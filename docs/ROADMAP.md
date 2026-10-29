@@ -50,7 +50,7 @@ saying it hasn't been tested by a person yet. The Windows hand checks (the same 
 Linux's, plus SmartScreen on the unsigned installer) wait until the owner says otherwise.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
-- **Merge in the browser host** (D226, D239): settled. A partner asked, so the host now
+- **Merge in the browser host** (D226, D239): settled. The web-based conversion asked, so the host now
   takes the base schedule as a file beside theirs (`merge_preview`, `merge_apply`); the
   page in a browser still offers no merge picker of its own.
 - **Unknown keys in a schedule file** (D224, D227): **approved by the owner** (2026-10-20,
