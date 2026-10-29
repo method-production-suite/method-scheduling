@@ -1585,7 +1585,7 @@ License: MIT (offered: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT). Sou
 
 Authors: Dan Gohman, Jakub Konka
 
-### rustls 0.23.45
+### rustls 0.23.46
 
 License: MIT (offered: Apache-2.0 OR ISC OR MIT). Source: https://github.com/rustls/rustls
 
