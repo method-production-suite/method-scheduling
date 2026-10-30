@@ -466,9 +466,15 @@ impl MergeInputs {
         let d = diff(&self.ours, &m.schedule);
         out.base = base.id;
         out.base_label = base.label;
-        out.conflicts = m.conflicts.iter().map(conflict_dto).collect();
+        out.conflicts = m
+            .conflicts
+            .iter()
+            .map(|c| conflict_dto_in(c, &self.ours))
+            .collect();
         out.count = d.changes.len();
-        out.changes = groups(&d);
+        // Linked where they are in the window's schedule (decision 240): what the merge
+        // adds isn't there yet, so only what it changes, moves or removes is a link.
+        out.changes = groups_in(&d, &self.ours);
         out.renumbered = m.renumbered;
         out.fallbacks = m.fallbacks;
         out
@@ -810,6 +816,13 @@ mod tests {
         // Theirs' rename comes in; ours' title stays.
         assert_eq!(p.count, 1, "{:?}", p.changes);
         assert!(p.changes[0].changes[0].text.contains("THEIR NAME"));
+        // Each is a link to the element in the window (decision 240).
+        let at = |g: &Option<GoDto>| g.as_ref().map(|g| (g.kind, g.element));
+        assert_eq!(at(&c.go), Some(("element", Some(el.0))));
+        assert_eq!(
+            at(&p.changes[0].changes[0].go).map(|(k, _)| k),
+            Some("element")
+        );
 
         // Pick theirs for the conflict and apply: one undo step.
         let picks = BTreeMap::from([(c.key.clone(), Side::Theirs)]);
@@ -844,6 +857,27 @@ mod tests {
         let again = MergeInputs::gather(&state, &safety, theirs).unwrap();
         let n = apply(&state, &again, &BaseChoice::Auto, &picks).unwrap();
         assert!(n.starts_with("Nothing to merge"), "{n}");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn what_a_merge_adds_is_no_link_until_it_is_here() {
+        // Decision 240: an element only theirs has isn't in the window's schedule yet.
+        let (dir, state, safety, theirs, _) = setup("merge-links");
+        let mut more = (*theirs.schedule).clone();
+        let cast = more.category_named("Cast").unwrap();
+        more.add_element(cast, "NEWCOMER").unwrap();
+        let theirs = Theirs {
+            schedule: Arc::new(more),
+            ..theirs
+        };
+        let p = MergeInputs::gather(&state, &safety, theirs)
+            .unwrap()
+            .preview(&BaseChoice::Auto, &BTreeMap::new());
+        let all: Vec<_> = p.changes.iter().flat_map(|g| &g.changes).collect();
+        let added = all.iter().find(|c| c.text.contains("NEWCOMER")).unwrap();
+        assert!(added.go.is_none(), "{added:?}");
+        assert!(all.iter().any(|c| c.go.is_some()), "the rename still links");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

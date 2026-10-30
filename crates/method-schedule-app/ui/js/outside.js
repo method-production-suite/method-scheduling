@@ -66,7 +66,7 @@ function pickBackup(list) {
 
 /**
  * Sets up the check. `ctx`: { apply(promise) shows a command's view, say(text, isError),
- * show(view) }. Returns `check(force)`, which resolves true when it asked (Save then
+ * show(view), go(where) shows a place }. Returns `check(force)`, which resolves true when it asked (Save then
  * leaves the rest to the choice), and `revertToBackup()`.
  */
 export function initOutside(ctx) {
@@ -75,7 +75,7 @@ export function initOutside(ctx) {
   async function settle(dto) {
     const choice = await askOutside(dto);
     if (choice === 'merge') {
-      if (await runMerge(dto.token, ctx.say, ctx.show)) return;
+      if (await runMerge(dto.token, ctx.say, ctx.show, ctx.go)) return;
       // Cancelled: as Later, so focus doesn't ask again about this version.
       await ctx.apply(invoke('outside_resolve', { choice: 'later', version: dto.version }));
       return;

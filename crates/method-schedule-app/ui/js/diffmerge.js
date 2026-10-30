@@ -11,12 +11,14 @@
 // picked, with the backups and the file on disk to pick from instead; every conflict
 // with Keep Yours and Keep Theirs (yours to begin with); what the merge changes here;
 // and anything the merge kept yours so the schedule hangs together. Each choice works
-// the merge out again in Rust. Merge applies it as one undo step.
+// the merge out again in Rust. Merge applies it as one undo step. A conflict or change
+// about something in this schedule is a link that shows it (decision 240): the merge
+// waits in the footer, picks and base kept, until Back to Merge or Cancel Merge.
 //
 // Every string is Rust's, put in with textContent. No inline styles (the CSP).
 
 import { invoke } from './api.js';
-import { el } from './dom.js';
+import { $, el } from './dom.js';
 import { customDialog, errorLine } from './modal.js';
 import { baseChoiceOf, baseValueOf } from './logic.js';
 
@@ -70,8 +72,8 @@ export async function whatChanged(against, say, backup = null, go = null) {
   });
 }
 
-/** One conflict with its pick. */
-function conflictNode(c, onPick) {
+/** One conflict with its pick; with `onGo`, what it is about is a link that shows it. */
+function conflictNode(c, onPick, onGo = null) {
   const name = nextId('dm-pick');
   const radio = (side, label) => {
     const id = nextId('dm-side');
@@ -87,7 +89,9 @@ function conflictNode(c, onPick) {
   return el(
     'li',
     { class: 'dm-conflict' },
-    el('div', { class: 'dm-what', text: c.what }),
+    onGo && c.go
+      ? el('div', { class: 'dm-what' }, el('button', { class: 'cf-link dm-go', text: c.what, attrs: { type: 'button', title: 'Show it' }, on: { click: () => onGo(c.go) } }))
+      : el('div', { class: 'dm-what', text: c.what }),
     el(
       'div',
       { class: 'dm-cols' },
@@ -178,8 +182,44 @@ export async function reviewConflicts(say, run, go) {
   });
 }
 
-/** File > Merge Changes From: pick the file, preview, apply. `show(view)` draws the result. */
-export async function mergeChanges(say, show) {
+/**
+ * A merge left to look at something (decision 240): the footer's bar says so, and the
+ * promise its dialog waits on resolves true for Back to Merge, false for Cancel Merge.
+ */
+let waiting = null;
+
+function wait(theirs) {
+  const box = $('merge-waiting');
+  $('merge-waiting-label').textContent = `Merge from ${theirs} waiting`;
+  box.hidden = false;
+  return new Promise((resolve) => {
+    waiting = (back) => {
+      waiting = null;
+      box.hidden = true;
+      resolve(back);
+    };
+  });
+}
+
+/** The footer's buttons. Run once. */
+export function initMergeWaiting() {
+  $('btn-merge-back').addEventListener('click', () => waiting && waiting(true));
+  $('btn-merge-cancel').addEventListener('click', () => waiting && waiting(false));
+}
+
+/** Brings a waiting merge back (Save does, so nothing is saved past it): true if one was. */
+export function resumeMerge() {
+  if (!waiting) return false;
+  waiting(true);
+  return true;
+}
+
+/**
+ * File > Merge Changes From: pick the file, preview, apply. `show(view)` draws the result,
+ * `go(where)` shows a place. A merge already waiting is cancelled for the new one.
+ */
+export async function mergeChanges(say, show, go = null) {
+  if (waiting) waiting(false);
   let picked;
   try {
     picked = await invoke('merge_pick_file');
@@ -188,24 +228,47 @@ export async function mergeChanges(say, show) {
     return;
   }
   if (!picked) return;
-  await runMerge(picked.token, say, show);
+  await runMerge(picked.token, say, show, go);
 }
 
 /**
  * The merge dialog for file `token` (Merge Changes From's pick, or the schedule's own file
- * changed outside the app, src/outside.rs): preview, then apply. True when merged.
+ * changed outside the app, src/outside.rs): preview, then apply. True when merged. With
+ * `go`, a link in it shows its place and the merge waits to come back, worked out again
+ * then on the schedule as it is, with the same base and picks.
  */
-export async function runMerge(token, say, show) {
+export async function runMerge(token, say, show, go = null) {
   const choice = { base: { kind: 'auto' }, picks: {} };
+  for (;;) {
+    const out = await mergeDialog(token, choice, say, go);
+    if (out && out.go) {
+      go(out.go);
+      if (await wait(out.theirs)) continue;
+      return false;
+    }
+    if (!out) return false;
+    try {
+      const view = await invoke('merge_apply', { token, base: choice.base, picks: choice.picks });
+      if (view) show(view);
+      return true;
+    } catch (e) {
+      say(e, true);
+      return false;
+    }
+  }
+}
+
+/** The dialog: resolves `true` (Merge), `{ go, theirs }` (a link) or null (Cancel). */
+async function mergeDialog(token, choice, say, onGo) {
   let dto;
   try {
     dto = await invoke('merge_preview', { token, base: choice.base, picks: choice.picks });
   } catch (e) {
     say(e, true);
-    return false;
+    return null;
   }
 
-  const go = await customDialog((close) => {
+  return customDialog((close) => {
     const body = el('div', { class: 'dm-body' });
     const error = errorLine('dm-error');
     const merge = el('button', { class: 'btn btn-primary', text: 'Merge', attrs: { type: 'button' }, on: { click: () => close(true) } });
@@ -215,6 +278,8 @@ export async function runMerge(token, say, show) {
     let seq = 0;
     /** The pick just made, to keep focus on it when the preview is drawn again. */
     let focusPick = null;
+    /** A link's click: the merge waits while the place is shown (decision 240). */
+    const goTo = onGo ? (where) => close({ go: where, theirs: dto.theirs }) : null;
 
     async function refresh() {
       const mine = ++seq;
@@ -278,18 +343,22 @@ export async function runMerge(token, say, show) {
               'ul',
               { class: 'dm-conflicts' },
               ...dto.conflicts.map((c) =>
-                conflictNode(c, (key, side) => {
-                  if (side === 'ours') delete choice.picks[key];
-                  else choice.picks[key] = side;
-                  focusPick = { key, side };
-                  refresh();
-                }),
+                conflictNode(
+                  c,
+                  (key, side) => {
+                    if (side === 'ours') delete choice.picks[key];
+                    else choice.picks[key] = side;
+                    focusPick = { key, side };
+                    refresh();
+                  },
+                  goTo,
+                ),
               ),
             ),
           );
         }
         parts.push(el('h3', { class: 'dm-head', text: dto.count ? `What will change here (${plural(dto.count, 'change', 'changes')})` : 'What will change here' }));
-        if (dto.count) parts.push(...changeList(dto.changes));
+        if (dto.count) parts.push(...changeList(dto.changes, goTo));
         else parts.push(el('p', { class: 'dm-note', text: `Nothing changes: this schedule already has what it takes from ${dto.theirs}.` }));
         if (dto.renumbered) parts.push(el('p', { class: 'dm-note', text: `${plural(dto.renumbered, 'thing', 'things')} from ${dto.theirs} got new ids, as this schedule added different ones with the same ids.` }));
         if (dto.fallbacks.length) {
@@ -312,20 +381,11 @@ export async function runMerge(token, say, show) {
       'div',
       { class: 'modal modal-wider', attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dm-title' } },
       el('h2', { class: 'modal-title', text: `Merge Changes From ${dto.theirs}`, attrs: { id: 'dm-title' } }),
-      el('p', { class: 'modal-message', text: `What changed in ${dto.theirs} comes into ${dto.ours}. The merge compares both with the version they started from, the base.` }),
+      el('p', { class: 'modal-message', text: `What changed in ${dto.theirs} comes into ${dto.ours}. The merge compares both with the version they started from, the base.${onGo ? ' Click a link to see it here; the merge waits, with your picks, until you come back.' : ''}` }),
       el('div', { class: 'dm-base' }, el('label', { class: 'field', attrs: { for: 'dm-base' } }, 'Base', baseSelect), baseWhy),
       error,
       body,
       el('div', { class: 'modal-actions' }, cancel, merge),
     );
   });
-  if (!go) return false;
-  try {
-    const view = await invoke('merge_apply', { token, base: choice.base, picks: choice.picks });
-    if (view) show(view);
-    return true;
-  } catch (e) {
-    say(e, true);
-    return false;
-  }
 }

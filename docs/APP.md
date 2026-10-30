@@ -810,6 +810,10 @@ flag on KIT for 2027-03-02 marks scene 3, that date and KIT's cell.
   - **What will change here**: the changes the merge makes to the schedule in the window,
     grouped like What Changed; how many of theirs got new ids; and anything the merge
     kept yours so the schedule hangs together.
+  A conflict or change about something in this schedule (a sheet, element, category,
+  scheduled strip or calendar date) is a link that shows it; the merge waits in the
+  footer ("Merge from … waiting") with its base and picks until **Back to Merge** or
+  **Cancel Merge**, and Save brings it back first (decisions.md, entry 240).
   **Merge** applies it as one undo step, worked out on the schedule as it is then; the
   status line says how the conflicts were settled. The result always passes the
   schedule's check. A schedule never saved can't merge (it has no base), and the file
@@ -1614,10 +1618,7 @@ app's key equivalents (behavior note 19).
   text (the writer has it; no export offers it yet).
 - **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
   and a find bar per tab.
-- **More of What Changed and merging**: going to a change from inside the merge itself
-  (What Changed links sheets, elements, strips and calendar dates, decisions.md entries
-  235 and 237); picking any file as a merge base;
-  the changes a merge brings in shown per conflict
+- **More of What Changed and merging**: the changes a merge brings in shown per conflict
   pick side by side.
 - **Beyond the reference app**: daylight saving rules other than the US and Canada's, the EU's,
   Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (a location

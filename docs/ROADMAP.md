@@ -15,14 +15,7 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **v0.7.0**: the owner said yes on 2026-10-29 to tagging 5a466f6, which still carries
-  version 0.6.0, so the tag can't go there. This release PR moves the version to 0.7.0 and
-  adds the notes (docs/releases/0.7.0.md): conflicts kept for review (D238), What Changed's
-  links (D235, D237), a rename meeting a new element (D236), the browser merge (D239), the
-  strip order cost (D234) and drafts on Breakdown and printed. After it merges and the
-  rehearsal passes, the tag waits for the owner's yes naming its merge commit. Files with
-  `plan.conflicts` won't open in 0.6.0 or earlier; files using `plan.person_calls` or
-  `plan.drafts` won't open in 0.5.0 or earlier. v0.6.0 was published on 2026-10-26.
+- None waiting. v0.7.0 was published on 2026-10-30 (tag on 62e9139, the owner's yes).
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
@@ -233,11 +226,13 @@ deferred, the owner, 2026-10-20).
 
 | Item | Size | Refs |
 |---|---|---|
-| Merge UI polish: going to a change from the merge itself (it would drop the picks; What Changed links them since D235, calendar dates since D237) | S | D26, D235, D237, APP.md "Not yet" |
 | Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |
 
 **Exit**: two copies edited apart in a shared folder and in git merge with every change
 kept or offered as a pick, in tests and in a live run.
+
+Done: going to a change from inside the merge, the picks kept while it waits (D240,
+2026-10-30).
 
 ---
 

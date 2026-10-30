@@ -1554,12 +1554,16 @@ function mergePreview(token, base, picks) {
     return { theirs: 'harbor-copy.mtsc', ours: fileName, base: '', base_label: '', base_reason: '', base_clear: true, bases, conflicts: [], count: 0, changes: [], renumbered: 0, fallbacks: [], problem: 'The base can\'t be read: That backup is no longer in the backups folder.' };
   }
   label = bases.find((b) => b.id === id).label;
+  // As changes.rs (decision 240): what is in the window's schedule says where it is; the
+  // element the merge adds isn't there yet.
+  const one = scenesBy(model, 'board').find((x) => x.n === '1');
+  const go = one ? { kind: 'sheet', sheet: one.sheet, field: 'set' } : null;
   const conflicts = MERGE_CONFLICTS.map((c) => {
     const taken = picks[c.key] === 'theirs' ? 'theirs' : 'ours';
-    return { ...c, taken, text: `${c.what}: ours ${c.ours}, theirs ${c.theirs}` };
+    return { ...c, taken, text: `${c.what}: ours ${c.ours}, theirs ${c.theirs}`, ...(c.key === 'sheet:4:set' && go ? { go } : {}) };
   });
   const changes = [CANNED_CHANGES[1]];
-  if (picks['sheet:4:set'] === 'theirs') changes.push({ group: 'Sheets', changes: [{ kind: 'changed', subject: 'sheet', text: 'Scene 1: set "LOFT" -> "BARN"' }] });
+  if (picks['sheet:4:set'] === 'theirs') changes.push({ group: 'Sheets', changes: [{ kind: 'changed', subject: 'sheet', text: 'Scene 1: set "LOFT" -> "BARN"', ...(go ? { go } : {}) }] });
   const count = changes.reduce((n, g) => n + g.changes.length, 0);
   return { theirs: 'harbor-copy.mtsc', ours: fileName, base: id, base_label: label, base_reason: reason, base_clear: clear, bases, conflicts, count, changes, renumbered: 0, fallbacks: ['Element "DOG" (Cast): the name collides with one in ours, so it joins it'], problem: null };
 }
