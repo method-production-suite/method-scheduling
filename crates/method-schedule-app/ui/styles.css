@@ -241,6 +241,9 @@ html, body {
 .status-line.error { padding: 0 8px; margin-left: -8px; }
 .footer-counts { white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* An update downloaded and ready (updates.js, decision 213): quiet, until it is chosen. */
+/* A merge waiting while a link from it is looked at (diffmerge.js, decision 240). */
+.merge-waiting { display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--text-soft); }
+.merge-waiting .btn { min-height: 18px; padding: 0 8px; font-size: 11px; }
 .update-ready { display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--text-soft); }
 .update-ready .btn { min-height: 18px; padding: 0 8px; font-size: 11px; }
 

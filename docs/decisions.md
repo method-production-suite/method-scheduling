@@ -5710,3 +5710,23 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **No `COMMANDS_VERSION` change**: two new commands, nothing a caller already sends
   behaves differently. The merge picker (`merge_pick_file`) stays desktop only, and the
   page in a browser doesn't offer Merge Changes From yet: a host builds its own picker.
+
+## 240. Going to a change from inside the merge (2026-10-30)
+
+- **Links in the merge**: in Merge Changes From's dialog, a conflict or a change about a
+  sheet, element (or its red flag), category, scheduled strip or calendar date in the
+  window's schedule is a link, as in What Changed (entries 235 and 237) and Merge
+  Conflicts to Review (entry 238). What only theirs has isn't in the window yet, so a
+  change that adds it is plain text.
+- **The merge waits, with its picks**: a link closes the dialog and shows the place. The
+  footer says "Merge from <file> waiting", with Back to Merge and Cancel Merge. Back works
+  the merge out again on the schedule as it is then, with the same base and picks, so an
+  edit made while looking is in the preview. Picks for conflicts that have gone are left
+  out, as before.
+- **Nothing saved past it**: Save with a merge waiting brings the merge back instead of
+  saving. For a change made outside the app (entry 180) that keeps the rule that nothing
+  is written over the change without a choice; for Merge Changes From it is the same
+  rule, kept simple. A new Merge Changes From cancels the one waiting.
+- **Desktop only**: the page in a browser doesn't offer Merge Changes From (entry 239), and
+  the browser host's `merge_preview` gives no links, so its callers see no change.
+

@@ -18,9 +18,9 @@ pub struct ChangeDto {
     /// `title`, `category`, `element`, `sheet`, `board`, `sub_board`, `calendar`, `strip`.
     pub subject: &'static str,
     pub text: String,
-    /// Where the page can show it (decision 235): set only in What Changed, and only for a
-    /// sheet, element (or its red flag), scheduled strip or calendar date (decision 237)
-    /// still in the window's schedule.
+    /// Where the page can show it (decision 235): set in What Changed and the desktop's
+    /// merge preview (decision 240), and only for a sheet, element (or its red flag),
+    /// scheduled strip or calendar date (decision 237) still in the window's schedule.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub go: Option<GoDto>,
 }
@@ -197,6 +197,12 @@ pub fn groups(d: &Diff) -> Vec<GroupDto> {
     grouped(d, None)
 }
 
+/// [`groups`], each change with where to show it in `here`, the schedule in the window
+/// (decisions 235 and 240).
+pub fn groups_in(d: &Diff, here: &Schedule) -> Vec<GroupDto> {
+    grouped(d, Some(here))
+}
+
 /// [`groups`], each change with where to show it in `here` (decision 235).
 fn grouped(d: &Diff, here: Option<&Schedule>) -> Vec<GroupDto> {
     let mut out: Vec<GroupDto> = Vec::new();
@@ -258,6 +264,10 @@ pub struct ConflictDto {
     /// `"ours"` or `"theirs"`.
     pub taken: &'static str,
     pub text: String,
+    /// Where the sheet, element or category it is about is in the window's schedule: set
+    /// only in the desktop's merge preview (decision 240).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub go: Option<GoDto>,
 }
 
 /// A merge conflict as the page lists it.
@@ -270,6 +280,15 @@ pub fn conflict_dto(c: &method_schedule_core::merge::Conflict) -> ConflictDto {
         theirs: c.theirs.clone(),
         taken: c.taken.key(),
         text: c.text.clone(),
+        go: None,
+    }
+}
+
+/// [`conflict_dto`], with where it is in `here`, the schedule in the window.
+pub fn conflict_dto_in(c: &method_schedule_core::merge::Conflict, here: &Schedule) -> ConflictDto {
+    ConflictDto {
+        go: go_key(here, &c.key),
+        ..conflict_dto(c)
     }
 }
 

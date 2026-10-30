@@ -27,7 +27,7 @@ import { createElements } from './elements.js';
 import { createCalendar } from './calendar.js';
 import { createReports, EXPORTABLE } from './reports.js';
 import { exportReport, exportBudget } from './export.js';
-import { whatChanged, mergeChanges, reviewConflicts } from './diffmerge.js';
+import { whatChanged, mergeChanges, reviewConflicts, initMergeWaiting, resumeMerge } from './diffmerge.js';
 import { createFind } from './find.js';
 import { createConflicts } from './conflicts.js';
 import { createRedFlags, manageTypes, paintFlagTypes, flagDialog } from './redflags.js';
@@ -1946,14 +1946,17 @@ $('board').addEventListener('keydown', (e) => {
 
 const safety = initSafety({ apply, say, fileState });
 const updates = initUpdates({ say });
-outside = initOutside({ apply, say, show });
+outside = initOutside({ apply, say, show, go: (h) => goToHit(h, { keepFocus: false }) });
+initMergeWaiting();
 
 const COMMANDS = {
   'file.new': () => apply(invoke('new_schedule')),
   'file.open': () => apply(invoke('open_schedule')),
   // Save checks for a change made outside the app first; settling it takes the save's
-  // place (decisions.md, entry 179).
+  // place (decisions.md, entry 179). So does a merge waiting in the footer (entry 240):
+  // it comes back, so a change outside the app it settles is never saved over.
   'file.save': async () => {
+    if (resumeMerge()) return;
     if (await outside.check(true)) return;
     await apply(invoke('save_schedule', { save_as: false }));
   },
@@ -1965,7 +1968,7 @@ const COMMANDS = {
   'file.save_pdf': () => printReport(true),
   'file.what_changed': () => whatChanged('file', say, null, (h) => goToHit(h, { keepFocus: false })),
   'file.what_changed_saved': () => whatChanged('saved', say, null, (h) => goToHit(h, { keepFocus: false })),
-  'file.merge': () => mergeChanges(say, show),
+  'file.merge': () => mergeChanges(say, show, (h) => goToHit(h, { keepFocus: false })),
   'file.review_conflicts': () => reviewConflicts(say, command, (h) => goToHit(h, { keepFocus: false })),
   'file.revert_backup': () => outside.revertToBackup(),
   'edit.undo': () => apply(invoke('undo')),
