@@ -393,6 +393,9 @@ mod tests {
     const DESKTOP_ONLY: &[&str] = &[
         "backup_list",
         "close_window",
+        "copies_found",
+        "copy_merge",
+        "copy_settle",
         "discard_recovered",
         "merge_pick_file",
         "new_window",
