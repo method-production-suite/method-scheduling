@@ -271,8 +271,7 @@ Day by day
         </div>
       </div>
       <p class="fine">Method Schedule reads scripts in the open Fountain format and the
-        <code>.fdx</code> files screenwriting apps save. Final Draft is a trademark of its
-        owner; Method Schedule is independent and not affiliated with or endorsed by it.</p>
+        <code>.fdx</code> files screenwriting apps save.</p>
     </div>
   </section>
 
@@ -368,7 +367,7 @@ Day by day
             <li><strong>Undo</strong> Every change is one step, up to 200 of them.</li>
             <li><strong>Templates and layout files</strong> Start a schedule from a template of your categories, elements, boards and layouts, and share layouts as files.</li>
             <li><strong>Several windows</strong> One schedule per window, each with its own undo, autosave and recovery, and a list of recent files.</li>
-            <li><strong>What changed and merge</strong> See every change between two schedules in plain words, and merge two copies that changed apart, with real clashes listed for you to pick.</li>
+            <li><strong>What changed and merge</strong> See every change between two schedules in plain words, each a link to what changed, and merge two copies that changed apart, with every conflict the merge settles kept in the file for review (File &gt; Merge Conflicts to Review), whether it ran in the app, on the command line or in git.</li>
             <li><strong>Signed Mac app with updates</strong> A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.</li>
           </ul>
         </details>
@@ -393,14 +392,14 @@ Day by day
           <ul class="feats">
             <li><strong>Budget exchange file</strong> Shoot days and every element's day counts as one small, documented file, written for Method Budget and open to any budgeting app.</li>
             <li><strong>Production tags from the script</strong> Bring in the props, wardrobe and other tags a tagged script already carries as elements.</li>
-            <li><strong>Script revisions</strong> Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard and cut ones are marked omitted.</li>
-            <li><strong>Day timeline</strong> Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.</li>
+            <li><strong>Script revisions</strong> Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard, cut ones are marked omitted, and each draft is recorded by color (Blue, Pink, Yellow and on) with the scenes it changed, each sheet naming the newest draft that touched it.</li>
+            <li><strong>Day timeline</strong> Each shoot day from its call time, strip by strip, with a call and wrap of their own for anyone who needs one, warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.</li>
             <li><strong>Sunrise and sunset</strong> Give each location its coordinates and see sunrise and sunset for every dated shoot day, with the US and Canada or EU daylight saving dates.</li>
             <li><strong>Rest checks</strong> Set a turnaround per category and get a warning wherever a rest between wrap and the next call is too short.</li>
             <li><strong>Schedule locks and drift</strong> Lock the schedule as sent, then see each actor's work days added, dropped and moved since, on screen or as a spreadsheet.</li>
-            <li><strong>Strip order suggestion</strong> A suggested order that groups by location, set and cast around your pinned strips and red flags, with the before and after counts to compare.</li>
+            <li><strong>Strip order suggestion</strong> Suggest Strip Order tries three orders around your pinned strips and red flags, adds up a cost for each that you can check by hand (actors' work days, location changes within a day, day and night switches, red flag clashes) and suggests the cheapest; when none beats the board, nothing moves.</li>
             <li><strong>Call sheet data</strong> A shoot day's call sheet data as JSON or CSV, ready for whatever lays out your call sheets.</li>
-            <li><strong>A printed call sheet</strong> A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set, other elements and notes.</li>
+            <li><strong>A printed call sheet</strong> A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, other elements, notes and the next two shoot days in brief.</li>
             <li><strong>What was shot</strong> Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan.</li>
             <li><strong>Try it in your browser</strong> The whole app with Field Station, an invented production, running in your browser with nothing to install: nothing is uploaded, and Save downloads the file.</li>
           </ul>
@@ -505,8 +504,9 @@ Day by day
         </li>
         <li>
           <h3>Budget</h3>
-          <p>Method Budget reads it and sets its shoot day and cast globals from it. Any other
-            budgeting tool can read the file too.</p>
+          <p>Method Budget reads it and sets its globals from it: shoot days, and the days
+            for each location, set, week and cast member, after a review of every change. Any
+            other budgeting tool can read the file too.</p>
         </li>
       </ol>
       <p class="fine"><a href="https://github.com/method-production-suite/method-scheduling/blob/main/docs/EXCHANGE.md" data-repo="docs/EXCHANGE.md">Read the exchange file spec</a></p>
@@ -525,7 +525,8 @@ Day by day
           <h3>Mac app</h3>
           <p>One app for Intel and Apple silicon Macs, signed and notarized by Apple so it opens like any other
             app, and it keeps itself up to date. Windows and Linux installers are built
-            too, and wait on a hands-on test.</p>
+            too, and nobody has installed them by hand yet: get them from the
+            <a href="https://github.com/method-production-suite/method-scheduling/releases/latest">latest release</a>.</p>
           <p><a class="btn primary" href="https://github.com/method-production-suite/method-scheduling/releases/latest/download/Method-Schedule-macOS.dmg">Download for Mac</a></p>
           <p><a href="releases/">Release notes</a></p>
         </div>
@@ -546,8 +547,8 @@ Day by day
           </thead>
           <tbody>
             <tr><th scope="row">Mac, Apple silicon</th><td>Yes, an app (<code>.dmg</code>)</td><td>Signed and notarized by Apple</td><td>By a person throughout development, and by the automated tests weekly</td></tr>
-            <tr><th scope="row">Mac, Intel</th><td>Yes, the same app (<code>.dmg</code>), built for both chips</td><td>Signed and notarized by Apple</td><td>The Intel half by the automated tests, run under Rosetta before each release; not yet on an Intel Mac by a person</td></tr>
-            <tr><th scope="row">Windows, 64-bit</th><td>Yes, an installer (<code>.exe</code>)</td><td>Not yet: Windows will warn that the publisher is unknown</td><td>Automated tests weekly; never installed by a person yet</td></tr>
+            <tr><th scope="row">Mac, Intel</th><td>Yes, the same app (<code>.dmg</code>), built for both chips</td><td>Signed and notarized by Apple</td><td>The Intel half by the automated tests, run the way an Intel Mac runs them before each release; not yet on an Intel Mac by a person</td></tr>
+            <tr><th scope="row">Windows, 64-bit</th><td>Yes, an installer (<code>.exe</code>)</td><td>Not signed, and no certificate is planned: Windows warns that the publisher is unknown before it opens</td><td>Automated tests weekly; never installed by a person yet</td></tr>
             <tr><th scope="row">Linux, 64-bit</th><td>Yes, <code>.deb</code> and AppImage</td><td>Not signed</td><td>Automated tests weekly; never installed by a person yet</td></tr>
           </tbody>
         </table>
@@ -605,7 +606,8 @@ Day by day
         <details>
           <summary>Is Method Schedule affiliated with other scheduling software?</summary>
           <p>No. Method Schedule is an independent, clean-room project, not affiliated with
-            Entertainment Partners or Movie Magic Scheduling.</p>
+            or endorsed by Entertainment Partners, Movie Magic Scheduling or Final Draft.
+            Trademarks belong to their owners.</p>
         </details>
         <details>
           <summary>Can it open schedules from other apps?</summary>
@@ -635,8 +637,9 @@ Day by day
         <details>
           <summary>Does it work with Method Budget?</summary>
           <p>Yes. Method Schedule writes the shoot days and day counts to one open exchange file,
-            and Method Budget 0.5 and later reads it and sets its globals from them, after showing
-            you every change. Any other budgeting tool can read the file too. See
+            and Method Budget reads it and sets its shoot days and its days per location, set, week
+            and cast member from it, after showing you every change. A new budget can link a
+            schedule from the start. Any other budgeting tool can read the file too. See
             <a href="#budget">The day out of days feeds the budget</a>.</p>
         </details>
         <details>
@@ -680,7 +683,8 @@ Day by day
     <p>Free and open source, dual-licensed under MIT or Apache-2.0. An independent,
       clean-room project by the Method Schedule contributors. Trademarks belong to their
       respective owners.</p>
-    <p>This site sets no cookies, runs no scripts and loads nothing from anyone else.</p>
+    <p>This site sets no cookies and loads nothing from anyone else. Its few scripts come
+      from this site and send nothing anywhere.</p>
   </div>
 </footer>
 </body>

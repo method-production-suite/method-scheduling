@@ -42,8 +42,8 @@ Website: [methodschedule.com](https://methodschedule.com).
 | Computer | Built | Signed | Tested |
 | --- | --- | --- | --- |
 | Mac, Apple silicon | Yes, an app (`.dmg`) | Signed and notarized by Apple | By a person throughout development, and by the automated tests weekly |
-| Mac, Intel | Yes, the same app (`.dmg`), built for both chips | Signed and notarized by Apple | The Intel half by the automated tests, run under Rosetta before each release; not yet on an Intel Mac by a person |
-| Windows, 64-bit | Yes, an installer (`.exe`) | Not yet: Windows will warn that the publisher is unknown | Automated tests weekly; never installed by a person yet |
+| Mac, Intel | Yes, the same app (`.dmg`), built for both chips | Signed and notarized by Apple | The Intel half by the automated tests, run the way an Intel Mac runs them before each release; not yet on an Intel Mac by a person |
+| Windows, 64-bit | Yes, an installer (`.exe`) | Not signed, and no certificate is planned: Windows warns that the publisher is unknown before it opens | Automated tests weekly; never installed by a person yet |
 | Linux, 64-bit | Yes, `.deb` and AppImage | Not signed | Automated tests weekly; never installed by a person yet |
 
 Not there yet: updates inside the app on Windows and Linux, and a hands-on check of
@@ -76,8 +76,8 @@ free, open tools for making films, from the first draft to the last shoot day.
 
 | Computer | Download | Status |
 |---|---|---|
-| macOS, Intel and Apple silicon | `Method-Schedule-macOS.dmg` | One universal app, signed and notarized. Checked by hand on an Apple silicon Mac; Intel from the next release. |
-| Windows, x64 | `Method-Schedule-windows-x64-setup.exe` | Built by CI, never installed by a person yet. Reports welcome. |
+| macOS, Intel and Apple silicon | `Method-Schedule-macOS.dmg` | One universal app, signed and notarized. Checked by hand on an Apple silicon Mac; on Intel by the automated tests only. |
+| Windows, x64 | `Method-Schedule-windows-x64-setup.exe` | Built by CI, never installed by a person yet. Not signed, and no certificate is planned: Windows warns that the publisher is unknown before it opens. Reports welcome. |
 | Linux, x64 | `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` | Built by CI, never installed by a person yet. Reports welcome. |
 
 ## A look around
@@ -184,7 +184,7 @@ docs/features.toml.
 - **Undo.** Every change is one step, up to 200 of them.
 - **Templates and layout files.** Start a schedule from a template of your categories, elements, boards and layouts, and share layouts as files.
 - **Several windows.** One schedule per window, each with its own undo, autosave and recovery, and a list of recent files.
-- **What changed and merge.** See every change between two schedules in plain words, and merge two copies that changed apart, with real clashes listed for you to pick.
+- **What changed and merge.** See every change between two schedules in plain words, each a link to what changed, and merge two copies that changed apart, with every conflict the merge settles kept in the file for review (File > Merge Conflicts to Review), whether it ran in the app, on the command line or in git.
 - **Signed Mac app with updates.** A downloadable Mac app, signed and notarized by Apple, that keeps itself up to date.
 
 ### Keyboard and command line
@@ -199,14 +199,14 @@ docs/features.toml.
 
 - **Budget exchange file.** Shoot days and every element's day counts as one small, documented file, written for Method Budget and open to any budgeting app.
 - **Production tags from the script.** Bring in the props, wardrobe and other tags a tagged script already carries as elements.
-- **Script revisions.** Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard and cut ones are marked omitted.
-- **Day timeline.** Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.
+- **Script revisions.** Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard, cut ones are marked omitted, and each draft is recorded by color (Blue, Pink, Yellow and on) with the scenes it changed, each sheet naming the newest draft that touched it.
+- **Day timeline.** Each shoot day from its call time, strip by strip, with a call and wrap of their own for anyone who needs one, warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step.
 - **Sunrise and sunset.** Give each location its coordinates and see sunrise and sunset for every dated shoot day, with the US and Canada or EU daylight saving dates.
 - **Rest checks.** Set a turnaround per category and get a warning wherever a rest between wrap and the next call is too short.
 - **Schedule locks and drift.** Lock the schedule as sent, then see each actor's work days added, dropped and moved since, on screen or as a spreadsheet.
-- **Strip order suggestion.** A suggested order that groups by location, set and cast around your pinned strips and red flags, with the before and after counts to compare.
+- **Strip order suggestion.** Suggest Strip Order tries three orders around your pinned strips and red flags, adds up a cost for each that you can check by hand (actors' work days, location changes within a day, day and night switches, red flag clashes) and suggests the cheapest; when none beats the board, nothing moves.
 - **Call sheet data.** A shoot day's call sheet data as JSON or CSV, ready for whatever lays out your call sheets.
-- **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set, other elements and notes.
+- **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, other elements, notes and the next two shoot days in brief.
 - **What was shot.** Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan.
 - **Try it in your browser.** The whole app with Field Station, an invented production, running in your browser with nothing to install: nothing is uploaded, and Save downloads the file.
 
@@ -221,7 +221,7 @@ docs/features.toml.
 
 Feature parity with the reference product is tracked in docs/parity/PARITY.md; the plan from here is in docs/ROADMAP.md.
 
-Not affiliated with Entertainment Partners or Movie Magic Scheduling.
+Not affiliated with or endorsed by Entertainment Partners, Movie Magic Scheduling or Final Draft. Trademarks belong to their owners.
 
 Licensed under either of MIT or Apache-2.0, at your option.
 Copyright (c) 2026 Method Production Suite Team and the Method Schedule contributors.
