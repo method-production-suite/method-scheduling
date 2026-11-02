@@ -5730,3 +5730,31 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Desktop only**: the page in a browser doesn't offer Merge Changes From (entry 239), and
   the browser host's `merge_preview` gives no links, so its callers see no change.
 
+## 241. Conflict copies beside the file are offered for merging (2026-11-02)
+
+- **The gap in shared folders**: when two computers change one file in a shared folder
+  before either has the other's version, the sync service keeps one as the file and saves
+  the other beside it under a new name. The outside-change guard (entries 179 and 180)
+  settles the version that became the file; the copy beside it was never looked at, so
+  its changes were lost without a word. Git needed nothing more (`merge-driver` and
+  `git-setup` in the CLI).
+- **Found by name**: a `.mtsc` file in the same folder whose name is the file's stem
+  followed by ` (… conflict …)`, ` 2` to ` 99`, ` (1)` to ` (99)` or `.sync-conflict-…`:
+  the names the common sync services give a conflict copy. Nothing in a schedule file
+  identifies it across copies, so a file the user named `film 2.mtsc` is offered too;
+  that is why it is a line in the footer and not a dialog, and Dismiss is one click.
+  Names some services give that can't be told from a user's own (`film-LAPTOP.mtsc`) are
+  left out.
+- **When**: the window lists its folder when it gets focus and when its file changes
+  (Open, Save As). Only the listing and file times are read then; a copy is read when the
+  user chooses Merge, named by its file name and checked against the listing.
+- **Merging**: the footer says "Conflict copy beside this file: NAME, changed TIME" (or
+  how many, naming the newest), with **Merge…** and **Dismiss**. Merge is Merge Changes
+  From with the copy as theirs and the automatic base (the newest backup from before the
+  copy was last changed, entry 26), so every change comes in or is offered as a pick. The
+  copy stays in the folder; deleting it is the user's call.
+- **Not offered again** in this window once merged or dismissed, until the copy changes
+  (kept by path and modification time, in memory: a new window offers it again).
+- `copies::tests` cover the names, the listing (newest first, folders and other names left
+  out, settled copies hidden until they change) and a copy merging in with the change on
+  both sides kept.

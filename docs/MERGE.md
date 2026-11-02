@@ -285,6 +285,7 @@ made before the copy was last changed, else the file on disk, saying why), with 
 yours or Keep theirs per conflict, as one undo step. When the schedule's own file was
 changed outside the app while the window has unsaved changes, the same dialog merges the
 file on disk in, against the version the window last read from or saved into it
-(decisions.md, entry 180). On the Day out of days tab a row's
+(decisions.md, entry 180). A conflict copy a sync service saved beside the file is offered
+in the footer and merged the same way, with the automatic base (entry 241). On the Day out of days tab a row's
 Work, Hold or Total opens `explain` in a panel beside the grid; a date there scrolls the
 grid to it. docs/APP.md has the details; decisions.md, entry 26, the choices.

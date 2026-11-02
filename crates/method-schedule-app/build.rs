@@ -149,6 +149,10 @@ const COMMANDS: &[&str] = &[
     "outside_resolve",
     "backup_list",
     "revert_to_backup",
+    // Conflict copies a sync service left beside the file (src/copies.rs)
+    "copies_found",
+    "copy_merge",
+    "copy_settle",
     // The Plan menu, beyond the reference app (src/plan.rs): dialogs are shown by Rust
     "import_script_tags",
     "revise_pick",

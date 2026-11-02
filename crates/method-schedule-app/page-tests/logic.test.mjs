@@ -658,6 +658,13 @@ test('Revert to Backup: each backup with how far it is from now', () => {
   assert.equal(L.backupLine(b(null)), "Backup from 2026-10-11 14:03 UTC, can't be read");
 });
 
+test('conflict copies: the footer line names the newest', () => {
+  const c = (name, changed_at) => ({ name, changed_at });
+  assert.equal(L.copiesLabel([]), '');
+  assert.equal(L.copiesLabel([c('film 2.mtsc', '2026-10-30 14:03 UTC')]), 'Conflict copy beside this file: film 2.mtsc, changed 2026-10-30 14:03 UTC');
+  assert.equal(L.copiesLabel([c('film 2.mtsc', ''), c('film (1).mtsc', '')]), '2 conflict copies beside this file, the newest film 2.mtsc');
+});
+
 test('breakdown designer: rows of the usual or own lengths, dragging between rows', () => {
   const keys = 'abcdefghijklmnopqr'.split('');
   assert.deepEqual(L.sheetRows(keys, []).map((r) => r.length), [6, 5, 7], 'six, five, the rest');

@@ -1783,6 +1783,17 @@ const commands = {
   },
   backup_list: () => ({ file: 'harbor.mtsc', backups: [{ name: 'harbor 2026-10-11 14.03.00.000 UTC.mtsc', label: 'Backup from 2026-10-11 14:03 UTC', changes: 2 }] }),
   revert_to_backup: () => view('Reverted to the backup from 2026-10-11 14:03 UTC. Undo takes it back.'),
+  // Conflict copies (src/copies.rs): none unless window.__copies holds them.
+  copies_found: () => (window.__copies || []).slice(),
+  copy_merge: ({ name }) => {
+    if (!(window.__copies || []).some((c) => c.name === name)) throw `${name} is no longer beside harbor.mtsc.`;
+    return { token: 1, name };
+  },
+  copy_settle: ({ name }) => {
+    window.__copies = (window.__copies || []).filter((c) => c.name !== name);
+    (window.__settled = window.__settled || []).push(name);
+    return null;
+  },
   report_data: ({ sub_board, index, week_start }) => reportDataFor(index, sub_board, week_start || 'sun'),
   report_list: () => reportListDto(),
   // In Rust's order and words (src/reportsetup.rs apply_report).
