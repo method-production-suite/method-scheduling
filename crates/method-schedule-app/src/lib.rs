@@ -6,7 +6,7 @@
 //! [`board`], [`sheet`], [`elements`] and [`calendar`] hold the edits, [`view`] is what
 //! the page draws, [`reports`] the Reports tab's data (and printing), [`export`] the
 //! spreadsheet and budget exports, [`explain`] the Day out of days tab's Explain panel,
-//! [`find`] Find and Replace, [`clipboard`] cut, copy and paste, [`conflicts`] the Conflicts tab, [`redflags`] red flags and their clashes, [`diffmerge`] What Changed and Merge Changes From, [`outside`] changes made outside the app and Revert to Backup, [`help`] the sample schedule and the user guide, [`safety`] keeps files safe (atomic
+//! [`find`] Find and Replace, [`clipboard`] cut, copy and paste, [`conflicts`] the Conflicts tab, [`redflags`] red flags and their clashes, [`diffmerge`] What Changed and Merge Changes From, [`outside`] changes made outside the app and Revert to Backup, [`copies`] conflict copies a sync service left beside the file, [`help`] the sample schedule and the user guide, [`safety`] keeps files safe (atomic
 //! writes, recovery copies, backups, settings, recent files) and [`safety_app`]'s core runs
 //! autosave and recovery. The page
 //! itself is static HTML, CSS and JavaScript in `ui/`; see docs/APP.md.
@@ -15,6 +15,7 @@ pub mod app;
 pub mod breakdown;
 #[cfg(test)]
 mod budgets;
+pub mod copies;
 pub mod diffmerge;
 pub mod docs;
 pub mod elements;

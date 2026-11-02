@@ -54,6 +54,8 @@ pub struct AppState {
     pub(crate) autosave_error: Mutex<Option<String>>,
     /// Files picked for merging in this window, by token.
     pub(crate) merge_files: crate::diffmerge::MergeFiles,
+    /// Conflict copies merged or dismissed in this window.
+    pub(crate) copies: crate::copies::Settled,
 }
 
 impl Default for AppState {
@@ -82,6 +84,7 @@ impl AppState {
             closing: AtomicBool::new(false),
             autosave_error: Mutex::new(None),
             merge_files: Default::default(),
+            copies: Default::default(),
         }
     }
 
@@ -1955,6 +1958,9 @@ pub fn run() {
             crate::outside::outside_resolve,
             crate::outside::backup_list,
             crate::outside::revert_to_backup,
+            crate::copies::copies_found,
+            crate::copies::copy_merge,
+            crate::copies::copy_settle,
             crate::plan::import_script_tags,
             crate::plan::revise_pick,
             crate::plan::revise_apply,

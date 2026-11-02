@@ -30,6 +30,11 @@ section. Everything else on this page goes ahead without waiting.
   recovery in the window (`scripts/crash-check.sh`, M2); the app on Tauri 2.12 opening, its
   menus and a Save dialog (the move's live check; Linux too, eventually); and in the reference app E-L5,
   E-S34 and the two report questions (M1's review row).
+- **M4's live run**, about fifteen minutes with two computers on one shared folder
+  (any sync service): open the same `.mtsc` on both with the network off on one, change
+  different things on each (and one thing on both), turn the network back on, and check
+  that each window either offers Merge for the file on disk or shows "Conflict copy beside
+  this file" in the footer, and that merging keeps every change or offers it as a pick.
 - **A Linux machine, eventually**, for M3's hand checks there (the screen block 3 list),
   including the keys: every shortcut is Ctrl there, and a test keeps them off the keys the
   usual Linux desktops keep for themselves; pressing them is the live check. Also
@@ -224,15 +229,14 @@ deferred, the owner, 2026-10-20).
 
 **Goal**: two people on one schedule through a shared folder or git, with nothing lost.
 
-| Item | Size | Refs |
-|---|---|---|
-| Shared folders (iCloud Drive, Dropbox, network drives): the outside-change guard settled by merging with the file on disk, keeping the version last read as the base | M | APP.md "Saving and recovery" |
-
 **Exit**: two copies edited apart in a shared folder and in git merge with every change
 kept or offered as a pick, in tests and in a live run.
 
 Done: going to a change from inside the merge, the picks kept while it waits (D240,
-2026-10-30).
+2026-10-30); shared folders: the file on disk merged against the version last read (D180)
+and conflict copies beside the file offered for merging (D241, 2026-11-02). Git merges
+through the CLI's `merge-driver` and `git-setup`. What is left is the exit's live run
+(Waiting on the owner).
 
 ---
 

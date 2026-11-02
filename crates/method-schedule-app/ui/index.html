@@ -91,6 +91,7 @@
       <footer class="footer">
         <div class="status status-line quiet" id="status" role="status" aria-live="polite"></div>
         <span class="footer-counts" id="footer"></span>
+        <span class="merge-waiting" id="copies-found" hidden title="A sync service saved this copy when the file was changed in two places at once. Merge brings its changes into yours, with a pick for each clash; the copy stays in the folder."><span id="copies-found-label">Conflict copy beside this file</span> <button type="button" class="btn btn-primary" id="btn-copies-merge">Merge…</button> <button type="button" class="btn" id="btn-copies-dismiss">Dismiss</button></span>
         <span class="merge-waiting" id="merge-waiting" hidden><span id="merge-waiting-label">Merge waiting</span> <button type="button" class="btn btn-primary" id="btn-merge-back">Back to Merge</button> <button type="button" class="btn" id="btn-merge-cancel">Cancel Merge</button></span>
         <span class="update-ready" id="update-ready" hidden><span id="update-label">Update ready</span> <button type="button" class="btn btn-primary" id="btn-update-restart">Restart to Update</button></span>
         <label class="switch"><input type="checkbox" id="autosave" checked> Autosave</label>

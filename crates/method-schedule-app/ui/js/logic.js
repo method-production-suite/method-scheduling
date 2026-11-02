@@ -859,6 +859,16 @@ export function backupLine(b) {
   return `${b.label}, ${from}`;
 }
 
+/** The footer line for conflict copies beside the file (copies.js), newest first. */
+export function copiesLabel(found) {
+  if (!found.length) return '';
+  const newest = found[0];
+  const when = newest.changed_at ? `, changed ${newest.changed_at}` : '';
+  return found.length === 1
+    ? `Conflict copy beside this file: ${newest.name}${when}`
+    : `${found.length} conflict copies beside this file, the newest ${newest.name}${when}`;
+}
+
 // ---- The breakdown designer's grid (breakdown.js, decisions.md, entries 101 and 186)
 
 /** The rows a sheet's shown fields fall in when no lengths are set: six, five, the rest. */

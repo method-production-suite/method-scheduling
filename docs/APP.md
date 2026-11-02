@@ -872,6 +872,17 @@ either differs; decisions.md, entry 179), and asks what to do:
 - **Later** leaves everything as before: autosave stays paused, a banner says so, and the
   focus check doesn't ask again about the same version (Save does).
 
+**Conflict copies** (decisions.md, entry 241). When two computers change the file in a
+shared folder before either has the other's version, the sync service keeps one as the
+file and saves the other beside it, under a name such as `film (conflicted copy
+2026-10-30).mtsc`, `film 2.mtsc`, `film (1).mtsc` or `film.sync-conflict-….mtsc`. The
+window looks for these when it gets focus and when its file changes, and the footer says
+`Conflict copy beside this file: NAME, changed TIME` (or how many there are, naming the
+newest) with **Merge…** and **Dismiss**. Merge is Merge Changes From with the copy as
+theirs and the automatic base, so every change comes in or is offered as a pick; the copy
+stays in the folder. A copy merged or dismissed isn't offered again in that window until
+it changes. A file you named `film 2.mtsc` yourself is offered too: Dismiss it.
+
 Nothing is ever written over the change without one of these. Keep Mine and Merge put the
 version on disk into the backups first, whatever the gap since the last one. Load Theirs is
 one undo step: Undo brings your version back, unsaved. A choice is made for the version
@@ -1104,6 +1115,8 @@ crates/method-schedule-app/
   src/outside.rs   changes made outside the app: the decision (a pure function), the check
                    on focus and before Save, Keep Mine, Load Theirs and Merge with the
                    file on disk; Revert to Backup
+  src/copies.rs    conflict copies a sync service left beside the file: found by name,
+                   offered for Merge Changes From, settled per window
   src/view.rs      what the page draws: the board shown as day groups of strips with
                    totals, every board's name, one breakdown sheet, and the Elements tab,
                    day out of days grid and calendar of a named sub-board (serde shapes)
@@ -1140,6 +1153,7 @@ crates/method-schedule-app/
   ui/js/safety.js     the Autosave switch, the Recovered schedules dialog, Open Recent
                       and files from the system
   ui/js/outside.js    the outside-change question and the Revert to Backup dialog
+  ui/js/copies.js     the footer line offering conflict copies for merging
   ui/js/board.js      drawing the board, the selection marks, dragging (drop indicator,
                       edge scrolling); where strips go when they move one place
   ui/js/boards.js     the board and sub-board bar, the Boards and Sub-boards dialog, and
@@ -1306,6 +1320,9 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `merge_preview`, `merge_apply` in the browser host | `file` (theirs), `base` (`"file"`, the default, with `base_file`; or `"saved"`, the schedule as last opened or saved there), `picks`; `merge_apply` also `pictures` (theirs', as `open_schedule` takes them) | the preview `{theirs, ours, base, conflicts, count, changes, renumbered, fallbacks}`, the base being its label; the apply as above (decisions.md, entry 239) |
 | `outside_check` | `force` (true before Save: ask again about a version put off) | null, or `{name, version, changed_at, dirty, choices, default, confirm_load, problem, token}`: `choices` of `merge`, `keep_mine`, `load_theirs`; `token` is Merge's, for `merge_preview` and `merge_apply` (base `{kind: "auto"}` or `{kind: "last_read"}`) |
 | `outside_resolve` | `choice` (`keep_mine`, `load_theirs`, `later`), `version` (as `outside_check` gave it) | the view, with a notice; refused when the file changed again since |
+| `copies_found` | | `[{name, changed_at}]`: the conflict copies beside the file, newest first, less those merged or dismissed in this window and unchanged since |
+| `copy_merge` | `name` (from `copies_found`) | `{token, name}`, for `merge_preview` and `merge_apply` (base `{kind: "auto"}`) |
+| `copy_settle` | `name` | null: not offered again in this window until it changes |
 | `backup_list` | | `{file, backups: [{name, label, changes}]}`, newest first; `changes` null when one can't be read |
 | `revert_to_backup` | `name` (a backup's file name from `backup_list`) | the view, with a notice |
 | `import_script_tags` | shows the Open dialog (`.fdx`) | the view with a notice, or null when cancelled (Plan menu; decisions.md, IMP-04) |

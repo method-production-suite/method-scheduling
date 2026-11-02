@@ -15,6 +15,7 @@ import { createDood } from './dood.js';
 import { initSafety } from './safety.js';
 import { initUpdates } from './updates.js';
 import { initOutside } from './outside.js';
+import { initCopies } from './copies.js';
 import { isModalOpen, confirmDialog, askText, customDialog } from './modal.js';
 import { createBreakdown, fieldOrderDialog } from './breakdown.js';
 import { createSplit } from './split.js';
@@ -106,6 +107,9 @@ function say(text, isError = false) {
 
 /** Changes made outside the app (outside.js), set up with the commands below. */
 let outside = null;
+/** Conflict copies beside the file (copies.js), and the file they were looked for beside. */
+let copies = null;
+let copiesOf = null;
 
 function fileState(file) {
   $('doc-file').textContent = file.name;
@@ -120,6 +124,12 @@ function fileState(file) {
     : '';
   conflict.hidden = !file.conflict;
   if (state.view) state.view.file = file;
+  // Another file (Open, Save As): look for conflict copies beside it.
+  const of = file.saved_once ? file.name : null;
+  if (copies && of !== copiesOf) {
+    copiesOf = of;
+    copies.check();
+  }
   // Autosave just found the change: ask now when this window is in front (decisions.md,
   // entry 179); otherwise the check runs when it gets focus.
   if (file.conflict && !was && document.hasFocus() && outside) outside.check(false);
@@ -1948,6 +1958,7 @@ const safety = initSafety({ apply, say, fileState });
 const updates = initUpdates({ say });
 outside = initOutside({ apply, say, show, go: (h) => goToHit(h, { keepFocus: false }) });
 initMergeWaiting();
+copies = initCopies({ say, show, go: (h) => goToHit(h, { keepFocus: false }) });
 
 const COMMANDS = {
   'file.new': () => apply(invoke('new_schedule')),
