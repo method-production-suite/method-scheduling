@@ -344,7 +344,7 @@ ref = ["FIL-03", "FIL-08", "D86"]
 [[feature]]
 group = "files"
 title = "What changed and merge"
-text = "See every change between two schedules in plain words, and merge two copies that changed apart, with real clashes listed for you to pick."
+text = "See every change between two schedules in plain words, each a link to what changed, and merge two copies that changed apart, with every conflict the merge settles kept in the file for review (File > Merge Conflicts to Review), whether it ran in the app, on the command line or in git."
 status = "have"
 ref = ["D25", "D26"]
 
@@ -404,14 +404,14 @@ ref = ["IMP-04", "D68"]
 [[feature]]
 group = "beyond"
 title = "Script revisions"
-text = "Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard and cut ones are marked omitted."
+text = "Merge a revised draft into the schedule: scenes keep their tags and places, new ones go to the Boneyard, cut ones are marked omitted, and each draft is recorded by color (Blue, Pink, Yellow and on) with the scenes it changed, each sheet naming the newest draft that touched it."
 status = "have"
 ref = ["BYD-01", "D69"]
 
 [[feature]]
 group = "beyond"
 title = "Day timeline"
-text = "Each shoot day from its call time, strip by strip, with warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step."
+text = "Each shoot day from its call time, strip by strip, with a call and wrap of their own for anyone who needs one, warnings for a long day or a scene past sunset, and what runs past wrap moved to the next day in one step."
 status = "have"
 ref = ["BYD-04", "D71", "D192"]
 
@@ -439,7 +439,7 @@ ref = ["BYD-05", "D74"]
 [[feature]]
 group = "beyond"
 title = "Strip order suggestion"
-text = "A suggested order that groups by location, set and cast around your pinned strips and red flags, with the before and after counts to compare."
+text = "Suggest Strip Order tries three orders around your pinned strips and red flags, adds up a cost for each that you can check by hand (actors' work days, location changes within a day, day and night switches, red flag clashes) and suggests the cheapest; when none beats the board, nothing moves."
 status = "have"
 ref = ["BYD-06", "D75"]
 
@@ -453,7 +453,7 @@ ref = ["BYD-02", "D70"]
 [[feature]]
 group = "beyond"
 title = "A printed call sheet"
-text = "A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set, other elements and notes."
+text = "A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, other elements, notes and the next two shoot days in brief."
 status = "have"
 ref = ["BYD-02", "D207"]
 

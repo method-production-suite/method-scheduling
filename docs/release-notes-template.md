@@ -28,6 +28,9 @@ steps: [RELEASING.md](RELEASING.md).
 - Claim only what is built. If `docs/features.toml` or `docs/ROADMAP.md` doesn't back a
   claim, leave it out.
 - No other product's name, and no comparisons.
+- Windows signing, in Known gaps, always in these words: "Not signed, and no certificate
+  is planned: Windows warns that the publisher is unknown before it opens." The installer
+  stays unsigned for good, so never "not signed yet".
 - Most commits earn no bullet. Refactors, tests, tooling and documentation don't, unless a
   scheduler would notice.
 
