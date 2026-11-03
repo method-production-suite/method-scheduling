@@ -482,7 +482,7 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
     for x in f.crew_calls {
         department_ok(&x.department)
             .map_err(|e| bad(format!("crew call {:?}: {e}", x.department)))?;
-        if x.offset_minutes.abs() > MAX_CREW_OFFSET {
+        if x.offset_minutes.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
             return Err(bad(format!(
                 "crew call {:?}: {} minutes is more than 12 hours from the call",
                 x.department, x.offset_minutes

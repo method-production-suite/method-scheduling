@@ -287,7 +287,7 @@ impl Plan {
         if loc.longitude.abs() > 180_000_000 {
             return Err(refuse("a longitude is 180 degrees east or west at most"));
         }
-        if loc.utc_offset.abs() > 14 * 60 {
+        if loc.utc_offset.unsigned_abs() > 14 * 60 {
             return Err(refuse("a UTC offset is 14 hours at most"));
         }
         let loc = GeoLocation { name, ..loc };
@@ -490,7 +490,7 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
         if let Err(why) = department_ok(&x.department) {
             return broken(why);
         }
-        if x.offset.abs() > MAX_CREW_OFFSET {
+        if x.offset.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
             return broken(format!(
                 "the crew call of {:?} is out of range",
                 x.department
@@ -830,7 +830,8 @@ pub fn set_crew_call(s: &mut Schedule, department: &str, offset: Option<i32>) ->
         p.crew_calls.retain(|x| !same_name(&x.department, name));
         return Ok(());
     };
-    if offset.abs() > MAX_CREW_OFFSET {
+    // unsigned_abs: i32::MIN has no i32 absolute value.
+    if offset.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
         return Err(refuse("a crew call is within 12:00 of the company's call"));
     }
     let full = p.crew_calls.len() >= MAX_CREW_CALLS;
@@ -1220,12 +1221,19 @@ mod tests {
         assert_eq!(s.plan.crew_call("CAMERA").unwrap().on(7 * 60), 390);
         assert_eq!(s.plan.crew_call("Hair and makeup").unwrap().on(60), -30);
         assert!(set_crew_call(&mut s, "Grip", Some(721)).is_err());
+        assert!(set_crew_call(&mut s, "Grip", Some(i32::MIN)).is_err());
+        assert!(set_crew_call(&mut s, "Grip", Some(i32::MAX)).is_err());
         assert!(set_crew_call(&mut s, "", Some(0)).is_err());
         assert!(set_crew_call(&mut s, "Grip\nElectric", Some(0)).is_err());
         assert!(check(&s).is_ok());
         let mut bad = s.clone();
         bad.plan.crew_calls[1].department = "Camera".to_string();
         assert!(check(&bad).is_err(), "two of one department");
+        for v in [i32::MIN, i32::MAX, -721] {
+            let mut bad = s.clone();
+            bad.plan.crew_calls[0].offset = v;
+            assert!(check(&bad).is_err(), "{v}");
+        }
         set_crew_call(&mut s, "Camera", None).unwrap();
         assert_eq!(s.plan.crew_calls.len(), 1);
         for i in 1..MAX_CREW_CALLS {
