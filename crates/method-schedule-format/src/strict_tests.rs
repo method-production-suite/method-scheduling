@@ -587,6 +587,28 @@ fn null_and_defaults_are_named_in_the_message() {
     assert!(e.contains("].images [] is the default"), "{e}");
 }
 
+/// Offsets at the ends of the integer range are refused, not wrapped past the range check
+/// (`i32::MIN` has no `i32` absolute value).
+#[test]
+fn offsets_at_the_integer_limits_are_refused() {
+    let text = to_string(&everything());
+    for v in [i32::MIN as i64, i32::MAX as i64, -721, 721] {
+        let crew = text.replacen(
+            "\"offset_minutes\": -90",
+            &format!("\"offset_minutes\": {v}"),
+            1,
+        );
+        assert_ne!(crew, text);
+        assert!(from_str(&crew).is_err(), "crew call at {v}");
+    }
+    let at = text.find("\"utc_offset_minutes\": ").unwrap();
+    let end = at + text[at..].find([',', '\n']).unwrap();
+    for v in [i32::MIN as i64, i32::MAX as i64] {
+        let loc = format!("{}\"utc_offset_minutes\": {v}{}", &text[..at], &text[end..]);
+        assert!(from_str(&loc).is_err(), "UTC offset {v}");
+    }
+}
+
 #[test]
 fn an_event_longer_than_any_edit_makes_is_refused() {
     let mut s = everything();
