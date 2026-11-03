@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
     department_ok, CallTime, CrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall,
-    Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS,
-    MAX_CREW_OFFSET, MAX_WRAP,
+    Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS, MAX_CREW_OFFSET,
+    MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 

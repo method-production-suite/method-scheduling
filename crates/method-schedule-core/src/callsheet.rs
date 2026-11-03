@@ -425,8 +425,15 @@ mod tests {
         crate::plan::set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
         crate::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
         let c = call_sheet(&s, b, sb, 1).unwrap();
-        let crew: Vec<_> = c.crew.iter().map(|x| (x.department.as_str(), x.call)).collect();
-        assert_eq!(crew, [("Hair and makeup", Some(330)), ("Camera", Some(420))]);
+        let crew: Vec<_> = c
+            .crew
+            .iter()
+            .map(|x| (x.department.as_str(), x.call))
+            .collect();
+        assert_eq!(
+            crew,
+            [("Hair and makeup", Some(330)), ("Camera", Some(420))]
+        );
         assert_eq!(c.elements.len(), 1);
         assert_eq!(c.elements[0].name, "Props");
         assert_eq!(c.elements[0].elements[0].name, "NET");

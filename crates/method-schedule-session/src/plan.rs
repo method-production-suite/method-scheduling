@@ -16,8 +16,8 @@ use method_schedule_core::model::{BoardId, CategoryId, ElementId, StripId, SubBo
 use method_schedule_core::optimize::{apply as apply_order_to, suggest, Score};
 use method_schedule_core::plan::{
     self as p, clock_text, crew_offset_text, crew_offset_words, degrees_text, hours_text,
-    offset_text, parse_clock, parse_crew_offset, parse_daylight_saving, parse_degrees,
-    parse_hours, parse_offset, GeoLocation,
+    offset_text, parse_clock, parse_crew_offset, parse_daylight_saving, parse_degrees, parse_hours,
+    parse_offset, GeoLocation,
 };
 use method_schedule_core::rest::rest_report;
 use method_schedule_core::revise::{revise, revision_text};

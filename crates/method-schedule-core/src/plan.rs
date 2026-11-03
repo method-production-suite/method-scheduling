@@ -491,7 +491,10 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
             return broken(why);
         }
         if x.offset.abs() > MAX_CREW_OFFSET {
-            return broken(format!("the crew call of {:?} is out of range", x.department));
+            return broken(format!(
+                "the crew call of {:?} is out of range",
+                x.department
+            ));
         }
         if p.crew_calls[..i]
             .iter()
@@ -1080,9 +1083,7 @@ pub fn hours_text(minutes: u32) -> String {
 /// `+0:15` or `0:15` after, `0` with it (decision 242). Minutes.
 pub fn parse_crew_offset(text: &str) -> Result<i32, String> {
     let t = text.trim();
-    let bad = || {
-        format!("{t:?} is not a time before or after the call such as -1:30, 0 or +0:15")
-    };
+    let bad = || format!("{t:?} is not a time before or after the call such as -1:30, 0 or +0:15");
     let (neg, rest) = match t.as_bytes().first() {
         Some(b'-') => (true, &t[1..]),
         Some(b'+') => (false, &t[1..]),
@@ -1205,8 +1206,17 @@ mod tests {
         set_crew_call(&mut s, "Camera", Some(0)).unwrap();
         set_crew_call(&mut s, " Hair and makeup ", Some(-90)).unwrap();
         set_crew_call(&mut s, "camera", Some(-30)).unwrap();
-        let names: Vec<_> = s.plan.crew_calls.iter().map(|x| x.department.as_str()).collect();
-        assert_eq!(names, ["camera", "Hair and makeup"], "kept in place, renamed as typed");
+        let names: Vec<_> = s
+            .plan
+            .crew_calls
+            .iter()
+            .map(|x| x.department.as_str())
+            .collect();
+        assert_eq!(
+            names,
+            ["camera", "Hair and makeup"],
+            "kept in place, renamed as typed"
+        );
         assert_eq!(s.plan.crew_call("CAMERA").unwrap().on(7 * 60), 390);
         assert_eq!(s.plan.crew_call("Hair and makeup").unwrap().on(60), -30);
         assert!(set_crew_call(&mut s, "Grip", Some(721)).is_err());

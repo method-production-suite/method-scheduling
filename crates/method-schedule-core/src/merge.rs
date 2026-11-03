@@ -4057,7 +4057,11 @@ pub(crate) mod tests {
         let m = merge(&b, &o, &t);
         assert_eq!(m.conflicts.len(), 1, "{:?}", texts(&m));
         assert_eq!(m.conflicts[0].key, "plan:crew_call:camera");
-        assert!(m.conflicts[0].text.contains("Camera"), "{}", m.conflicts[0].text);
+        assert!(
+            m.conflicts[0].text.contains("Camera"),
+            "{}",
+            m.conflicts[0].text
+        );
         assert!(m.schedule.check().is_ok());
     }
 }

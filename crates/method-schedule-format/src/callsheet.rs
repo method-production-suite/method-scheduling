@@ -471,7 +471,8 @@ mod tests {
             let cells: Vec<&str> = row.split('|').collect();
             let keys = ticks(cells[1]);
             if let [one] = keys.as_slice() {
-                if ["sun", "scenes", "cast", "elements", "advance", "crew"].contains(&one.as_str()) {
+                if ["sun", "scenes", "cast", "elements", "advance", "crew"].contains(&one.as_str())
+                {
                     // The object's own keys: for elements, those before `(each`.
                     let notes = cells[3].split("(each").next().unwrap();
                     let mut k = ticks(notes);
