@@ -71,6 +71,16 @@ pub struct AdvanceDay {
     pub scenes: Vec<CallScene>,
 }
 
+/// A crew department's call on the day (decision 242).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CallCrew {
+    pub department: String,
+    /// Minutes from the company's call.
+    pub offset: i32,
+    /// With a call time: minutes after midnight, below 0 the day before.
+    pub call: Option<i32>,
+}
+
 /// How many shoot days after the call sheet's the advance schedule covers.
 pub const ADVANCE_DAYS: usize = 2;
 
@@ -96,6 +106,8 @@ pub struct CallSheet {
     pub sun: Option<Sun>,
     pub scenes: Vec<CallScene>,
     pub cast: Vec<CallCast>,
+    /// Each crew department's call, in the order the schedule keeps them.
+    pub crew: Vec<CallCrew>,
     /// Categories other than the cast, in schedule order, those with elements today.
     pub elements: Vec<CallCategory>,
     /// Banners (with their times), events on the date, and the timeline's warnings.
@@ -352,6 +364,16 @@ pub fn call_sheet(
         sun: t.sun.map(|x| x.sun),
         scenes,
         cast,
+        crew: s
+            .plan
+            .crew_calls
+            .iter()
+            .map(|x| CallCrew {
+                department: x.department.clone(),
+                offset: x.offset,
+                call: t.call.map(|c| x.on(c)),
+            })
+            .collect(),
         elements: by_cat,
         notes,
         advance,
@@ -399,6 +421,12 @@ mod tests {
             (c.cast[0].call, c.cast[0].wrap, c.cast[0].own),
             (Some(360), Some(1200), true)
         );
+        // Crew calls (decision 242) follow the day's call.
+        crate::plan::set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
+        crate::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
+        let c = call_sheet(&s, b, sb, 1).unwrap();
+        let crew: Vec<_> = c.crew.iter().map(|x| (x.department.as_str(), x.call)).collect();
+        assert_eq!(crew, [("Hair and makeup", Some(330)), ("Camera", Some(420))]);
         assert_eq!(c.elements.len(), 1);
         assert_eq!(c.elements[0].name, "Props");
         assert_eq!(c.elements[0].elements[0].name, "NET");

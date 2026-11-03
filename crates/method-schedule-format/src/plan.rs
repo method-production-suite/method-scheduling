@@ -5,8 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    CallTime, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall, Plan, ReviewConflict,
-    SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_WRAP,
+    department_ok, CallTime, CrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall,
+    Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS,
+    MAX_CREW_OFFSET, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -45,6 +46,17 @@ pub(crate) struct FilePlan {
     drafts: Vec<FileDraft>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     conflicts: Vec<FileConflict>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    crew_calls: Vec<FileCrewCall>,
+}
+
+/// A crew department's call against the company's (decision 242).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileCrewCall {
+    department: String,
+    /// Always written, 0 included: it is the whole of the entry.
+    offset_minutes: i32,
 }
 
 /// A merge conflict kept for review (decision 238).
@@ -185,6 +197,14 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
                 theirs: c.theirs.clone(),
                 taken: c.taken.key().to_string(),
                 date: c.date.map(|x| x.to_string()),
+            })
+            .collect(),
+        crew_calls: p
+            .crew_calls
+            .iter()
+            .map(|x| FileCrewCall {
+                department: x.department.clone(),
+                offset_minutes: x.offset,
             })
             .collect(),
         drafts: p
@@ -454,6 +474,26 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             ours: c.ours,
             theirs: c.theirs,
             taken,
+        });
+    }
+    if f.crew_calls.len() > MAX_CREW_CALLS {
+        return Err(bad(format!("more than {MAX_CREW_CALLS} crew calls")));
+    }
+    for x in f.crew_calls {
+        department_ok(&x.department)
+            .map_err(|e| bad(format!("crew call {:?}: {e}", x.department)))?;
+        if x.offset_minutes.abs() > MAX_CREW_OFFSET {
+            return Err(bad(format!(
+                "crew call {:?}: {} minutes is more than 12 hours from the call",
+                x.department, x.offset_minutes
+            )));
+        }
+        if p.crew_call(&x.department).is_some() {
+            return Err(bad(format!("{:?} has two crew calls", x.department)));
+        }
+        p.crew_calls.push(CrewCall {
+            department: x.department,
+            offset: x.offset_minutes,
         });
     }
     for x in f.person_calls {

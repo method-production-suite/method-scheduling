@@ -5758,3 +5758,26 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - `copies::tests` cover the names, the listing (newest first, folders and other names left
   out, settled copies hidden until they change) and a copy merging in with the change on
   both sides kept.
+
+## 242. Crew calls by department (2026-11-03)
+
+- **Decision 207's crew calls**: a call sheet names when each department is called, not
+  only the cast. Crew aren't elements in a schedule, so a crew call is a department's name
+  and its time against the company's call: `-1:30` for an hour and a half before, `0`
+  with it, `+0:15` after (`plan.crew_calls`, in the order added, 100 at most, 12 hours
+  either way). Set once under Plan > Crew Calls..., it holds on every shoot day, so a
+  changed company call moves every department with it.
+- **On the call sheet**: a Crew calls section after the cast (department, call, how far
+  from the company's call), the JSON's `crew` and the CSV's seventh table, last so the
+  first six keep their places; so the command line and the MCP `call_sheet` tool too. A
+  day without a call time lists the departments with no times.
+- **Merging**: entry by entry, by department name without regard to case; two different
+  changes to one department's call conflict, with the department named.
+- **Additive in the file**: a file without the key reads and writes back byte for byte; a
+  file using it won't open in 0.7.0 or earlier. `offset_minutes` is always written, 0
+  included.
+- **Not yet**: a department's call for one day only, crew names under each department,
+  and setting crew calls from the command line or MCP.
+- `plan::tests::crew_calls_are_set_against_the_call` covers the typed offsets, names kept
+  in place and the limits; `callsheet` tests in core and format cover the sheet, the JSON
+  and the CSV.

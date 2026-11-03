@@ -108,6 +108,25 @@ export const hoursText = (minutes) => `${Math.floor(minutes / 60)}:${String(minu
 
 const DEFAULT_LONG_DAY = 12 * 60;
 
+/** A crew call's offset as typed, `-1:30`, `0`, `+0:15` (plan::parse_crew_offset). */
+function parseCrew(text) {
+  const t = String(text).trim();
+  const neg = t[0] === '-';
+  const rest = t[0] === '-' || t[0] === '+' ? t.slice(1) : t;
+  let m;
+  try {
+    m = parseHours(rest);
+  } catch {
+    throw `${q(t)} is not a time before or after the call such as -1:30, 0 or +0:15`;
+  }
+  if (m > 12 * 60) throw `${q(t)} is more than 12:00 from the call`;
+  return neg ? -m : m;
+}
+
+/** plan::crew_offset_text and crew_offset_words. */
+const crewText = (m) => (m < 0 ? `-${hoursText(-m)}` : m > 0 ? `+${hoursText(m)}` : hoursText(0));
+const crewWords = (m) => (m < 0 ? `${hoursText(-m)} before the call` : m > 0 ? `${hoursText(m)} after the call` : 'with the call');
+
 /** A daylight saving rule as typed; its name or null (plan::parse_daylight_saving). */
 export function parseDaylightSaving(text) {
   const t = String(text ?? '').trim();
@@ -162,6 +181,7 @@ export function planFakes(ctx) {
       longDay: null,
       locations: [{ name: 'Harbor', latitude: 41500000, longitude: -70600000, utc_offset: -240 }],
       turnarounds: {},
+      crew: [{ department: 'Hair and makeup', offset: -90 }, { department: 'Camera', offset: -30 }],
       locks: [],
       pinned: [],
     });
@@ -398,6 +418,23 @@ export function planFakes(ctx) {
         unchecked: 2,
       };
     },
+    // As plan.rs crew_view and set_crew (decision 242).
+    crew_data: () =>
+      (planOf(model()).crew || []).map((c) => ({ department: c.department, offset: crewText(c.offset), words: crewWords(c.offset) })),
+    set_crew_call: ({ department, value }) => {
+      const name = String(department).trim();
+      if (!name || name.length > 100) throw 'A department is one line of 1 to 100 characters.';
+      const t = String(value).trim();
+      const offset = t ? read(() => parseCrew(t)) : null;
+      return planEdit((m, plan) => {
+        plan.crew = plan.crew || [];
+        const at = plan.crew.findIndex((c) => c.department.toLowerCase() === name.toLowerCase());
+        if (offset === null) {
+          if (at >= 0) plan.crew.splice(at, 1);
+        } else if (at >= 0) plan.crew[at] = { department: name, offset };
+        else plan.crew.push({ department: name, offset });
+      });
+    },
     set_turnaround: ({ category, value }) => {
       const t = String(value).trim();
       const minutes = t ? read(() => parseHours(t)) : null;
@@ -509,6 +546,7 @@ export function planFakes(ctx) {
           { element: 4, board_id: '4', name: 'HARBORMASTER LUND', scenes: ['3', '5'], first: '07:00', last: '08:50', call: '07:00', wrap: '15:40', own_call: false },
         ],
         elements: [{ category: 5, name: 'Hand props', elements: [{ element: 9, board_id: '', name: 'Logbook', scenes: ['5'] }] }],
+        crew: (planOf(model()).crew || []).map((c) => ({ department: c.department, offset: crewText(c.offset), offset_minutes: c.offset, call: clockText(420 + c.offset), call_minutes: 420 + c.offset })),
         notes: ['Company move to Gull Point, 09:20, 30 minutes.', 'Scene 9 is exterior dusk: shoot before sunset at 18:19.'],
         advance: day < sb.days.length
           ? [{ day: day + 1, date: '2026-10-21', call: '07:00', call_minutes: 420, eighths: 11, pages: '1 3/8', scenes: [sc('3A', 'INT/EXT', "KIT'S TRUCK", 'DAY', '1/8', ['1'], null, null, ''), sc('7', 'INT', 'NET LOFT', 'NIGHT', '1 2/8', ['1', '4'], null, null, '')] }]

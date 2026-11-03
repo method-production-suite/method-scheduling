@@ -9,6 +9,7 @@
 // - Locations: latitude, longitude, UTC offset and daylight saving rule beside each sheet
 //   location.
 // - Turnarounds and Rest: a minimum per category and the rests shorter than it.
+// - Crew Calls: each department's call, before or after the company's call (entry 242).
 // - Schedule Locks: lock, see each actor's drift, delete.
 // - Pin Strips, Unpin Strips: the selected scenes stay put in a suggested order.
 // - Suggest Strip Order: before and after counts, Apply as one undo step.
@@ -397,6 +398,67 @@ export function planCommands(ctx) {
     });
   }
 
+  async function crew() {
+    let list;
+    try {
+      list = await invoke('crew_data');
+    } catch (e) {
+      ctx.say(e, true);
+      return;
+    }
+    await customDialog((close) => {
+      const error = errorLine('pl-error');
+      const body = el('tbody');
+      const set = async (department, value) => {
+        if (!(await edit(invoke('set_crew_call', { department, value }), error))) return false;
+        list = await invoke('crew_data');
+        draw();
+        return true;
+      };
+      const newName = textInput('', 'pl-name');
+      newName.setAttribute('aria-label', 'New department');
+      newName.placeholder = 'Department';
+      const newOffset = textInput('');
+      newOffset.setAttribute('aria-label', 'Its call against the company call');
+      newOffset.placeholder = '-1:00';
+      const add = async () => {
+        if (await set(newName.value, newOffset.value || '0')) {
+          newName.value = '';
+          newOffset.value = '';
+          newName.focus();
+        }
+      };
+      [newName, newOffset].forEach((i) => i.addEventListener('keydown', (e) => e.key === 'Enter' && add()));
+      function draw() {
+        const rows = list.map((c) => {
+          const input = textInput(c.offset);
+          input.setAttribute('aria-label', `Call for ${c.department} against the company call`);
+          const save = () => set(c.department, input.value || '0');
+          input.addEventListener('keydown', (e) => e.key === 'Enter' && save());
+          return el(
+            'tr',
+            {},
+            el('td', { text: c.department }),
+            el('td', {}, input),
+            el('td', { class: 'muted', text: c.words }),
+            el('td', {}, button('Set', save, 'btn btn-mini'), ' ', button('Remove', () => set(c.department, ''), 'btn btn-mini')),
+          );
+        });
+        rows.push(el('tr', {}, el('td', {}, newName), el('td', {}, newOffset), el('td'), el('td', {}, button('Add', add, 'btn btn-mini'))));
+        body.replaceChildren(...rows);
+      }
+      draw();
+      return box(
+        'Crew Calls',
+        'pl-crew',
+        el('p', { class: 'modal-message', text: 'Each department’s call against the company’s call on every shoot day: -1:30 is an hour and a half before it, 0 with it, +0:15 a quarter of an hour after. The call sheet lists them with the day’s times.' }),
+        error,
+        el('table', { class: 'pl-table' }, el('thead', {}, el('tr', {}, ...['Department', 'From the call', '', ''].map((h) => el('th', { text: h })))), body),
+        el('div', { class: 'modal-actions' }, closeButton(close)),
+      );
+    });
+  }
+
   /** The drift since a lock, printed (BYD-05): a row per actor whose days changed. */
   async function printDrift(d) {
     const head = el('tr', {}, th('ID'), th('Actor'), th('Days', 'n'), th('Added'), th('Dropped'), th('Moved'));
@@ -629,6 +691,7 @@ export function planCommands(ctx) {
     'plan.call_sheet': () => callSheet(),
     'plan.locations': () => locations(),
     'plan.rest': () => rest(),
+    'plan.crew': () => crew(),
     'plan.locks': () => locks(),
     'plan.pin': () => pin(true),
     'plan.unpin': () => pin(false),

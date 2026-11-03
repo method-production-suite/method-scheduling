@@ -170,6 +170,8 @@ const COMMANDS: &[&str] = &[
     "drafts_data",
     "conflicts_data",
     "set_turnaround",
+    "crew_data",
+    "set_crew_call",
     "locks_data",
     "lock_schedule",
     "delete_lock",

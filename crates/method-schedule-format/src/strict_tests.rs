@@ -355,6 +355,9 @@ pub(crate) fn everything() -> Schedule {
         added: vec![last],
         omitted: Vec::new(),
     });
+    // A crew call (decision 242), and one with the call.
+    method_schedule_core::plan::set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
+    method_schedule_core::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
     // A merge conflict kept for review (decision 238).
     s.plan
         .conflicts

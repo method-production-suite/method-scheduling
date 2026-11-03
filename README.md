@@ -206,7 +206,7 @@ docs/features.toml.
 - **Schedule locks and drift.** Lock the schedule as sent, then see each actor's work days added, dropped and moved since, on screen or as a spreadsheet.
 - **Strip order suggestion.** Suggest Strip Order tries three orders around your pinned strips and red flags, adds up a cost for each that you can check by hand (actors' work days, location changes within a day, day and night switches, red flag clashes) and suggests the cheapest; when none beats the board, nothing moves.
 - **Call sheet data.** A shoot day's call sheet data as JSON or CSV, ready for whatever lays out your call sheets.
-- **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, other elements, notes and the next two shoot days in brief.
+- **A printed call sheet.** A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, each crew department's call, other elements, notes and the next two shoot days in brief.
 - **What was shot.** Mark each scene shot, in part or finished: the board dims finished scenes, every day says the pages still to shoot, and an export sets what was shot beside the plan.
 - **Try it in your browser.** The whole app with Field Station, an invented production, running in your browser with nothing to install: nothing is uploaded, and Save downloads the file.
 

@@ -976,6 +976,13 @@ export function spanText(start, end) {
   return start || end || '';
 }
 
+/** A crew call's place against the company's call (entry 242): "1:30 before", "With the call". */
+export function crewFromCall(minutes) {
+  const n = Math.round(Number(minutes) || 0);
+  if (!n) return 'With the call';
+  return `${lengthText(Math.abs(n))} ${n < 0 ? 'before' : 'after'}`;
+}
+
 /** Sunrise and sunset as the sheet says them. */
 export function sunText(sun) {
   if (!sun) return '';

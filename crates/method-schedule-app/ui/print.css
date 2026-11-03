@@ -641,5 +641,8 @@
 .method-report col.cs-c-scenes { width: 20%; }
 .method-report col.cs-c-call { width: 20%; }
 .method-report col.cs-c-on { width: 20%; }
+.method-report col.cs-c-dept { width: 40%; }
+.method-report col.cs-c-crew-call { width: 20%; }
+.method-report col.cs-c-from { width: 40%; }
 .method-report col.cs-c-cat { width: 22%; }
 .method-report col.cs-c-els { width: 78%; }

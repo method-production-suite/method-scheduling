@@ -6,7 +6,7 @@
 use serde_json::{json, Value};
 
 use method_schedule_core::callsheet::{CallScene, CallSheet};
-use method_schedule_core::plan::clock_text;
+use method_schedule_core::plan::{clock_text, crew_offset_text};
 use method_schedule_core::solar::Sun;
 
 use crate::export::csv::{self as csvw, Delimiter};
@@ -93,6 +93,13 @@ pub fn to_json(c: &CallSheet) -> String {
             "wrap": time_text(x.wrap),
             "own_call": x.own,
         })).collect::<Vec<_>>(),
+        "crew": c.crew.iter().map(|x| json!({
+            "department": x.department,
+            "offset_minutes": x.offset,
+            "offset": crew_offset_text(x.offset),
+            "call_minutes": time(x.call),
+            "call": time_text(x.call),
+        })).collect::<Vec<_>>(),
         "elements": c.elements.iter().map(|cat| json!({
             "category": cat.category.0,
             "name": cat.name,
@@ -123,8 +130,9 @@ fn opt(m: Option<i32>) -> Cell {
     m.map_or(Cell::Empty, |m| Cell::text(clock_text(m)))
 }
 
-/// The call sheet as tables: Day (field and value), Scenes, Cast, Elements, Notes and
-/// Advance (the next days' scenes, decision 232).
+/// The call sheet as tables: Day (field and value), Scenes, Cast, Elements, Notes,
+/// Advance (the next days' scenes, decision 232) and Crew (decision 242), the last two
+/// last so the first tables keep their places.
 pub fn workbook(c: &CallSheet) -> Workbook {
     let (rise, set) = c.sun_text();
     let row = |k: &str, v: Cell| vec![Cell::text(k), v];
@@ -279,9 +287,27 @@ pub fn workbook(c: &CallSheet) -> Workbook {
             })
             .collect(),
     };
+    let crew = Sheet {
+        name: "Crew",
+        columns: ["Department", "From call", "Call"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect(),
+        rows: c
+            .crew
+            .iter()
+            .map(|x| {
+                vec![
+                    Cell::text(x.department.clone()),
+                    Cell::text(crew_offset_text(x.offset)),
+                    opt(x.call),
+                ]
+            })
+            .collect(),
+    };
     Workbook {
         title: c.title.clone(),
-        sheets: vec![day, scenes, cast, elements, notes, advance],
+        sheets: vec![day, scenes, cast, elements, notes, advance, crew],
     }
 }
 
@@ -360,6 +386,7 @@ mod tests {
         let st = s.boards[0].boneyard[0].id;
         s.move_strips(b, &[st], at(3)).unwrap();
         s.insert_strip(b, StripKind::DayBreak, at(4)).unwrap();
+        method_schedule_core::plan::set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
         s.plan
             .set_location(GeoLocation {
                 name: "pier".into(),
@@ -409,10 +436,18 @@ mod tests {
             csv.contains("\r\n\r\nDay,Date,Call,Scene,I/E,Set,Day/Night,Pages,Cast\r\n2,2024-06-21,,13,INT,SHED,NIGHT,3/8,1\r\n"),
             "{csv}"
         );
+        // Crew calls (decision 242): in the JSON, and the seventh table.
+        assert_eq!(j["crew"][0]["department"], "Hair and makeup");
+        assert_eq!(j["crew"][0]["offset"], "-1:30");
+        assert_eq!(j["crew"][0]["call"], "05:30");
+        assert!(
+            csv.ends_with("\r\n\r\nDepartment,From call,Call\r\nHair and makeup,-1:30,05:30\r\n"),
+            "{csv}"
+        );
     }
 
     /// The JSON has exactly the keys CALLSHEET.md's table lists, and inside `sun`,
-    /// `scenes`, `cast` and `elements` the keys its notes name, in alphabetical order.
+    /// `scenes`, `cast`, `elements`, `advance` and `crew` the keys its notes name, in alphabetical order.
     #[test]
     fn json_keys_are_the_ones_callsheet_md_lists() {
         let doc = include_str!("../../../docs/CALLSHEET.md");
@@ -436,7 +471,7 @@ mod tests {
             let cells: Vec<&str> = row.split('|').collect();
             let keys = ticks(cells[1]);
             if let [one] = keys.as_slice() {
-                if ["sun", "scenes", "cast", "elements", "advance"].contains(&one.as_str()) {
+                if ["sun", "scenes", "cast", "elements", "advance", "crew"].contains(&one.as_str()) {
                     // The object's own keys: for elements, those before `(each`.
                     let notes = cells[3].split("(each").next().unwrap();
                     let mut k = ticks(notes);
@@ -452,7 +487,7 @@ mod tests {
         let j: Value = serde_json::from_str(&text).unwrap();
         let keys = |v: &Value| -> Vec<String> { v.as_object().unwrap().keys().cloned().collect() };
         assert_eq!(keys(&j), top, "top level");
-        for part in ["sun", "scenes", "cast", "elements", "advance"] {
+        for part in ["sun", "scenes", "cast", "elements", "advance", "crew"] {
             let v = if part == "sun" { &j[part] } else { &j[part][0] };
             assert_eq!(keys(v), inner[part], "{part}");
         }

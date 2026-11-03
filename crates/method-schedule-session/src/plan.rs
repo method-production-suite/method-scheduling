@@ -15,8 +15,9 @@ use method_schedule_core::fountain::ImportedScript;
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, StripId, SubBoardId};
 use method_schedule_core::optimize::{apply as apply_order_to, suggest, Score};
 use method_schedule_core::plan::{
-    self as p, clock_text, degrees_text, hours_text, offset_text, parse_clock,
-    parse_daylight_saving, parse_degrees, parse_hours, parse_offset, GeoLocation,
+    self as p, clock_text, crew_offset_text, crew_offset_words, degrees_text, hours_text,
+    offset_text, parse_clock, parse_crew_offset, parse_daylight_saving, parse_degrees,
+    parse_hours, parse_offset, GeoLocation,
 };
 use method_schedule_core::rest::rest_report;
 use method_schedule_core::revise::{revise, revision_text};
@@ -518,6 +519,41 @@ pub fn set_minimum(s: &mut Schedule, category: u32, value: &str) -> Result<(), S
         Some(parse_hours(v).map_err(upper)?)
     };
     p::set_turnaround(s, CategoryId(category), m).map_err(upper)
+}
+
+// ---------------------------------------------------------------------------
+// Crew calls (decision 242)
+
+#[derive(Clone, Debug, Serialize)]
+pub struct CrewDto {
+    pub department: String,
+    /// As typed back: `-1:30`, `0:00`, `+0:15`.
+    pub offset: String,
+    /// In words: `1:30 before the call`.
+    pub words: String,
+}
+
+pub fn crew_view(s: &Schedule) -> Vec<CrewDto> {
+    s.plan
+        .crew_calls
+        .iter()
+        .map(|x| CrewDto {
+            department: x.department.clone(),
+            offset: crew_offset_text(x.offset),
+            words: crew_offset_words(x.offset),
+        })
+        .collect()
+}
+
+/// Sets a department's crew call from its typed offset; an empty one removes it.
+pub fn set_crew(s: &mut Schedule, department: &str, value: &str) -> Result<(), String> {
+    let v = value.trim();
+    let m = if v.is_empty() {
+        None
+    } else {
+        Some(parse_crew_offset(v).map_err(upper)?)
+    };
+    p::set_crew_call(s, department, m).map_err(upper)
 }
 
 // ---------------------------------------------------------------------------
