@@ -437,10 +437,13 @@ fn mutate(rng: &mut Rng, t: &str) -> (String, bool) {
     let b = t.as_bytes();
     let splice = |a: usize, z: usize, with: &str| format!("{}{with}{}", &t[..a], &t[z..]);
     match rng.below(9) {
-        // A scalar for another.
+        // A scalar for another. A key swapped for another name keeps the layout only
+        // where the key order does: inside an `extensions` object the writer sorts its
+        // keys, so there the same JSON is all that can be asked.
         0 | 1 if !scalars.is_empty() => {
             let &(a, z, _) = pick(rng, &scalars);
-            (splice(a, z, pick(rng, SCALARS)), true)
+            let key = t[z..].trim_start().starts_with(':');
+            (splice(a, z, pick(rng, SCALARS)), !key)
         }
         // Any value for an odd one.
         2 if !sp.values.is_empty() => {

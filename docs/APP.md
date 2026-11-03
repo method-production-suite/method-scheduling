@@ -1106,7 +1106,7 @@ crates/method-schedule-app/
                    flag), the calendar's and day out of days' marks, and the Red flags tab
   src/plan.rs      the Plan menu, beyond the reference app: tagged import, script
                    revisions (picked by token), timelines and call times, locations,
-                   turnarounds and rest, locks and drift, pins and the order suggestion,
+                   turnarounds and rest, crew calls, locks and drift, pins and the order suggestion,
                    call sheet data and the printed call sheet's data; each change one
                    undo step
   src/diffmerge.rs What Changed and Merge Changes From: the Open dialogs, the files picked
@@ -1338,6 +1338,7 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `locations_data` | | `[{name, sheets, latitude, longitude, utc_offset, daylight_saving}]`, every sheet location; `daylight_saving` `us_canada`, `eu`, `australia`, `new_zealand`, `israel`, `egypt`, `chile` or empty for none |
 | `set_location` | `name`, `latitude`, `longitude`, `utc_offset` (as typed; both degrees empty takes it off the map), `daylight_saving` (the select's value: `us_canada`, `eu`, `australia`, `new_zealand`, `israel`, `egypt`, `chile` or empty; decisions.md, entries 193, 220 and 230) | the view |
 | `rest_data`, `set_turnaround` | `board`; `category`, `value` | `{turnarounds: [{category, name, minimum}], short, unchecked}`; the view |
+| `crew_data`, `set_crew_call` | none; `department`, `value` (`-1:30`, `0`, `+0:15`; empty removes it) | `[{department, offset, words}]`; the view (decision 242) |
 | `locks_data`, `lock_schedule`, `delete_lock`, `drift_data` | `board`; `board`, `name`; `name`; `name` | `[{name, made, scenes}]`; the view; the view; `{lock, actors: [{name, board_id, before, after, added, dropped, moved}], unchanged}` |
 | `pin_strips` | `strips`, `pinned` | the view, with a notice |
 | `suggest_order`, `apply_suggested_order` | `sub_board`; `sub_board`, `order` (as previewed) | `{sub_board, sub_board_name, order, moved, pinned, groups, rows: [{label, before, after}], rule, tried: [{rule, cost}]}` (the cheapest of three orders, or the board's own when none costs less; decisions.md, entry 234); the view (refused when the board changed since) |

@@ -112,6 +112,8 @@ pub const COMMANDS: &[&str] = &[
     "set_location",
     "rest_data",
     "set_turnaround",
+    "crew_data",
+    "set_crew_call",
     "drafts_data",
     "conflicts_data",
     "locks_data",
@@ -159,6 +161,7 @@ pub const READS: &[&str] = &[
     "rest_data",
     "drafts_data",
     "conflicts_data",
+    "crew_data",
     "locks_data",
     "drift_data",
     "suggest_order",
@@ -1976,6 +1979,22 @@ mod plan_cmds {
                 };
                 to_reply(crate::commands::plan::set_turnaround(
                     &window, state, category, value,
+                ))
+            }
+            "crew_data" => to_reply(crate::commands::plan::crew_data(state)),
+            "set_crew_call" => {
+                #[derive(Deserialize)]
+                #[serde(rename_all = "camelCase")]
+                struct A {
+                    department: String,
+                    value: String,
+                }
+                let A { department, value } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::set_crew_call(
+                    &window, state, department, value,
                 ))
             }
             "locks_data" => {

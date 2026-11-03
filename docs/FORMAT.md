@@ -238,6 +238,7 @@ by the next plan edit; they are never an error.
 | `scenes_shot` | array of [scene shot](#scene-shot) | empty | What was shot of each scene on each day (entry 224). One per scene and day. |
 | `drafts` | array of [draft](#draft) | empty | Each script draft a revision merged, oldest first (entry 233). |
 | `conflicts` | array of [merge conflict](#merge-conflict) | empty | Conflicts merges settled one way, kept until someone marks them done (entry 238). |
+| `crew_calls` | array of [crew call](#crew-call) | empty | Each crew department's call against the company's call on every shoot day, in the order added (entry 242). At most 100. |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
 
 #### Location
@@ -315,6 +316,16 @@ conflict under the same key replaces it. At most 10,000; the oldest go first.
 An entry with neither `call` nor `wrap` is refused: leave it out. The rest check
 (turnarounds) measures from each element's own wrap to its own next call. Entries for an
 element or day break that no longer exists are dropped like the other plan keys.
+
+#### Crew call
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `department` | string | | The department, one line of 1 to 100 characters with no spaces around it; unique without regard to case. |
+| `offset_minutes` | integer | | Minutes from the company's call: negative before it, positive after, 0 with it; 720 either way at most. Always written. |
+
+A department's call on a day is the day's call plus `offset_minutes`; a day without a call
+time has none. The call sheet lists them (CALLSHEET.md).
 
 #### Lock
 

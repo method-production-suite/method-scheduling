@@ -3,15 +3,15 @@
 // breaks between rows and every page has its header and "Page X of Y". The first page opens
 // with the day: the production, the shoot day out of how many, the date, the call and wrap,
 // the day's length and pages, sunrise and sunset. Then the scenes in shooting order with
-// their clock times, the cast with when they are on set, the other elements by category,
-// and the notes. Only what the schedule holds: no crew, weather or map (CALLSHEET.md, "Not
-// included").
+// their clock times, the cast with when they are on set, the crew calls by department, the
+// other elements by category, the notes and the next days in brief. Only what the schedule
+// holds: no weather or map (CALLSHEET.md, "Not included").
 //
 // Text goes in through textContent only (dom.js); no inline styles (print.css, .cs-*).
 
 import { el } from './dom.js';
 import { row, td, th } from './report.js';
-import { callSheetDate, lengthText, spanText, sunText } from './logic.js';
+import { callSheetDate, crewFromCall, lengthText, spanText, sunText } from './logic.js';
 
 const fact = (label, value) => el('div', { class: 'cs-fact' }, el('span', { class: 'cs-label', text: label }), el('span', { class: 'cs-value', text: value || 'Not set' }));
 
@@ -82,6 +82,7 @@ function setCell(s) {
 export function callSheetFlows(d) {
   const scenes = d.scenes || [];
   const cast = d.cast || [];
+  const crew = d.crew || [];
   const cats = (d.elements || []).filter((c) => (c.elements || []).length);
   const notes = d.notes || [];
   const advance = (d.advance || []).filter((a) => (a.scenes || []).length);
@@ -107,6 +108,17 @@ export function callSheetFlows(d) {
       intro: title('Cast'),
       // Their call and wrap, bold when their own (entry 231).
       rows: cast.map((c) => row(el('tr', {}, td(c.board_id, 'fb'), td(c.name), td((c.scenes || []).join(', '), 'muted'), td(spanText(c.call, c.wrap), c.own_call ? 'fb' : ''), td(spanText(c.first, c.last))))),
+    });
+  }
+  // Each department's call against the company's (entry 242).
+  if (crew.length) {
+    flows.push({
+      name: 'Crew',
+      cls: 'cs-crew',
+      cols: ['cs-c-dept', 'cs-c-crew-call', 'cs-c-from'],
+      head: el('tr', {}, th('Department'), th('Call'), th('From the call')),
+      intro: title('Crew calls'),
+      rows: crew.map((c) => row(el('tr', {}, td(c.department), td(c.call || '--:--', 'fb'), td(crewFromCall(c.offset_minutes), 'muted')))),
     });
   }
   if (cats.length) {

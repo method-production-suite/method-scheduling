@@ -758,6 +758,9 @@ test('the printed call sheet says dates, lengths, times and the sun plainly (dec
   assert.equal(L.callSheetDate(null), null);
   assert.equal(L.callSheetDate('10/20/2026'), null);
   assert.equal(L.lengthText(520), '8:40');
+  assert.equal(L.crewFromCall(-90), '1:30 before');
+  assert.equal(L.crewFromCall(15), '0:15 after');
+  assert.equal(L.crewFromCall(0), 'With the call');
   assert.equal(L.lengthText(5), '0:05');
   assert.equal(L.spanText('07:00', '07:20'), '07:00–07:20');
   assert.equal(L.spanText('', ''), '', 'no call time, no clock times');

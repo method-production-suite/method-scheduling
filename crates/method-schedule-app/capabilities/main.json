@@ -149,6 +149,8 @@
     "allow-drafts-data",
     "allow-conflicts-data",
     "allow-set-turnaround",
+    "allow-crew-data",
+    "allow-set-crew-call",
     "allow-locks-data",
     "allow-lock-schedule",
     "allow-delete-lock",

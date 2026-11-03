@@ -1592,6 +1592,16 @@ impl M<'_> {
                 |c| format!("The conflict to review on {}", c.what),
                 |c| c.text(),
             ),
+            crew_calls: merge_keyed(
+                cx,
+                "plan:crew_call",
+                &b.crew_calls,
+                &o.crew_calls,
+                &t.crew_calls,
+                |x| fold(&x.department),
+                |x| format!("The crew call of {}", x.department),
+                |x| crate::plan::crew_offset_words(x.offset),
+            ),
             pinned: merge_ids(cx, Some(&b.pinned), &o.pinned, &t.pinned),
             omitted: merge_ids(cx, Some(&b.omitted), &o.omitted, &t.omitted),
         }
@@ -4025,5 +4035,33 @@ pub(crate) mod tests {
         );
         assert_eq!(m.schedule.plan.call_time(d1), Some(420), "ours by default");
         assert_eq!(m.schedule.plan.call_time(d2), Some(480));
+    }
+
+    #[test]
+    fn crew_calls_merge_by_department() {
+        use crate::plan::set_crew_call;
+        let mut b = one_scene();
+        set_crew_call(&mut b, "Camera", Some(0)).unwrap();
+        // Ours adds a department; theirs moves Camera's call.
+        let mut o = b.clone();
+        set_crew_call(&mut o, "Hair and makeup", Some(-90)).unwrap();
+        let mut t = b.clone();
+        set_crew_call(&mut t, "camera", Some(-30)).unwrap();
+        let m = merge(&b, &o, &t);
+        assert!(m.conflicts.is_empty(), "{:?}", texts(&m));
+        let p = &m.schedule.plan;
+        assert_eq!(p.crew_call("Camera").unwrap().offset, -30);
+        assert_eq!(p.crew_call("Hair and makeup").unwrap().offset, -90);
+        // Both move Camera's call: one conflict, naming the department.
+        set_crew_call(&mut o, "Camera", Some(15)).unwrap();
+        let m = merge(&b, &o, &t);
+        assert_eq!(m.conflicts.len(), 1, "{:?}", texts(&m));
+        assert_eq!(m.conflicts[0].key, "plan:crew_call:camera");
+        assert!(
+            m.conflicts[0].text.contains("Camera"),
+            "{}",
+            m.conflicts[0].text
+        );
+        assert!(m.schedule.check().is_ok());
     }
 }

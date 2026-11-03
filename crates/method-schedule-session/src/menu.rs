@@ -269,6 +269,7 @@ pub const PLAN: &[Entry] = &[
     plain("plan.timeline", "Day Timeline\u{2026}"),
     plain("plan.locations", "Locations\u{2026}"),
     plain("plan.rest", "Turnarounds and Rest\u{2026}"),
+    plain("plan.crew", "Crew Calls\u{2026}"),
     plain("plan.print_call_sheet", "Print Call Sheet\u{2026}"),
     plain("plan.call_sheet", "Export Call Sheet Data\u{2026}"),
     SEP,

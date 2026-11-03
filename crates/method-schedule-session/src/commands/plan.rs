@@ -178,6 +178,23 @@ pub fn set_turnaround<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, None)
 }
 
+/// The `crew_data` command.
+pub fn crew_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<CrewDto>> {
+    Ok(crew_view(state.lock().schedule()))
+}
+
+/// The `set_crew_call` command.
+pub fn set_crew_call<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    department: String,
+    value: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_crew(x, &department, &value))?;
+    finish(&window, &s, None)
+}
+
 /// The `locks_data` command.
 pub fn locks_data<D: DocLock + ?Sized>(state: &D, board: u32) -> CmdResult<Vec<LockDto>> {
     let s = state.lock();

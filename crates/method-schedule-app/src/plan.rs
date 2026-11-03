@@ -308,6 +308,26 @@ pub fn rest_data(state: Doc, board: u32) -> CmdResult<RestDto> {
 }
 
 #[tauri::command]
+pub fn crew_data(state: Doc) -> CmdResult<Vec<CrewDto>> {
+    method_schedule_session::commands::plan::crew_data(&*state)
+}
+
+#[tauri::command]
+pub fn set_crew_call<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    department: String,
+    value: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::set_crew_call(
+        &crate::app::Win(&window),
+        &*state,
+        department,
+        value,
+    )
+}
+
+#[tauri::command]
 pub fn set_turnaround<R: Runtime>(
     window: WebviewWindow<R>,
     state: Doc,

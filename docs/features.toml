@@ -453,9 +453,9 @@ ref = ["BYD-02", "D70"]
 [[feature]]
 group = "beyond"
 title = "A printed call sheet"
-text = "A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, other elements, notes and the next two shoot days in brief."
+text = "A shoot day's call sheet printed or saved as a PDF: call and wrap, sunrise and sunset, the scenes with their times, the cast on set with each person's call and wrap, each crew department's call, other elements, notes and the next two shoot days in brief."
 status = "have"
-ref = ["BYD-02", "D207"]
+ref = ["BYD-02", "D207", "D242"]
 
 # ----------------------------------------------------------------------------- soon
 

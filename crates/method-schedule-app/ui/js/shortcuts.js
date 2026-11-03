@@ -136,6 +136,7 @@ export const SHORTCUTS = [
   { id: 'plan.timeline', label: "Each shoot day's clock times from its call time, with warnings", scope: 'menu' },
   { id: 'plan.locations', label: 'Place sheet locations on the map for sunrise and sunset', scope: 'menu' },
   { id: 'plan.rest', label: 'Set turnaround minimums and list rests shorter than them', scope: 'menu' },
+  { id: 'plan.crew', label: "Set each crew department's call against the company call", scope: 'menu' },
   { id: 'plan.print_call_sheet', label: "Print a shoot day's call sheet, or save it as a PDF", scope: 'menu' },
   { id: 'plan.call_sheet', label: "Export a shoot day's call sheet data as JSON or CSV", scope: 'menu' },
   { id: 'plan.locks', label: "Lock the schedule and see each actor's drift since", scope: 'menu' },

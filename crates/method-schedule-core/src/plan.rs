@@ -52,6 +52,34 @@ pub struct Plan {
     /// Merge conflicts settled one way and not yet looked at, kept with the file until
     /// someone marks them done (decision 238).
     pub conflicts: Vec<ReviewConflict>,
+    /// Each crew department's call, set once against the company's call (decision 242), in
+    /// the order added.
+    pub crew_calls: Vec<CrewCall>,
+}
+
+/// A crew department's call (decision 242): so long before (negative) or after the
+/// company's call on every shoot day, or with it (0).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrewCall {
+    /// One line, unique without regard to case, at most [`MAX_DEPARTMENT`] characters.
+    pub department: String,
+    /// Minutes from the company's call, [`MAX_CREW_OFFSET`] either way at most.
+    pub offset: i32,
+}
+
+/// The furthest a crew call may be from the company's: twelve hours.
+pub const MAX_CREW_OFFSET: i32 = 12 * 60;
+/// The longest department name, in characters.
+pub const MAX_DEPARTMENT: usize = 100;
+/// The most crew calls a schedule keeps.
+pub const MAX_CREW_CALLS: usize = 100;
+
+impl CrewCall {
+    /// The department's call on a day called at `call`: minutes after that day's midnight,
+    /// below 0 the day before.
+    pub fn on(&self, call: u32) -> i32 {
+        call as i32 + self.offset
+    }
 }
 
 /// A merge conflict kept for review (decision 238): what [`crate::merge::Conflict`] said,
@@ -326,6 +354,13 @@ impl Plan {
             .find(|x| x.day == day && x.element == element)
     }
 
+    /// The crew call of `department`, if set (decision 242).
+    pub fn crew_call(&self, department: &str) -> Option<&CrewCall> {
+        self.crew_calls
+            .iter()
+            .find(|x| same_name(&x.department, department))
+    }
+
     /// The day closed by `day` as shot, if reported.
     pub fn day_shot(&self, day: StripId) -> Option<&DayShot> {
         self.days_shot.iter().find(|d| d.day == day)
@@ -447,6 +482,26 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
     }
     if p.long_day.is_some_and(|m| m == 0 || m > 24 * 60) {
         return broken("the long day limit is out of range".to_string());
+    }
+    if p.crew_calls.len() > MAX_CREW_CALLS {
+        return broken(format!("more than {MAX_CREW_CALLS} crew calls"));
+    }
+    for (i, x) in p.crew_calls.iter().enumerate() {
+        if let Err(why) = department_ok(&x.department) {
+            return broken(why);
+        }
+        if x.offset.abs() > MAX_CREW_OFFSET {
+            return broken(format!(
+                "the crew call of {:?} is out of range",
+                x.department
+            ));
+        }
+        if p.crew_calls[..i]
+            .iter()
+            .any(|o| same_name(&o.department, &x.department))
+        {
+            return broken(format!("{:?} has two crew calls", x.department));
+        }
     }
     let mut cats = HashSet::new();
     for t in &p.turnarounds {
@@ -749,6 +804,54 @@ pub fn set_person_call(
     Ok(())
 }
 
+/// Whether a department name may be kept as it is: one line of 1 to [`MAX_DEPARTMENT`]
+/// characters with no spaces around it.
+pub fn department_ok(name: &str) -> Result<(), String> {
+    if name.is_empty()
+        || name != name.trim()
+        || name.chars().count() > MAX_DEPARTMENT
+        || name.chars().any(char::is_control)
+    {
+        return Err(format!(
+            "a department is one line of 1 to {MAX_DEPARTMENT} characters"
+        ));
+    }
+    Ok(())
+}
+
+/// Sets the crew call of `department` (decision 242), minutes from the company's call, or
+/// removes it with `None`. A new department goes last; one already there keeps its place
+/// and takes the name as typed now.
+pub fn set_crew_call(s: &mut Schedule, department: &str, offset: Option<i32>) -> Result<(), Error> {
+    let name = department.trim();
+    department_ok(name).map_err(|e| refuse(&e))?;
+    let p = &mut s.plan;
+    let Some(offset) = offset else {
+        p.crew_calls.retain(|x| !same_name(&x.department, name));
+        return Ok(());
+    };
+    if offset.abs() > MAX_CREW_OFFSET {
+        return Err(refuse("a crew call is within 12:00 of the company's call"));
+    }
+    let full = p.crew_calls.len() >= MAX_CREW_CALLS;
+    match p
+        .crew_calls
+        .iter_mut()
+        .find(|x| same_name(&x.department, name))
+    {
+        Some(x) => {
+            x.department = name.to_string();
+            x.offset = offset;
+        }
+        None if full => return Err(refuse("a schedule keeps 100 crew calls at most")),
+        None => p.crew_calls.push(CrewCall {
+            department: name.to_string(),
+            offset,
+        }),
+    }
+    Ok(())
+}
+
 /// Sets the long day limit in minutes, or back to the default with `None`.
 pub fn set_long_day(s: &mut Schedule, minutes: Option<u32>) -> Result<(), Error> {
     if let Some(m) = minutes {
@@ -976,6 +1079,43 @@ pub fn hours_text(minutes: u32) -> String {
     format!("{}:{:02}", minutes / 60, minutes % 60)
 }
 
+/// A crew call's offset from the company's call as typed: `-1:30` or `-1` before it,
+/// `+0:15` or `0:15` after, `0` with it (decision 242). Minutes.
+pub fn parse_crew_offset(text: &str) -> Result<i32, String> {
+    let t = text.trim();
+    let bad = || format!("{t:?} is not a time before or after the call such as -1:30, 0 or +0:15");
+    let (neg, rest) = match t.as_bytes().first() {
+        Some(b'-') => (true, &t[1..]),
+        Some(b'+') => (false, &t[1..]),
+        _ => (false, t),
+    };
+    let m = parse_hours(rest).map_err(|_| bad())? as i32;
+    if m > MAX_CREW_OFFSET {
+        return Err(format!("{t:?} is more than 12:00 from the call"));
+    }
+    Ok(if neg { -m } else { m })
+}
+
+/// An offset from the call as typed back: `-1:30`, `0:00`, `+0:15`.
+pub fn crew_offset_text(minutes: i32) -> String {
+    let a = hours_text(minutes.unsigned_abs());
+    match minutes.signum() {
+        -1 => format!("-{a}"),
+        1 => format!("+{a}"),
+        _ => a,
+    }
+}
+
+/// An offset from the call in words: `1:30 before the call`, `with the call`.
+pub fn crew_offset_words(minutes: i32) -> String {
+    let a = hours_text(minutes.unsigned_abs());
+    match minutes.signum() {
+        -1 => format!("{a} before the call"),
+        1 => format!("{a} after the call"),
+        _ => "with the call".to_string(),
+    }
+}
+
 /// What changed in the plan between two schedules, in plain phrases (for What Changed).
 pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     let mut out = Vec::new();
@@ -1013,6 +1153,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     if a.turnarounds != b.turnarounds {
         out.push("turnaround minimums changed".to_string());
     }
+    if a.crew_calls != b.crew_calls {
+        out.push("crew calls changed".to_string());
+    }
     for l in &b.locks {
         if a.lock(&l.name).is_none() {
             out.push(format!("schedule lock {:?} made", l.name));
@@ -1041,6 +1184,55 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn crew_calls_are_set_against_the_call() {
+        assert_eq!(parse_crew_offset("-1:30"), Ok(-90));
+        assert_eq!(parse_crew_offset("-1"), Ok(-60));
+        assert_eq!(parse_crew_offset("0"), Ok(0));
+        assert_eq!(parse_crew_offset("+0:15"), Ok(15));
+        assert_eq!(parse_crew_offset("0:15"), Ok(15));
+        assert_eq!(parse_crew_offset(" -12:00 "), Ok(-720));
+        for bad in ["", "-", "12:01", "1:5", "-1:60", "ten", "--1"] {
+            assert!(parse_crew_offset(bad).is_err(), "{bad:?}");
+        }
+        assert_eq!(crew_offset_text(-90), "-1:30");
+        assert_eq!(crew_offset_text(0), "0:00");
+        assert_eq!(crew_offset_text(15), "+0:15");
+        assert_eq!(crew_offset_words(-90), "1:30 before the call");
+        assert_eq!(crew_offset_words(0), "with the call");
+
+        let mut s = Schedule::new("T");
+        set_crew_call(&mut s, "Camera", Some(0)).unwrap();
+        set_crew_call(&mut s, " Hair and makeup ", Some(-90)).unwrap();
+        set_crew_call(&mut s, "camera", Some(-30)).unwrap();
+        let names: Vec<_> = s
+            .plan
+            .crew_calls
+            .iter()
+            .map(|x| x.department.as_str())
+            .collect();
+        assert_eq!(
+            names,
+            ["camera", "Hair and makeup"],
+            "kept in place, renamed as typed"
+        );
+        assert_eq!(s.plan.crew_call("CAMERA").unwrap().on(7 * 60), 390);
+        assert_eq!(s.plan.crew_call("Hair and makeup").unwrap().on(60), -30);
+        assert!(set_crew_call(&mut s, "Grip", Some(721)).is_err());
+        assert!(set_crew_call(&mut s, "", Some(0)).is_err());
+        assert!(set_crew_call(&mut s, "Grip\nElectric", Some(0)).is_err());
+        assert!(check(&s).is_ok());
+        let mut bad = s.clone();
+        bad.plan.crew_calls[1].department = "Camera".to_string();
+        assert!(check(&bad).is_err(), "two of one department");
+        set_crew_call(&mut s, "Camera", None).unwrap();
+        assert_eq!(s.plan.crew_calls.len(), 1);
+        for i in 1..MAX_CREW_CALLS {
+            set_crew_call(&mut s, &format!("Department {i}"), Some(0)).unwrap();
+        }
+        assert!(set_crew_call(&mut s, "One too many", Some(0)).is_err());
+    }
 
     #[test]
     fn degrees_read_and_write() {
