@@ -587,8 +587,8 @@ fn null_and_defaults_are_named_in_the_message() {
     assert!(e.contains("].images [] is the default"), "{e}");
 }
 
-/// Offsets at the ends of the integer range are refused, not wrapped past the range check
-/// (`i32::MIN` has no `i32` absolute value).
+/// Offsets, latitudes and longitudes at the ends of the integer range are refused, not
+/// wrapped past the range check (`i32::MIN` has no `i32` absolute value).
 #[test]
 fn offsets_at_the_integer_limits_are_refused() {
     let text = to_string(&everything());
@@ -601,11 +601,17 @@ fn offsets_at_the_integer_limits_are_refused() {
         assert_ne!(crew, text);
         assert!(from_str(&crew).is_err(), "crew call at {v}");
     }
-    let at = text.find("\"utc_offset_minutes\": ").unwrap();
-    let end = at + text[at..].find([',', '\n']).unwrap();
-    for v in [i32::MIN as i64, i32::MAX as i64] {
-        let loc = format!("{}\"utc_offset_minutes\": {v}{}", &text[..at], &text[end..]);
-        assert!(from_str(&loc).is_err(), "UTC offset {v}");
+    for key in [
+        "utc_offset_minutes",
+        "latitude_microdeg",
+        "longitude_microdeg",
+    ] {
+        let at = text.find(&format!("\"{key}\": ")).unwrap();
+        let end = at + text[at..].find([',', '\n']).unwrap();
+        for v in [i32::MIN as i64, i32::MAX as i64] {
+            let loc = format!("{}\"{key}\": {v}{}", &text[..at], &text[end..]);
+            assert!(from_str(&loc).is_err(), "{key} at {v}");
+        }
     }
 }
 

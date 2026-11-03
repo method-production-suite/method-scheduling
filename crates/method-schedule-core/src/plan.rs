@@ -281,10 +281,10 @@ impl Plan {
         if name.is_empty() {
             return Err(Error::EmptyName);
         }
-        if loc.latitude.abs() > 90_000_000 {
+        if loc.latitude.unsigned_abs() > 90_000_000 {
             return Err(refuse("a latitude is 90 degrees north or south at most"));
         }
-        if loc.longitude.abs() > 180_000_000 {
+        if loc.longitude.unsigned_abs() > 180_000_000 {
             return Err(refuse("a longitude is 180 degrees east or west at most"));
         }
         if loc.utc_offset.unsigned_abs() > 14 * 60 {
