@@ -6,7 +6,7 @@
 use serde_json::{json, Value};
 
 use method_schedule_core::callsheet::{CallScene, CallSheet};
-use method_schedule_core::plan::{clock_text, crew_offset_text};
+use method_schedule_core::plan::{clock_text, crew_offset_text, crew_offset_words};
 use method_schedule_core::solar::Sun;
 
 use crate::export::csv::{self as csvw, Delimiter};
@@ -289,7 +289,7 @@ pub fn workbook(c: &CallSheet) -> Workbook {
     };
     let crew = Sheet {
         name: "Crew",
-        columns: ["Department", "From call", "Call"]
+        columns: ["Department", "Call", "From the call"]
             .iter()
             .map(|x| x.to_string())
             .collect(),
@@ -299,8 +299,8 @@ pub fn workbook(c: &CallSheet) -> Workbook {
             .map(|x| {
                 vec![
                     Cell::text(x.department.clone()),
-                    Cell::text(crew_offset_text(x.offset)),
                     opt(x.call),
+                    Cell::text(crew_offset_words(x.offset)),
                 ]
             })
             .collect(),
@@ -441,7 +441,7 @@ mod tests {
         assert_eq!(j["crew"][0]["offset"], "-1:30");
         assert_eq!(j["crew"][0]["call"], "05:30");
         assert!(
-            csv.ends_with("\r\n\r\nDepartment,From call,Call\r\nHair and makeup,-1:30,05:30\r\n"),
+            csv.ends_with("\r\n\r\nDepartment,Call,From the call\r\nHair and makeup,05:30,1:30 before the call\r\n"),
             "{csv}"
         );
     }

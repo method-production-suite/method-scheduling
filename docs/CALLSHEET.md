@@ -102,7 +102,8 @@ between them:
 5. `Note`: one note per row.
 6. `Day,Date,Call,Scene,I/E,Set,Day/Night,Pages,Cast`: the advance schedule, a row per
    scene of the next shoot days (up to two).
-7. `Department,From call,Call`: the crew calls (decision 242).
+7. `Department,Call,From the call`: the crew calls, the last column in words (`1:30 before
+   the call`, `with the call`; decision 242).
 
 Fields are quoted only when they hold a comma, a quote or a line break. Text that a
 spreadsheet would run as a formula gets a leading `'` (as every export of ours does).
