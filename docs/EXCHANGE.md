@@ -298,10 +298,10 @@ whole and never negative; dates are `YYYY-MM-DD`.
 | `version` | always | `1` |
 | `title` | always | The title page's title, `""` when there is none |
 | `episode` | optional | A TV script's episode number or title |
-| `written_by` | optional | The title page's credit |
-| `draft` | optional | The title page's draft text, as written |
+| `written_by` | optional | The title page's author names, comma-joined (not the credit line, such as "Written by") |
+| `draft` | optional | The title page's draft text, as written (its Draft field, else its Draft date) |
 | `generated` | always | The date the file was written |
-| `source_hash` | always | 16 hex digits of a stable digest of the script's content. Opaque: a reader only compares it, to tell that this exact script was already imported |
+| `source_hash` | always | 16 hex digits of a stable digest of the script and everything in this file but `generated`, so any edit changes it, dialogue included. Opaque: a reader only compares it, to tell that this exact script was already imported |
 | `pages` | always | The script's length in whole pages |
 | `eighths` | always | The script's length in eighths: the sum of the scenes' |
 | `scenes` | always | The scenes, in script order |
@@ -314,7 +314,7 @@ whole and never negative; dates are `YYYY-MM-DD`.
 | `number` | optional | As printed: `12`, `12A`, or `A` in a multi-camera script |
 | `heading` | always | The heading's full text |
 | `int_ext` | optional | `INT`, `EXT` or `INT/EXT`; left out when the heading has none |
-| `set` | optional | The heading's location part |
+| `set` | optional | The heading's location part; left out, with `time`, when the heading has no `int_ext` |
 | `time` | optional | Its time of day, such as `NIGHT` |
 | `story_day` | optional | The story day, such as `DAY 3` or `NIGHT 2` |
 | `page` | always | The page it starts on, as printed, a string: `12`, or `12A` on a locked page |
@@ -325,7 +325,7 @@ whole and never negative; dates are `YYYY-MM-DD`.
 | `title` | optional | The scene's title |
 | `summary` | optional | The scene's summary |
 | `color` | optional | The scene's colour, `#RRGGBB` |
-| `act` | optional | The TV act it is in, such as `ACT ONE` |
+| `act` | optional | The TV act it is in, such as `ACT ONE`: the last act opened before it, none after an End of Act |
 | `tags` | reserved | Production tags, `[{"category", "name"}]`, the shape of the tagged `.fdx` import (entry 228 maps usual names such as "Props" to our categories). Not written in version 1; the name is kept for them |
 
 ## Script scenes: how Method Schedule reads them
