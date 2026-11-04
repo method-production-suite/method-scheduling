@@ -585,7 +585,7 @@ export function manageTypes(ctx) {
       const missing = ctx.missing ? ctx.missing() : 0;
       const standard = missing && ctx.standard
         ? el('div', { class: 'mb-new' }, el('button', { class: 'btn', text: 'Add the Standard Types', attrs: { type: 'button', id: 'rf-standard' }, on: { click: () => run(ctx.standard(), 'rf-new-type') } }), el('span', { class: 'mb-shown', text: missing === 1 ? '1 standard type is missing: travel, fitting, rehearsal and the other event kinds.' : `${missing} standard types are missing: travel, fitting, rehearsal and the other event kinds.` }))
-        : null;
+        : '';
       body.replaceChildren(
         types.length ? el('ul', { class: 'mb-list', attrs: { 'aria-label': 'Red flag types' } }, ...items) : el('p', { class: 'empty', text: 'No red flag types yet.' }),
         el('div', { class: 'mb-new' }, fresh, el('button', { class: 'btn', text: 'Add Type', attrs: { type: 'button' }, on: { click: add } })),
