@@ -55,6 +55,29 @@ pub struct Plan {
     /// Each crew department's call, set once against the company's call (decision 242), in
     /// the order added.
     pub crew_calls: Vec<CrewCall>,
+    /// Crew calls for one shoot day only (decision 243): a department's call that differs
+    /// that day, or a department called that day alone. Kept by the day break, in the order
+    /// added.
+    pub day_crew_calls: Vec<DayCrewCall>,
+}
+
+/// A department's call on one shoot day only (decision 243), against that day's company
+/// call as in [`CrewCall`]. Unique by day and department, without regard to case.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DayCrewCall {
+    /// The day break that closes the day, as in [`CallTime`].
+    pub day: StripId,
+    pub department: String,
+    pub offset: i32,
+}
+
+/// A department's call as it holds on one day: [`Plan::crew_on`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CrewOnDay {
+    pub department: String,
+    pub offset: i32,
+    /// Set for this day only, not the every-day call.
+    pub this_day: bool,
 }
 
 /// A crew department's call (decision 242): so long before (negative) or after the
@@ -361,6 +384,43 @@ impl Plan {
             .find(|x| same_name(&x.department, department))
     }
 
+    /// The crew calls on the day closed by `day` (decision 243): each every-day call in its
+    /// order, with that day's own offset where one is set, then the departments called that
+    /// day alone.
+    pub fn crew_on(&self, day: StripId) -> Vec<CrewOnDay> {
+        let own = |name: &str| {
+            self.day_crew_calls
+                .iter()
+                .find(|x| x.day == day && same_name(&x.department, name))
+        };
+        let mut out: Vec<CrewOnDay> = self
+            .crew_calls
+            .iter()
+            .map(|x| match own(&x.department) {
+                Some(d) => CrewOnDay {
+                    department: x.department.clone(),
+                    offset: d.offset,
+                    this_day: true,
+                },
+                None => CrewOnDay {
+                    department: x.department.clone(),
+                    offset: x.offset,
+                    this_day: false,
+                },
+            })
+            .collect();
+        for d in self.day_crew_calls.iter().filter(|x| x.day == day) {
+            if self.crew_call(&d.department).is_none() {
+                out.push(CrewOnDay {
+                    department: d.department.clone(),
+                    offset: d.offset,
+                    this_day: true,
+                });
+            }
+        }
+        out
+    }
+
     /// The day closed by `day` as shot, if reported.
     pub fn day_shot(&self, day: StripId) -> Option<&DayShot> {
         self.days_shot.iter().find(|d| d.day == day)
@@ -503,6 +563,33 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
             return broken(format!("{:?} has two crew calls", x.department));
         }
     }
+    for (i, x) in p.day_crew_calls.iter().enumerate() {
+        if let Err(why) = department_ok(&x.department) {
+            return broken(why);
+        }
+        if x.offset.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
+            return broken(format!(
+                "the crew call of {:?} on day {} is out of range",
+                x.department, x.day.0
+            ));
+        }
+        let before = &p.day_crew_calls[..i];
+        if before
+            .iter()
+            .any(|o| o.day == x.day && same_name(&o.department, &x.department))
+        {
+            return broken(format!(
+                "{:?} has two crew calls on day {}",
+                x.department, x.day.0
+            ));
+        }
+        if before.iter().filter(|o| o.day == x.day).count() >= MAX_CREW_CALLS {
+            return broken(format!(
+                "day {} has more than {MAX_CREW_CALLS} crew calls of its own",
+                x.day.0
+            ));
+        }
+    }
     let mut cats = HashSet::new();
     for t in &p.turnarounds {
         if t.minutes == 0 || t.minutes > 48 * 60 || !cats.insert(t.category) {
@@ -624,6 +711,7 @@ pub fn tidy(s: &mut Schedule) {
     p.days_shot.retain(|d| breaks.contains(&d.day));
     p.person_calls
         .retain(|x| breaks.contains(&x.day) && elements.contains(&x.element));
+    p.day_crew_calls.retain(|x| breaks.contains(&x.day));
     p.scenes_shot
         .retain(|x| breaks.contains(&x.day) && sheets.contains(&x.sheet));
     p.turnarounds.retain(|t| cats.contains(&t.category));
@@ -850,6 +938,55 @@ pub fn set_crew_call(s: &mut Schedule, department: &str, offset: Option<i32>) ->
             offset,
         }),
     }
+    Ok(())
+}
+
+/// Sets `department`'s call on the day closed by `day` only (decision 243), minutes from
+/// that day's company call, or removes it with `None` so the day follows the every-day
+/// call again (or, for a department without one, no longer calls it). One already set
+/// keeps its place and takes the name as typed now.
+pub fn set_day_crew_call(
+    s: &mut Schedule,
+    day: StripId,
+    department: &str,
+    offset: Option<i32>,
+) -> Result<(), Error> {
+    if !day_breaks(s).contains(&day) {
+        return Err(refuse("a call belongs to a shoot day: name its day break"));
+    }
+    let name = department.trim();
+    department_ok(name).map_err(|e| refuse(&e))?;
+    let p = &mut s.plan;
+    let Some(offset) = offset else {
+        p.day_crew_calls
+            .retain(|x| !(x.day == day && same_name(&x.department, name)));
+        return Ok(());
+    };
+    if offset.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
+        return Err(refuse("a crew call is within 12:00 of the company's call"));
+    }
+    let full = p.day_crew_calls.iter().filter(|x| x.day == day).count() >= MAX_CREW_CALLS;
+    match p
+        .day_crew_calls
+        .iter_mut()
+        .find(|x| x.day == day && same_name(&x.department, name))
+    {
+        Some(x) => {
+            x.department = name.to_string();
+            x.offset = offset;
+        }
+        None if full => {
+            return Err(refuse(
+                "a shoot day keeps 100 crew calls of its own at most",
+            ))
+        }
+        None => p.day_crew_calls.push(DayCrewCall {
+            day,
+            department: name.to_string(),
+            offset,
+        }),
+    }
+    tidy(s);
     Ok(())
 }
 
@@ -1157,6 +1294,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
     if a.crew_calls != b.crew_calls {
         out.push("crew calls changed".to_string());
     }
+    if a.day_crew_calls != b.day_crew_calls {
+        out.push("crew calls for one day changed".to_string());
+    }
     for l in &b.locks {
         if a.lock(&l.name).is_none() {
             out.push(format!("schedule lock {:?} made", l.name));
@@ -1240,6 +1380,69 @@ mod tests {
             set_crew_call(&mut s, &format!("Department {i}"), Some(0)).unwrap();
         }
         assert!(set_crew_call(&mut s, "One too many", Some(0)).is_err());
+    }
+
+    #[test]
+    fn crew_calls_for_one_day() {
+        let mut s = Schedule::new("T");
+        let b = s.boards[0].id;
+        let sb = s.boards[0].sub_boards[0].id;
+        let at = |index| crate::model::Place {
+            sub_board: Some(sb),
+            index,
+        };
+        let d1 = s.insert_strip(b, StripKind::DayBreak, at(0)).unwrap();
+        let d2 = s.insert_strip(b, StripKind::DayBreak, at(1)).unwrap();
+        set_crew_call(&mut s, "Camera", Some(-30)).unwrap();
+        set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
+        set_day_crew_call(&mut s, d1, "hair and makeup", Some(-120)).unwrap();
+        set_day_crew_call(&mut s, d1, "Stunts", Some(60)).unwrap();
+        let on = |s: &Schedule, d| -> Vec<(String, i32, bool)> {
+            s.plan
+                .crew_on(d)
+                .into_iter()
+                .map(|x| (x.department, x.offset, x.this_day))
+                .collect()
+        };
+        let row = |n: &str, o, t| (n.to_string(), o, t);
+        assert_eq!(
+            on(&s, d1),
+            [
+                row("Camera", -30, false),
+                row("Hair and makeup", -120, true),
+                row("Stunts", 60, true)
+            ],
+            "the every-day name, that day's offset, then the day's own"
+        );
+        assert_eq!(
+            on(&s, d2),
+            [
+                row("Camera", -30, false),
+                row("Hair and makeup", -90, false)
+            ]
+        );
+        assert!(check(&s).is_ok());
+        assert!(set_day_crew_call(&mut s, d1, "Grip", Some(721)).is_err());
+        assert!(set_day_crew_call(&mut s, d1, "Grip", Some(i32::MIN)).is_err());
+        assert!(set_day_crew_call(&mut s, StripId(9999), "Grip", Some(0)).is_err());
+        let mut bad = s.clone();
+        bad.plan.day_crew_calls[1].department = "HAIR AND MAKEUP".to_string();
+        assert!(check(&bad).is_err(), "two of one department on a day");
+        let mut bad = s.clone();
+        bad.plan.day_crew_calls[0].offset = i32::MIN;
+        assert!(check(&bad).is_err());
+        // Removing the day's call follows the every-day one again.
+        set_day_crew_call(&mut s, d1, "Hair and makeup", None).unwrap();
+        assert_eq!(on(&s, d1)[1], row("Hair and makeup", -90, false));
+        // A deleted day break takes its calls with it.
+        s.delete_strip(b, d1).unwrap();
+        tidy(&mut s);
+        assert!(s.plan.day_crew_calls.is_empty());
+        for i in 0..MAX_CREW_CALLS {
+            set_day_crew_call(&mut s, d2, &format!("Department {i}"), Some(0)).unwrap();
+        }
+        assert!(set_day_crew_call(&mut s, d2, "One too many", Some(0)).is_err());
+        assert!(check(&s).is_ok());
     }
 
     #[test]

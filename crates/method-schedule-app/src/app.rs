@@ -1967,6 +1967,7 @@ pub fn run() {
             crate::plan::timeline_data,
             crate::plan::set_call_time,
             crate::plan::set_person_call,
+            crate::plan::set_day_crew_call,
             crate::plan::settle_conflicts,
             crate::plan::set_shot,
             crate::plan::set_long_day,

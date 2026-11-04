@@ -10,6 +10,7 @@
 //   location.
 // - Turnarounds and Rest: a minimum per category and the rests shorter than it.
 // - Crew Calls: each department's call, before or after the company's call (entry 242).
+//   Day Timeline sets a department's call for one day only (entry 243).
 // - Schedule Locks: lock, see each actor's drift, delete.
 // - Pin Strips, Unpin Strips: the selected scenes stay put in a suggested order.
 // - Suggest Strip Order: before and after counts, Apply as one undo step.
@@ -190,12 +191,43 @@ export function planCommands(ctx) {
           }
           return el('tr', {}, el('td', { text: p.name }), el('td', {}, own[0]), el('td', {}, own[1]));
         });
+        // Each department's call this day only, empty for every day's (entry 243); the
+        // last row adds a department called this day alone.
+        const setCrew = async (department, value) => {
+          if (!(await edit(invoke('set_day_crew_call', { day: d.day, department, value }), error))) return false;
+          await reload();
+          return true;
+        };
+        const crew = (d.crew || []).map((c) => {
+          const input = textInput(c.this_day);
+          input.placeholder = c.every_day;
+          input.setAttribute('aria-label', `${c.department}'s call this day against the company call`);
+          let sent = c.this_day;
+          const set = () => {
+            if (input.value.trim() === sent) return;
+            sent = input.value.trim();
+            setCrew(c.department, input.value);
+          };
+          input.addEventListener('keydown', (e) => e.key === 'Enter' && set());
+          input.addEventListener('change', set);
+          return el('tr', {}, el('td', { text: c.department }), el('td', {}, input), el('td', { class: 'n', text: c.call }));
+        });
+        const newName = textInput('', 'pl-name');
+        newName.setAttribute('aria-label', 'Department called this day');
+        newName.placeholder = 'Department';
+        const newOffset = textInput('');
+        newOffset.setAttribute('aria-label', 'Its call this day against the company call');
+        newOffset.placeholder = '0';
+        const add = () => newName.value.trim() && setCrew(newName.value, newOffset.value || '0');
+        [newName, newOffset].forEach((i) => i.addEventListener('keydown', (e) => e.key === 'Enter' && add()));
+        crew.push(el('tr', {}, el('td', {}, newName), el('td', {}, newOffset), el('td', {}, button('Add', add, 'btn btn-mini'))));
         body.replaceChildren(
           el('p', { class: 'pl-head', text: head }),
           table(['Start', 'End', 'Strip', 'Note'], rows),
           d.warnings.length ? el('ul', { class: 'pl-lines pl-warnings' }, ...d.warnings.map((w) => el('li', { text: w }))) : '',
           past,
           people.length ? table(['Called', 'Own call', 'Own wrap'], people) : '',
+          table(['Crew', 'This day', 'Call'], crew),
         );
       }
       pick.addEventListener('change', () => {
@@ -451,7 +483,7 @@ export function planCommands(ctx) {
       return box(
         'Crew Calls',
         'pl-crew',
-        el('p', { class: 'modal-message', text: 'Each department’s call against the company’s call on every shoot day: -1:30 is an hour and a half before it, 0 with it, +0:15 a quarter of an hour after. The call sheet lists them with the day’s times.' }),
+        el('p', { class: 'modal-message', text: 'Each department’s call against the company’s call on every shoot day: -1:30 is an hour and a half before it, 0 with it, +0:15 a quarter of an hour after. The call sheet lists them with the day’s times; a call for one day only is set under Day Timeline.' }),
         error,
         el('table', { class: 'pl-table' }, el('thead', {}, el('tr', {}, ...['Department', 'From the call', '', ''].map((h) => el('th', { text: h })))), body),
         el('div', { class: 'modal-actions' }, closeButton(close)),

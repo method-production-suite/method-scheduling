@@ -99,6 +99,7 @@ pub fn to_json(c: &CallSheet) -> String {
             "offset": crew_offset_text(x.offset),
             "call_minutes": time(x.call),
             "call": time_text(x.call),
+            "this_day_only": x.this_day,
         })).collect::<Vec<_>>(),
         "elements": c.elements.iter().map(|cat| json!({
             "category": cat.category.0,
@@ -289,7 +290,7 @@ pub fn workbook(c: &CallSheet) -> Workbook {
     };
     let crew = Sheet {
         name: "Crew",
-        columns: ["Department", "Call", "From the call"]
+        columns: ["Department", "Call", "From the call", "This day only"]
             .iter()
             .map(|x| x.to_string())
             .collect(),
@@ -301,6 +302,11 @@ pub fn workbook(c: &CallSheet) -> Workbook {
                     Cell::text(x.department.clone()),
                     opt(x.call),
                     Cell::text(crew_offset_words(x.offset)),
+                    if x.this_day {
+                        Cell::text("yes")
+                    } else {
+                        Cell::Empty
+                    },
                 ]
             })
             .collect(),
@@ -441,7 +447,7 @@ mod tests {
         assert_eq!(j["crew"][0]["offset"], "-1:30");
         assert_eq!(j["crew"][0]["call"], "05:30");
         assert!(
-            csv.ends_with("\r\n\r\nDepartment,Call,From the call\r\nHair and makeup,05:30,1:30 before the call\r\n"),
+            csv.ends_with("\r\n\r\nDepartment,Call,From the call,This day only\r\nHair and makeup,05:30,1:30 before the call,\r\n"),
             "{csv}"
         );
     }

@@ -55,8 +55,10 @@ footer. It prints exactly the data below, nothing more (decisions.md, entry 207)
 - **Advance**: the next shoot days of the same sub-board, up to two (none on the last
   day), each with its number, date, call and pages and its scenes as above (decision 232).
 - **Crew calls**: each department's call, the day's call plus the time before or after
-  it set under Plan > Crew Calls..., in the order they were added (decision 242). Without a
-  call time the times are empty.
+  it set under Plan > Crew Calls..., in the order they were added (decision 242). A call
+  set for this day only under Plan > Day Timeline... replaces the every-day one, and
+  departments called this day alone follow (decision 243). Without a call time the times
+  are empty.
 
 Times are 24-hour local clock times. A time of 1440 minutes or more runs past midnight.
 Without a call time, the start, end, call and wrap fields are empty.
@@ -85,7 +87,7 @@ in minutes after midnight (with the same time as `HH:MM` text in a key without
 | `elements` | array | Each category: `category` (id), `name`, `elements` (each `element`, `board_id`, `name`, `scenes`). |
 | `notes` | array of strings | |
 | `advance` | array | The next shoot days of the sub-board, up to two, empty on the last day (decision 232). Each: `day`, `date`, `call`, `call_minutes`, `eighths`, `pages`, `scenes` (each as in the top-level list). |
-| `crew` | array | Each crew department, in the schedule's order (decision 242): `department`, `offset`, `offset_minutes` (from the call: `-1:30` and -90 before it, `0:00` and 0 with it, `+0:15` and 15 after), `call`, `call_minutes` (null without a call time; below 0 the day before). |
+| `crew` | array | Each crew department, in the schedule's order (decision 242): `department`, `offset`, `offset_minutes` (from the call: `-1:30` and -90 before it, `0:00` and 0 with it, `+0:15` and 15 after), `call`, `call_minutes` (null without a call time; below 0 the day before), `this_day_only` (true for a call set for this day alone, decision 243). |
 
 ## CSV
 
@@ -102,14 +104,14 @@ between them:
 5. `Note`: one note per row.
 6. `Day,Date,Call,Scene,I/E,Set,Day/Night,Pages,Cast`: the advance schedule, a row per
    scene of the next shoot days (up to two).
-7. `Department,Call,From the call`: the crew calls, the last column in words (`1:30 before
-   the call`, `with the call`; decision 242).
+7. `Department,Call,From the call,This day only`: the crew calls, the third column in words
+   (`1:30 before the call`, `with the call`; decision 242), the last `yes` for a call set
+   for this day alone (decision 243).
 
 Fields are quoted only when they hold a comma, a quote or a line break. Text that a
 spreadsheet would run as a formula gets a leading `'` (as every export of ours does).
 
 ## Not included
 
-A map or directions, weather, a crew call for one day only (crew calls follow the
-company's call on every day), and sending the sheet to anyone. Each is a later option;
+A map or directions, weather, and sending the sheet to anyone. Each is a later option;
 distribution needs a service and stays out (BYD-03).

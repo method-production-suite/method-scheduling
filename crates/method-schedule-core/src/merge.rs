@@ -920,6 +920,7 @@ fn remap(s: &mut Schedule, map: &BTreeMap<u32, u32>) {
         m(&mut x.day.0);
         m(&mut x.element.0);
     }
+    p.day_crew_calls.iter_mut().for_each(|x| m(&mut x.day.0));
     for x in &mut p.scenes_shot {
         m(&mut x.day.0);
         m(&mut x.sheet.0);
@@ -1600,6 +1601,22 @@ impl M<'_> {
                 &t.crew_calls,
                 |x| fold(&x.department),
                 |x| format!("The crew call of {}", x.department),
+                |x| crate::plan::crew_offset_words(x.offset),
+            ),
+            day_crew_calls: merge_keyed(
+                cx,
+                "plan:day_crew_call",
+                &b.day_crew_calls,
+                &o.day_crew_calls,
+                &t.day_crew_calls,
+                |x| format!("{}:{}", x.day.0, fold(&x.department)),
+                |x| {
+                    format!(
+                        "The crew call of {} on the day closed by {}",
+                        x.department,
+                        self.strip_name_by_id(x.day)
+                    )
+                },
                 |x| crate::plan::crew_offset_words(x.offset),
             ),
             pinned: merge_ids(cx, Some(&b.pinned), &o.pinned, &t.pinned),
@@ -4061,6 +4078,47 @@ pub(crate) mod tests {
             m.conflicts[0].text.contains("Camera"),
             "{}",
             m.conflicts[0].text
+        );
+        assert!(m.schedule.check().is_ok());
+    }
+
+    #[test]
+    fn crew_calls_for_one_day_merge_by_day_and_department() {
+        use crate::plan::set_day_crew_call;
+        let mut b = one_scene();
+        let board = b.boards[0].id;
+        let sb = b.boards[0].sub_boards[0].id;
+        let day = b
+            .insert_strip(
+                board,
+                StripKind::DayBreak,
+                Place {
+                    sub_board: Some(sb),
+                    index: 1,
+                },
+            )
+            .unwrap();
+        set_day_crew_call(&mut b, day, "Stunts", Some(0)).unwrap();
+        let mut o = b.clone();
+        set_day_crew_call(&mut o, day, "Grip", Some(-60)).unwrap();
+        let mut t = b.clone();
+        set_day_crew_call(&mut t, day, "stunts", Some(30)).unwrap();
+        let m = merge(&b, &o, &t);
+        assert!(m.conflicts.is_empty(), "{:?}", texts(&m));
+        let on: Vec<_> = m
+            .schedule
+            .plan
+            .crew_on(day)
+            .into_iter()
+            .map(|x| (x.department, x.offset))
+            .collect();
+        assert_eq!(on, [("stunts".to_string(), 30), ("Grip".to_string(), -60)]);
+        set_day_crew_call(&mut o, day, "Stunts", Some(-15)).unwrap();
+        let m = merge(&b, &o, &t);
+        assert_eq!(m.conflicts.len(), 1, "{:?}", texts(&m));
+        assert_eq!(
+            m.conflicts[0].key,
+            format!("plan:day_crew_call:{}:stunts", day.0)
         );
         assert!(m.schedule.check().is_ok());
     }

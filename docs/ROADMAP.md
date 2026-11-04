@@ -246,7 +246,7 @@ through the CLI's `merge-driver` and `git-setup`. What is left is the exit's liv
 
 | Item | Size | Refs |
 |---|---|---|
-| Call sheets beyond the printed sheet (decision 207): a map, and a crew call for one day only (the advance schedule came in D232, crew calls by department in D242); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
+| Call sheets beyond the printed sheet (decision 207): a map (the advance schedule came in D232, crew calls by department in D242, for one day only in D243); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Daylight saving rules beyond the US and Canada's, the EU's, Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (D230, 2026-10-21): the ones that move with a lunar calendar or by decree (others keep a typed offset today) | S | D72, D193, D220, D230, BYD-08 |
 | Auto-schedule improvements: weights people can set, searching beyond the three orders, a day's length in the cost (a cost and three orders since D234; a long day's tail moves to the next day by hand since D192) | M | D75, D234, BYD-06 |
 | Script revision workflow: revision colors on strips (needs a design beside the I/E and day or night colors), picking or renaming a color (each draft's color, date and changes are kept, shown on the Breakdown tab and printed since D233) | M | D69, D233, BYD-01 |
@@ -258,7 +258,8 @@ call and wrap; the rest checks and the call sheet use them. The call sheet's adv
 schedule, the next two shoot days in brief (D232, 2026-10-21). Script drafts: each merged
 revision's color, date and changes, under Plan > Script Drafts (D233, 2026-10-22). Suggest Strip Order compares three orders
 by one cost and keeps the board's when none is cheaper (D234, 2026-10-26). Crew calls by
-department, each against the company's call, on the call sheet (D242, 2026-11-03).
+department, each against the company's call, on the call sheet (D242, 2026-11-03), and a
+department's call for one day only, set in the Day Timeline (D243, 2026-11-04).
 
 **Exit**: each item ships behind its own menu entry or option, documented, with the
 exchange at version 1 read by Method Budget.

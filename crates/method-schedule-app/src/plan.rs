@@ -225,6 +225,23 @@ pub fn set_person_call<R: Runtime>(
     )
 }
 
+#[tauri::command]
+pub fn set_day_crew_call<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    day: u32,
+    department: String,
+    value: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::set_day_crew_call(
+        &crate::app::Win(&window),
+        &*state,
+        day,
+        department,
+        value,
+    )
+}
+
 /// Marks merge conflicts done (decision 238): those with `keys`, or every one.
 #[tauri::command]
 pub fn settle_conflicts<R: Runtime>(

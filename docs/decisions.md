@@ -5781,3 +5781,29 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - `plan::tests::crew_calls_are_set_against_the_call` covers the typed offsets, names kept
   in place and the limits; `callsheet` tests in core and format cover the sheet, the JSON
   and the CSV.
+
+## 243. A crew call for one day only (2026-11-04)
+
+- **Decision 242's "not yet"**: a department is often called differently on one day (an
+  early rig, a night exterior), and some come in for a day only (stunts, a second camera).
+  `plan.day_crew_calls` keeps a department's call for one shoot day, against that day's
+  company call as every crew call is, kept by the day break as call times are and dropped
+  with it.
+- **What a day lists**: each every-day call in its order, with the day's own offset where
+  one is set, then the departments called that day alone, in the order added. Removing the
+  day's call follows the every-day one again.
+- **Where it is set**: Plan > Day Timeline, a Crew table under the people: each department
+  with a This day field (the every-day offset greyed in it) and the day's call, and a row to
+  add a department for the day. Plan > Crew Calls stays the every-day list.
+- **On the call sheet**: the printed Crew calls say "this day only" after the time from the
+  call; the JSON's `crew` gains `this_day_only`, and the CSV's Crew table a fourth column,
+  `This day only` (`yes` or empty). Crew calls were not yet in a release, so this changes no
+  sheet anyone has.
+- **Merging**: by day and department, without regard to case; two different changes to one
+  conflict, naming the department and the day.
+- **Additive in the file**: a file without the key reads and writes back byte for byte.
+- **Not yet**: leaving a department out on one day (set its call for the day instead), crew
+  names under each department, and setting crew calls from the command line or MCP.
+- `plan::tests::crew_calls_for_one_day` and
+  `merge::tests::crew_calls_for_one_day_merge_by_day_and_department` cover it, with the
+  `callsheet` tests in core and the strict reader's.
