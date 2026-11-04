@@ -358,6 +358,8 @@ pub(crate) fn everything() -> Schedule {
     // A crew call (decision 242), and one with the call.
     method_schedule_core::plan::set_crew_call(&mut s, "Hair and makeup", Some(-90)).unwrap();
     method_schedule_core::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
+    // A crew call for one day only (decision 243).
+    method_schedule_core::plan::set_day_crew_call(&mut s, brk, "Stunts", Some(45)).unwrap();
     // A merge conflict kept for review (decision 238).
     s.plan
         .conflicts
@@ -600,6 +602,13 @@ fn offsets_at_the_integer_limits_are_refused() {
         );
         assert_ne!(crew, text);
         assert!(from_str(&crew).is_err(), "crew call at {v}");
+        let day = text.replacen(
+            "\"offset_minutes\": 45",
+            &format!("\"offset_minutes\": {v}"),
+            1,
+        );
+        assert_ne!(day, text);
+        assert!(from_str(&day).is_err(), "day crew call at {v}");
     }
     for key in [
         "utc_offset_minutes",

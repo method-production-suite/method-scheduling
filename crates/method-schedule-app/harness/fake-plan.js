@@ -204,6 +204,17 @@ export function planFakes(ctx) {
   let nextToken = 1;
   let pending = null;
 
+  /** As Plan::crew_on (decision 243): every day's calls with the day's own, then its own alone. */
+  function crewOn(plan, day) {
+    const own = (plan.dayCrew || []).filter((x) => x.day === day);
+    const find = (name) => own.find((x) => sameName(x.department, name));
+    const every = plan.crew || [];
+    return [
+      ...every.map((c) => (find(c.department) ? { department: c.department, offset: find(c.department).offset, thisDay: true } : { ...c, thisDay: false })),
+      ...own.filter((x) => !every.some((c) => sameName(c.department, x.department))).map((x) => ({ department: x.department, offset: x.offset, thisDay: true })),
+    ];
+  }
+
   /** The timeline of a sub-board from the fake's own days: an hour a strip from the call. */
   function timeline(sub, strip) {
     const m = model();
@@ -259,6 +270,11 @@ export function planFakes(ctx) {
         ].map(([element, name]) => {
           const own = (plan.own || {})[`${element}:${id}`] || {};
           return { element, name, call: own.call ?? '', wrap: own.wrap ?? '' };
+        }),
+        // As plan.rs day_crew (decision 243).
+        crew: crewOn(plan, id).map((c) => {
+          const every = (plan.crew || []).find((x) => sameName(x.department, c.department));
+          return { department: c.department, this_day: c.thisDay ? crewText(c.offset) : '', every_day: every ? crewText(every.offset) : '', call: call === null ? '' : clockText(call + c.offset) };
         }),
       };
     });
@@ -328,6 +344,22 @@ export function planFakes(ctx) {
         plan.own = plan.own || {};
         if (!c && !w) delete plan.own[`${element}:${day}`];
         else plan.own[`${element}:${day}`] = { call: c && clockText(parseClock(c)), wrap: w && clockText(parseClock(w)) };
+      });
+    },
+    // As plan.rs set_day_crew (decision 243).
+    set_day_crew_call: ({ day, department, value }) => {
+      if (typeof day !== 'number') throw 'fake: set_day_crew_call needs a day';
+      const name = String(department).trim();
+      if (!name || name.length > 100) throw 'A department is one line of 1 to 100 characters.';
+      const t = String(value).trim();
+      const offset = t ? read(() => parseCrew(t)) : null;
+      return planEdit((m, plan) => {
+        plan.dayCrew = plan.dayCrew || [];
+        const at = plan.dayCrew.findIndex((x) => x.day === day && sameName(x.department, name));
+        if (offset === null) {
+          if (at >= 0) plan.dayCrew.splice(at, 1);
+        } else if (at >= 0) plan.dayCrew[at] = { day, department: name, offset };
+        else plan.dayCrew.push({ day, department: name, offset });
       });
     },
     // As plan::record_shot (M5): kept for the page only; the fake's board doesn't mark it.
@@ -546,7 +578,7 @@ export function planFakes(ctx) {
           { element: 4, board_id: '4', name: 'HARBORMASTER LUND', scenes: ['3', '5'], first: '07:00', last: '08:50', call: '07:00', wrap: '15:40', own_call: false },
         ],
         elements: [{ category: 5, name: 'Hand props', elements: [{ element: 9, board_id: '', name: 'Logbook', scenes: ['5'] }] }],
-        crew: (planOf(model()).crew || []).map((c) => ({ department: c.department, offset: crewText(c.offset), offset_minutes: c.offset, call: clockText(420 + c.offset), call_minutes: 420 + c.offset })),
+        crew: crewOn(planOf(model()), sb.days[day - 1].end.id).map((c) => ({ department: c.department, offset: crewText(c.offset), offset_minutes: c.offset, call: clockText(420 + c.offset), call_minutes: 420 + c.offset, this_day_only: c.thisDay })),
         notes: ['Company move to Gull Point, 09:20, 30 minutes.', 'Scene 9 is exterior dusk: shoot before sunset at 18:19.'],
         advance: day < sb.days.length
           ? [{ day: day + 1, date: '2026-10-21', call: '07:00', call_minutes: 420, eighths: 11, pages: '1 3/8', scenes: [sc('3A', 'INT/EXT', "KIT'S TRUCK", 'DAY', '1/8', ['1'], null, null, ''), sc('7', 'INT', 'NET LOFT', 'NIGHT', '1 2/8', ['1', '4'], null, null, '')] }]

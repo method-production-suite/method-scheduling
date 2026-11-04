@@ -118,6 +118,41 @@ pub struct DayDto {
     /// Who works the day (cast, and any category with a turnaround), with their own call
     /// and wrap where they have one (decision 231).
     pub people: Vec<PersonDto>,
+    /// The crew calls on the day (decision 243), as the call sheet lists them.
+    pub crew: Vec<DayCrewDto>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DayCrewDto {
+    pub department: String,
+    /// This day's own offset as typed back (`-1:30`); empty when it follows every day's.
+    pub this_day: String,
+    /// The every-day offset (`-1:30`); empty for a department called this day alone.
+    pub every_day: String,
+    /// The day's call for the department; empty without a call time.
+    pub call: String,
+}
+
+fn day_crew(s: &Schedule, t: &method_schedule_core::timeline::DayTimeline) -> Vec<DayCrewDto> {
+    s.plan
+        .crew_on(t.day)
+        .into_iter()
+        .map(|x| DayCrewDto {
+            this_day: if x.this_day {
+                crew_offset_text(x.offset)
+            } else {
+                String::new()
+            },
+            every_day: s
+                .plan
+                .crew_call(&x.department)
+                .map_or(String::new(), |c| crew_offset_text(c.offset)),
+            call: t
+                .call
+                .map_or(String::new(), |c| t.time_text(c as i32 + x.offset)),
+            department: x.department,
+        })
+        .collect()
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -263,6 +298,7 @@ pub fn timeline_view(s: &Schedule, sub: u32, strip: Option<u32>) -> Result<Timel
             push,
             next: past.next,
             people: people(s, t),
+            crew: day_crew(s, t),
         });
     }
     Ok(TimelineDto {
@@ -317,6 +353,23 @@ pub fn set_own_call(
         _ => w,
     });
     p::set_person_call(s, day, ElementId(element), call, wrap).map_err(upper)
+}
+
+/// Sets `department`'s call on the day `day` closes only (decision 243), from its typed
+/// offset; empty follows the every-day call again.
+pub fn set_day_crew(
+    s: &mut Schedule,
+    day: u32,
+    department: &str,
+    value: &str,
+) -> Result<(), String> {
+    let v = value.trim();
+    let m = if v.is_empty() {
+        None
+    } else {
+        Some(parse_crew_offset(v).map_err(upper)?)
+    };
+    p::set_day_crew_call(s, StripId(day), department, m).map_err(upper)
 }
 
 /// Records what was shot of `sheet` on the day `day` closes (M5): `eighths` as typed

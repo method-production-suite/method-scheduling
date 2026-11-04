@@ -79,6 +79,8 @@ pub struct CallCrew {
     pub offset: i32,
     /// With a call time: minutes after midnight, below 0 the day before.
     pub call: Option<i32>,
+    /// Set for this day only (decision 243).
+    pub this_day: bool,
 }
 
 /// How many shoot days after the call sheet's the advance schedule covers.
@@ -366,12 +368,13 @@ pub fn call_sheet(
         cast,
         crew: s
             .plan
-            .crew_calls
-            .iter()
+            .crew_on(t.day)
+            .into_iter()
             .map(|x| CallCrew {
-                department: x.department.clone(),
+                call: t.call.map(|c| c as i32 + x.offset),
+                department: x.department,
                 offset: x.offset,
-                call: t.call.map(|c| x.on(c)),
+                this_day: x.this_day,
             })
             .collect(),
         elements: by_cat,
@@ -433,6 +436,24 @@ mod tests {
         assert_eq!(
             crew,
             [("Hair and makeup", Some(330)), ("Camera", Some(420))]
+        );
+        // A call for this day only (decision 243) replaces the every-day one, and a
+        // department called this day alone comes last.
+        crate::plan::set_day_crew_call(&mut s, day, "Camera", Some(-15)).unwrap();
+        crate::plan::set_day_crew_call(&mut s, day, "Stunts", Some(60)).unwrap();
+        let c = call_sheet(&s, b, sb, 1).unwrap();
+        let crew: Vec<_> = c
+            .crew
+            .iter()
+            .map(|x| (x.department.as_str(), x.call, x.this_day))
+            .collect();
+        assert_eq!(
+            crew,
+            [
+                ("Hair and makeup", Some(330), false),
+                ("Camera", Some(405), true),
+                ("Stunts", Some(480), true)
+            ]
         );
         assert_eq!(c.elements.len(), 1);
         assert_eq!(c.elements[0].name, "Props");

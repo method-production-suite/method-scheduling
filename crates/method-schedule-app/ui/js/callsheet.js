@@ -118,7 +118,7 @@ export function callSheetFlows(d) {
       cols: ['cs-c-dept', 'cs-c-crew-call', 'cs-c-from'],
       head: el('tr', {}, th('Department'), th('Call'), th('From the call')),
       intro: title('Crew calls'),
-      rows: crew.map((c) => row(el('tr', {}, td(c.department), td(c.call || '--:--', 'fb'), td(crewFromCall(c.offset_minutes), 'muted')))),
+      rows: crew.map((c) => row(el('tr', {}, td(c.department), td(c.call || '--:--', 'fb'), td(crewFromCall(c.offset_minutes) + (c.this_day_only ? ', this day only' : ''), 'muted')))),
     });
   }
   if (cats.length) {

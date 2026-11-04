@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    department_ok, CallTime, CrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene, PersonCall,
-    Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS, MAX_CREW_OFFSET,
-    MAX_WRAP,
+    department_ok, CallTime, CrewCall, DayCrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene,
+    PersonCall, Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS,
+    MAX_CREW_OFFSET, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -48,6 +48,18 @@ pub(crate) struct FilePlan {
     conflicts: Vec<FileConflict>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     crew_calls: Vec<FileCrewCall>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    day_crew_calls: Vec<FileDayCrewCall>,
+}
+
+/// A department's call on one shoot day only (decision 243).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileDayCrewCall {
+    day: u32,
+    department: String,
+    /// Always written, 0 included, as in [`FileCrewCall`].
+    offset_minutes: i32,
 }
 
 /// A crew department's call against the company's (decision 242).
@@ -203,6 +215,15 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
             .crew_calls
             .iter()
             .map(|x| FileCrewCall {
+                department: x.department.clone(),
+                offset_minutes: x.offset,
+            })
+            .collect(),
+        day_crew_calls: p
+            .day_crew_calls
+            .iter()
+            .map(|x| FileDayCrewCall {
+                day: x.day.0,
                 department: x.department.clone(),
                 offset_minutes: x.offset,
             })
@@ -492,6 +513,34 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             return Err(bad(format!("{:?} has two crew calls", x.department)));
         }
         p.crew_calls.push(CrewCall {
+            department: x.department,
+            offset: x.offset_minutes,
+        });
+    }
+    for x in f.day_crew_calls {
+        let who = format!("crew call {:?} on day {}", x.department, x.day);
+        department_ok(&x.department).map_err(|e| bad(format!("{who}: {e}")))?;
+        if x.offset_minutes.unsigned_abs() > MAX_CREW_OFFSET.unsigned_abs() {
+            return Err(bad(format!(
+                "{who}: {} minutes is more than 12 hours from the call",
+                x.offset_minutes
+            )));
+        }
+        let mut same_day = p.day_crew_calls.iter().filter(|o| o.day.0 == x.day);
+        if same_day
+            .clone()
+            .any(|o| o.department.eq_ignore_ascii_case(&x.department))
+        {
+            return Err(bad(format!("{who} is listed twice")));
+        }
+        if same_day.nth(MAX_CREW_CALLS - 1).is_some() {
+            return Err(bad(format!(
+                "day {} has more than {MAX_CREW_CALLS} crew calls of its own",
+                x.day
+            )));
+        }
+        p.day_crew_calls.push(DayCrewCall {
+            day: StripId(x.day),
             department: x.department,
             offset: x.offset_minutes,
         });

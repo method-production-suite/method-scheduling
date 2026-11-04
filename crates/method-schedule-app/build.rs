@@ -160,6 +160,7 @@ const COMMANDS: &[&str] = &[
     "timeline_data",
     "set_call_time",
     "set_person_call",
+    "set_day_crew_call",
     "settle_conflicts",
     "set_shot",
     "set_long_day",

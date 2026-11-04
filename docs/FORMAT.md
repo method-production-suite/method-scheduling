@@ -239,6 +239,7 @@ by the next plan edit; they are never an error.
 | `drafts` | array of [draft](#draft) | empty | Each script draft a revision merged, oldest first (entry 233). |
 | `conflicts` | array of [merge conflict](#merge-conflict) | empty | Conflicts merges settled one way, kept until someone marks them done (entry 238). |
 | `crew_calls` | array of [crew call](#crew-call) | empty | Each crew department's call against the company's call on every shoot day, in the order added (entry 242). At most 100. |
+| `day_crew_calls` | array of [day crew call](#day-crew-call) | empty | A department's call on one shoot day only: in place of its every-day call that day, or a department called that day alone (entry 243). In the order added; one per department and day, 100 a day at most. |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
 
 #### Location
@@ -326,6 +327,14 @@ element or day break that no longer exists are dropped like the other plan keys.
 
 A department's call on a day is the day's call plus `offset_minutes`; a day without a call
 time has none. The call sheet lists them (CALLSHEET.md).
+
+#### Day crew call
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `day` | integer | | The day break that closes the shoot day, as in a call time. Dropped with it. |
+| `department` | string | | As in a crew call; unique on its day without regard to case. Matching a crew call's department, it replaces that call on the day; otherwise the department is called that day alone. |
+| `offset_minutes` | integer | | As in a crew call. Always written. |
 
 #### Lock
 

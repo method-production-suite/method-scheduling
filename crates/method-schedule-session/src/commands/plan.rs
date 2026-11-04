@@ -82,6 +82,19 @@ pub fn set_person_call<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, None)
 }
 
+/// The `set_day_crew_call` command (decision 243).
+pub fn set_day_crew_call<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    day: u32,
+    department: String,
+    value: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_day_crew(x, day, &department, &value))?;
+    finish(&window, &s, None)
+}
+
 /// Records what was shot of a scene on a shoot day (M5): its eighths, and whether that day
 /// finished it.
 pub fn set_shot<W: Shell + ?Sized, D: DocLock + ?Sized>(
