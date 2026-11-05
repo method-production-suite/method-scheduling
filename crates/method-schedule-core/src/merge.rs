@@ -1437,7 +1437,9 @@ impl M<'_> {
     fn plan(&self, cx: &mut Cx) -> crate::plan::Plan {
         use crate::plan::{clock_text, degrees_text, hours_text, Plan};
         let (b, o, t) = (&self.b.plan, &self.o.plan, &self.t.plan);
-        let fold = |n: &str| n.trim().to_lowercase();
+        // As model::same_name compares names: ASCII letters without regard to case, every
+        // other character as it is. A Unicode fold would join names the plan keeps apart.
+        let fold = |n: &str| n.trim().to_ascii_lowercase();
         Plan {
             locations: merge_keyed(
                 cx,
@@ -2534,6 +2536,46 @@ fn repair(s: &mut Schedule, m: &M, out: &mut Vec<String>) {
 }
 
 fn repair_pass(s: &mut Schedule, m: &M, out: &mut Vec<String>) {
+    // Crew calls past the cap (decisions 242 and 243): each side kept under it, but both
+    // adding can go over. The kept side's list, or that day's, stands.
+    if s.plan.crew_calls.len() > crate::plan::MAX_CREW_CALLS {
+        out.push(format!(
+            "More than {} crew calls between the two sides: kept {} list",
+            crate::plan::MAX_CREW_CALLS,
+            m.whose()
+        ));
+        s.plan.crew_calls = m.kept().plan.crew_calls.clone();
+    }
+    let mut over: Vec<StripId> = Vec::new();
+    for x in &s.plan.day_crew_calls {
+        let n = s
+            .plan
+            .day_crew_calls
+            .iter()
+            .filter(|o| o.day == x.day)
+            .count();
+        if n > crate::plan::MAX_CREW_CALLS && !over.contains(&x.day) {
+            over.push(x.day);
+        }
+    }
+    for day in over {
+        out.push(format!(
+            "More than {} crew calls of its own on the day closed by {}: kept {}",
+            crate::plan::MAX_CREW_CALLS,
+            m.strip_name_by_id(day),
+            m.whose()
+        ));
+        s.plan.day_crew_calls.retain(|x| x.day != day);
+        let kept: Vec<_> = m
+            .kept()
+            .plan
+            .day_crew_calls
+            .iter()
+            .filter(|x| x.day == day)
+            .cloned()
+            .collect();
+        s.plan.day_crew_calls.extend(kept);
+    }
     // Fallbacks keep the side conflicts are settled for: ours unless the merge settles
     // for theirs (decision 174). Comments say ours for that side.
     //
@@ -4079,6 +4121,59 @@ pub(crate) mod tests {
             "{}",
             m.conflicts[0].text
         );
+        assert!(m.schedule.check().is_ok());
+    }
+
+    /// Names are keyed as `same_name` compares them: only ASCII letters ignore case, so two
+    /// departments the plan keeps apart stay apart through a merge.
+    #[test]
+    fn crew_call_names_are_keyed_as_they_are_compared() {
+        use crate::plan::set_crew_call;
+        let b = one_scene();
+        let mut o = b.clone();
+        set_crew_call(&mut o, "École", Some(-30)).unwrap();
+        let mut t = b.clone();
+        set_crew_call(&mut t, "école", Some(15)).unwrap();
+        let m = merge(&b, &o, &t);
+        assert!(m.conflicts.is_empty(), "{:?}", texts(&m));
+        assert_eq!(m.schedule.plan.crew_calls.len(), 2);
+        assert!(m.schedule.check().is_ok());
+    }
+
+    /// Both sides adding crew calls can go past the cap; the kept side's list stands and
+    /// the rest of the merge is kept, not the whole of one side.
+    #[test]
+    fn crew_calls_past_the_cap_keep_one_sides_list() {
+        use crate::plan::{set_crew_call, set_day_crew_call, MAX_CREW_CALLS};
+        let mut b = one_scene();
+        let board = b.boards[0].id;
+        let sb = b.boards[0].sub_boards[0].id;
+        let day = b
+            .insert_strip(
+                board,
+                StripKind::DayBreak,
+                Place {
+                    sub_board: Some(sb),
+                    index: 1,
+                },
+            )
+            .unwrap();
+        let mut o = b.clone();
+        let mut t = b.clone();
+        for i in 0..60 {
+            set_crew_call(&mut o, &format!("Ours {i}"), Some(0)).unwrap();
+            set_crew_call(&mut t, &format!("Theirs {i}"), Some(0)).unwrap();
+            set_day_crew_call(&mut o, day, &format!("Ours {i}"), Some(0)).unwrap();
+            set_day_crew_call(&mut t, day, &format!("Theirs {i}"), Some(0)).unwrap();
+        }
+        t.title = "Retitled".to_string();
+        let m = merge(&b, &o, &t);
+        let p = &m.schedule.plan;
+        assert_eq!(p.crew_calls, o.plan.crew_calls);
+        assert_eq!(p.day_crew_calls, o.plan.day_crew_calls);
+        assert!(p.crew_calls.len() <= MAX_CREW_CALLS);
+        assert_eq!(m.schedule.title, "Retitled", "theirs' other change kept");
+        assert_eq!(m.fallbacks.len(), 2, "{:?}", m.fallbacks);
         assert!(m.schedule.check().is_ok());
     }
 
