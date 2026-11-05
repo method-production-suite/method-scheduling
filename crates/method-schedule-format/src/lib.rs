@@ -2303,6 +2303,7 @@ pub(crate) mod tests {
                 longitude: 2,
                 utc_offset: 0,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .unwrap();
         let text = to_string(&s);
@@ -2980,6 +2981,7 @@ pub(crate) mod tests {
                 longitude: -118_243_700,
                 utc_offset: -420,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .unwrap();
         let b = s.boards[0].id;

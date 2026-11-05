@@ -1453,8 +1453,13 @@ impl M<'_> {
                     let dst = l
                         .daylight_saving
                         .map_or(String::new(), |r| format!(", {} summer time", r.label()));
+                    let own = if l.periods.is_empty() {
+                        String::new()
+                    } else {
+                        format!("; {}", crate::plan::offset_periods_text(&l.periods))
+                    };
                     format!(
-                        "{}, {} (UTC {}{dst})",
+                        "{}, {} (UTC {}{dst}{own})",
                         degrees_text(l.latitude),
                         degrees_text(l.longitude),
                         crate::plan::offset_text(l.utc_offset)
@@ -4059,6 +4064,7 @@ pub(crate) mod tests {
             longitude: 0,
             utc_offset: 0,
             daylight_saving: None,
+            periods: Vec::new(),
         };
         // Ours: a location and day 1's call time; theirs: day 2's call time and a pin.
         let mut o = b.clone();

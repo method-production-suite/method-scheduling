@@ -307,6 +307,7 @@ pub fn set_location<R: Runtime>(
     longitude: String,
     utc_offset: String,
     daylight_saving: String,
+    offsets: Option<String>,
 ) -> CmdResult {
     method_schedule_session::commands::plan::set_location(
         &crate::app::Win(&window),
@@ -316,6 +317,7 @@ pub fn set_location<R: Runtime>(
         longitude,
         utc_offset,
         daylight_saving,
+        offsets,
     )
 }
 

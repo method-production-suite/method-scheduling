@@ -251,6 +251,15 @@ by the next plan edit; they are never an error.
 | `longitude_microdeg` | integer | | Millionths of a degree, east positive, -180000000 to 180000000. |
 | `utc_offset_minutes` | integer | 0 | Minutes ahead of UTC, -840 to 840: the standard offset when `daylight_saving` names a rule, else the offset on the shoot dates. |
 | `daylight_saving` | string | none | When the clocks are an hour ahead of the standard offset (decisions.md, entry 193): `us_canada` (from the second Sunday of March to the first Sunday of November), `eu` (from the last Sunday of March to the last Sunday of October), `australia` (Australia's south-east, from the first Sunday of October to the first Sunday of April; Queensland, the Northern Territory and Western Australia have no daylight saving, so no rule) `new_zealand` (from the last Sunday of September to the first Sunday of April; decision 220), `israel` (from the Friday before the last Sunday of March to the last Sunday of October), `egypt` (from the last Friday of April to the end of the last Thursday of October) or `chile` (mainland Chile, from the Sunday after the first Saturday of September to the Sunday after the first Saturday of April; decision 230). Left out for none; `none` written, another spelling or another rule is refused. |
+| `offset_periods` | array of [offset period](#offset-period) | empty | Dates with a UTC offset of their own, for clocks that follow a lunar calendar or a decree (decisions.md, entry 244). In date order, not overlapping, 100 at most; on their dates they win over `daylight_saving`. |
+
+#### Offset period
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `from` | date | | The first date, `YYYY-MM-DD`. |
+| `to` | date | | The last date, on or after `from` (the same for one day). |
+| `utc_offset_minutes` | integer | | Minutes ahead of UTC on those dates, -840 to 840. Always written. |
 
 #### Day shot
 

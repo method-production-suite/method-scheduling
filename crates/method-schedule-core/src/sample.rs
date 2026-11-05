@@ -502,6 +502,7 @@ pub fn demo() -> Schedule {
                 longitude,
                 utc_offset: -5 * 60,
                 daylight_saving: Some(DaylightSaving::UsCanada),
+                periods: Vec::new(),
             })
             .expect("a valid place");
     }
@@ -1179,6 +1180,7 @@ pub fn field_station() -> Schedule {
                 longitude,
                 utc_offset: -8 * 60,
                 daylight_saving: Some(DaylightSaving::UsCanada),
+                periods: Vec::new(),
             })
             .expect("a valid place");
     }

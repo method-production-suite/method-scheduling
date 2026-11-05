@@ -401,6 +401,11 @@ fn location_cmd(args: &[String]) -> Result<String, String> {
         )?,
         None => s.plan.location(name).and_then(|l| l.daylight_saving),
     };
+    // Periods of its own offset (decision 244) are kept as they were.
+    let periods = s
+        .plan
+        .location(name)
+        .map_or_else(Vec::new, |l| l.periods.clone());
     s.plan
         .set_location(GeoLocation {
             name: name.to_string(),
@@ -408,6 +413,7 @@ fn location_cmd(args: &[String]) -> Result<String, String> {
             longitude: lon,
             utc_offset: offset,
             daylight_saving,
+            periods,
         })
         .map_err(|e| e.to_string())?;
     save(p[0], &s)?;

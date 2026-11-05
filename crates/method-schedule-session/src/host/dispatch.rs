@@ -1954,6 +1954,9 @@ mod plan_cmds {
                     longitude: String,
                     utc_offset: String,
                     daylight_saving: String,
+                    // Left out keeps the location's periods (decision 244).
+                    #[serde(default)]
+                    offsets: Option<String>,
                 }
                 let A {
                     name,
@@ -1961,6 +1964,7 @@ mod plan_cmds {
                     longitude,
                     utc_offset,
                     daylight_saving,
+                    offsets,
                 } = match args::<A>(command, a) {
                     Ok(v) => v,
                     Err(e) => return Some(Err(e)),
@@ -1973,6 +1977,7 @@ mod plan_cmds {
                     longitude,
                     utc_offset,
                     daylight_saving,
+                    offsets,
                 ))
             }
             "rest_data" => {

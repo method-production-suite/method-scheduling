@@ -136,8 +136,22 @@ export function parseDaylightSaving(text) {
   return name;
 }
 
-/** As src/plan.rs place_location: both degrees or neither, an empty offset from the longitude. */
-export function placeLocation(plan, name, latitude, longitude, utcOffset, daylightSaving = '') {
+/** Offset periods as typed, back as text in date order (plan::parse_offset_periods; no overlap check here). */
+function parseOffsets(text) {
+  const out = [];
+  for (const entry of String(text ?? '').split(/[;\n]/).map((x) => x.trim()).filter(Boolean)) {
+    const m = /^(\d{4}-\d{2}-\d{2})(?:\s+to\s+(\d{4}-\d{2}-\d{2}))?\s+(\S+)$/i.exec(entry);
+    if (!m) throw `${q(entry)} is not a period such as 2027-02-07 to 2027-03-14 +00:00`;
+    const to = m[2] || m[1];
+    if (to < m[1]) throw `the period from ${m[1]} ends before it starts`;
+    out.push({ from: m[1], to, offset: parseOffset(m[3]) });
+  }
+  out.sort((a, b) => (a.from < b.from ? -1 : 1));
+  return out.map((p) => (p.from === p.to ? `${p.from} ${offsetText(p.offset)}` : `${p.from} to ${p.to} ${offsetText(p.offset)}`)).join('; ');
+}
+
+/** As src/plan.rs place_location_with: both degrees or neither, an empty offset from the longitude; `offsets` undefined keeps them. */
+export function placeLocation(plan, name, latitude, longitude, utcOffset, daylightSaving = '', offsets = undefined) {
   const lat = String(latitude).trim();
   const lon = String(longitude).trim();
   if (!lat && !lon) {
@@ -160,8 +174,14 @@ export function placeLocation(plan, name, latitude, longitude, utcOffset, daylig
   }
   const n = String(name).trim();
   if (!n) throw "A name can't be empty.";
-  const loc = { name: n, latitude: la, longitude: lo, utc_offset: offset, daylight_saving: dst };
   const at = plan.locations.findIndex((l) => sameName(l.name, n));
+  let own;
+  try {
+    own = offsets === undefined ? (at < 0 ? '' : plan.locations[at].offsets || '') : parseOffsets(offsets);
+  } catch (e) {
+    throw upper(e);
+  }
+  const loc = { name: n, latitude: la, longitude: lo, utc_offset: offset, daylight_saving: dst, offsets: own };
   if (at < 0) plan.locations.push(loc);
   else plan.locations[at] = loc;
 }
@@ -410,11 +430,12 @@ export function planFakes(ctx) {
           longitude: g ? degreesText(g.longitude) : '',
           utc_offset: g ? offsetText(g.utc_offset) : '',
           daylight_saving: g && g.daylight_saving ? g.daylight_saving : '',
+          offsets: g ? g.offsets || '' : '',
         };
       });
     },
-    set_location: ({ name, latitude, longitude, utc_offset, daylight_saving }) => {
-      return planEdit((m, plan) => placeLocation(plan, name, latitude, longitude, utc_offset, daylight_saving));
+    set_location: ({ name, latitude, longitude, utc_offset, daylight_saving, offsets }) => {
+      return planEdit((m, plan) => placeLocation(plan, name, latitude, longitude, utc_offset, daylight_saving, offsets));
     },
     // As changes.rs review_view (decision 238): two conflicts kept from a merge, the first
     // on a category still there (a link), the second on a sheet since deleted.

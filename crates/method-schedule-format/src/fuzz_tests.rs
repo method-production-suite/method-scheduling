@@ -131,6 +131,7 @@ fn decorate(rng: &mut Rng, s: &mut Schedule) {
                         Some(DaylightSaving::UsCanada),
                         Some(DaylightSaving::Eu),
                     ][rng.below(3) as usize],
+                    periods: Vec::new(),
                 });
             }
             6 => s.title = text(rng),

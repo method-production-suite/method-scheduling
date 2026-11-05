@@ -316,6 +316,12 @@ pub(crate) fn everything() -> Schedule {
             longitude: -118_243_700,
             utc_offset: -480,
             daylight_saving: Some(method_schedule_core::solar::DaylightSaving::UsCanada),
+            // A period of its own offset (decision 244).
+            periods: vec![method_schedule_core::plan::OffsetPeriod {
+                from: "2027-02-07".parse().unwrap(),
+                to: "2027-03-14".parse().unwrap(),
+                offset: -420,
+            }],
         })
         .unwrap();
     method_schedule_core::drift::lock(&mut s, b, "White", "2027-02-01".parse().ok()).unwrap();
