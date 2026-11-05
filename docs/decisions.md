@@ -5800,7 +5800,11 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   `This day only` (`yes` or empty). Crew calls were not yet in a release, so this changes no
   sheet anyone has.
 - **Merging**: by day and department, without regard to case; two different changes to one
-  conflict, naming the department and the day.
+  conflict, naming the department and the day. Names are keyed as they are compared
+  (ASCII letters without regard to case; this holds for locations, locks and draft colors
+  too). When both sides' additions together go past 100 crew calls, or 100 on one day, the
+  kept side's list for it stands and the merge says so, instead of the whole merge falling
+  back to one side (MReview's audit of #126).
 - **Additive in the file**: a file without the key reads and writes back byte for byte.
 - **Not yet**: leaving a department out on one day (set its call for the day instead), crew
   names under each department, and setting crew calls from the command line or MCP.
