@@ -299,6 +299,7 @@ pub fn locations_data(state: Doc) -> CmdResult<Vec<LocationDto>> {
 }
 
 #[tauri::command(rename_all = "snake_case")]
+#[allow(clippy::too_many_arguments)]
 pub fn set_location<R: Runtime>(
     window: WebviewWindow<R>,
     state: Doc,

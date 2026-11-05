@@ -151,6 +151,8 @@ pub fn locations_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<LocationD
 }
 
 /// The `set_location` command.
+// One argument per field of the Locations row, as the command takes them.
+#[allow(clippy::too_many_arguments)]
 pub fn set_location<W: Shell + ?Sized, D: DocLock + ?Sized>(
     window: &W,
     state: &D,
