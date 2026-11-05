@@ -298,12 +298,16 @@ export function planCommands(ctx) {
           el('option', { text: 'Chile (mainland)', attrs: { value: 'chile' } }),
         );
         dst.value = l.daylight_saving;
+        // Dates with an offset of their own, typed from the year's announcement (entry 244).
+        const own = textInput(l.offsets || '', 'pl-name');
+        own.placeholder = '2027-02-07 to 2027-03-14 +00:00';
+        own.setAttribute('aria-label', `Dates with another UTC offset at ${l.name}`);
         lat.setAttribute('aria-label', `Latitude of ${l.name}`);
         lon.setAttribute('aria-label', `Longitude of ${l.name}`);
         off.setAttribute('aria-label', `UTC offset of ${l.name}`);
         const set = async () => {
           // A refusal keeps what was typed, so the mistake can be fixed in place.
-          if (!(await edit(invoke('set_location', { name: l.name, latitude: lat.value, longitude: lon.value, utc_offset: off.value, daylight_saving: dst.value }), error))) return;
+          if (!(await edit(invoke('set_location', { name: l.name, latitude: lat.value, longitude: lon.value, utc_offset: off.value, daylight_saving: dst.value, offsets: own.value }), error))) return;
           try {
             const back = (await invoke('locations_data')).find((x) => x.name === l.name);
             // As the engine reads them, once a click in progress is done (entry 170).
@@ -313,23 +317,24 @@ export function planCommands(ctx) {
                 lon.value = back.longitude;
                 off.value = back.utc_offset;
                 dst.value = back.daylight_saving;
+                own.value = back.offsets;
               });
             }
           } catch {
             // The row keeps what was typed.
           }
         };
-        for (const i of [lat, lon, off]) i.addEventListener('keydown', (e) => e.key === 'Enter' && set());
+        for (const i of [lat, lon, off, own]) i.addEventListener('keydown', (e) => e.key === 'Enter' && set());
         // A rule picked for a place already on the map is set at once.
         dst.addEventListener('change', () => lat.value.trim() && lon.value.trim() && set());
-        return el('tr', {}, el('td', { text: l.name }), el('td', { class: 'n', text: String(l.sheets) }), el('td', {}, lat), el('td', {}, lon), el('td', {}, off), el('td', {}, dst), el('td', {}, button('Set', set, 'btn btn-mini')));
+        return el('tr', {}, el('td', { text: l.name }), el('td', { class: 'n', text: String(l.sheets) }), el('td', {}, lat), el('td', {}, lon), el('td', {}, off), el('td', {}, dst), el('td', {}, own), el('td', {}, button('Set', set, 'btn btn-mini')));
       });
       return box(
         'Locations',
         'pl-loc',
-        el('p', { class: 'modal-message', text: 'Degrees as 34.0522 and -118.2437 (or 118.2437W); the UTC offset as -7 or +5:30 (empty: from the longitude): the standard one with a daylight saving rule, which adds an hour in summer, else the one on the shoot dates. Clear both degrees to take a location off the map.' }),
+        el('p', { class: 'modal-message', text: 'Degrees as 34.0522 and -118.2437 (or 118.2437W); the UTC offset as -7 or +5:30 (empty: from the longitude): the standard one with a daylight saving rule, which adds an hour in summer, else the one on the shoot dates. Where the clocks follow a lunar calendar or a decree, type the year’s dates with their offset under Other offsets, as 2027-02-07 to 2027-03-14 +00:00, several split by semicolons; they win over the rule. Clear both degrees to take a location off the map.' }),
         error,
-        table(['Location', 'Sheets', 'Latitude', 'Longitude', 'UTC offset', 'Daylight saving', ''], rows),
+        table(['Location', 'Sheets', 'Latitude', 'Longitude', 'UTC offset', 'Daylight saving', 'Other offsets', ''], rows),
         el('div', { class: 'modal-actions' }, closeButton(close)),
       );
     });

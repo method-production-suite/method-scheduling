@@ -16,8 +16,8 @@ use method_schedule_core::model::{BoardId, CategoryId, ElementId, StripId, SubBo
 use method_schedule_core::optimize::{apply as apply_order_to, suggest, Score};
 use method_schedule_core::plan::{
     self as p, clock_text, crew_offset_text, crew_offset_words, degrees_text, hours_text,
-    offset_text, parse_clock, parse_crew_offset, parse_daylight_saving, parse_degrees, parse_hours,
-    parse_offset, GeoLocation,
+    offset_periods_text, offset_text, parse_clock, parse_crew_offset, parse_daylight_saving,
+    parse_degrees, parse_hours, parse_offset, parse_offset_periods, GeoLocation,
 };
 use method_schedule_core::rest::rest_report;
 use method_schedule_core::revise::{revise, revision_text};
@@ -455,6 +455,9 @@ pub struct LocationDto {
     /// The daylight saving rule's name (`us_canada`, `eu`, `australia`, `new_zealand`, `israel`, `egypt`, `chile`), empty for
     /// none (decisions 193 and 230).
     pub daylight_saving: String,
+    /// Dates with a UTC offset of their own as typed back (`2027-02-07 to 2027-03-14
+    /// +00:00; ...`), empty for none (decision 244).
+    pub offsets: String,
 }
 
 pub fn locations_view(s: &Schedule) -> Vec<LocationDto> {
@@ -486,6 +489,7 @@ pub fn locations_view(s: &Schedule) -> Vec<LocationDto> {
                 daylight_saving: g
                     .and_then(|g| g.daylight_saving)
                     .map_or(String::new(), |r| r.name().to_string()),
+                offsets: g.map_or(String::new(), |g| offset_periods_text(&g.periods)),
                 name: n,
             }
         })
@@ -503,6 +507,28 @@ pub fn place_location(
     utc_offset: &str,
     daylight_saving: &str,
 ) -> Result<(), String> {
+    place_location_with(
+        s,
+        name,
+        latitude,
+        longitude,
+        utc_offset,
+        daylight_saving,
+        None,
+    )
+}
+
+/// [`place_location`] with the location's dates of their own offset as typed (decision
+/// 244: `2027-02-07 to 2027-03-14 +00:00; ...`, empty for none); `None` keeps them.
+pub fn place_location_with(
+    s: &mut Schedule,
+    name: &str,
+    latitude: &str,
+    longitude: &str,
+    utc_offset: &str,
+    daylight_saving: &str,
+    offsets: Option<&str>,
+) -> Result<(), String> {
     if latitude.trim().is_empty() && longitude.trim().is_empty() {
         s.plan.remove_location(name);
         return Ok(());
@@ -518,6 +544,13 @@ pub fn place_location(
         parse_offset(utc_offset).map_err(upper)?
     };
     let daylight_saving = parse_daylight_saving(daylight_saving).map_err(upper)?;
+    let periods = match offsets {
+        Some(t) => parse_offset_periods(t).map_err(upper)?,
+        None => s
+            .plan
+            .location(name)
+            .map_or_else(Vec::new, |l| l.periods.clone()),
+    };
     s.plan
         .set_location(GeoLocation {
             name: name.to_string(),
@@ -525,6 +558,7 @@ pub fn place_location(
             longitude: lon,
             utc_offset: offset,
             daylight_saving,
+            periods,
         })
         .map_err(upper)
 }

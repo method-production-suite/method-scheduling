@@ -8039,6 +8039,7 @@ mod tests {
                 longitude: 2,
                 utc_offset: 0,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .unwrap();
         plan::set_long_day(&mut s, Some(600)).unwrap();
@@ -8130,6 +8131,7 @@ mod tests {
                 longitude: 0,
                 utc_offset: 0,
                 daylight_saving: None,
+                periods: Vec::new(),
             }]));
         assert!(bad(&|t| t.plan.pinned = vec![day]));
         assert!(bad(&|t| {

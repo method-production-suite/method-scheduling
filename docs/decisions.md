@@ -5811,3 +5811,25 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - `plan::tests::crew_calls_for_one_day` and
   `merge::tests::crew_calls_for_one_day_merge_by_day_and_department` cover it, with the
   `callsheet` tests in core and the strict reader's.
+
+## 244. Offsets for clocks set by a lunar calendar or a decree (2026-11-05)
+
+- **BYD-08's last rules**: some places don't follow a yearly pattern a program can work out.
+  Morocco puts its clocks back an hour for Ramadan, which moves with the lunar calendar and
+  is set each year from the moon's sighting; others change by decree from year to year.
+  Working those out would guess, and a guessed hour moves every sunrise on the call sheet.
+- **So the dates are typed**: a location placed on the map can carry periods of its own UTC
+  offset (`offset_periods`: from, to, offset), typed from the year's announcement, as
+  `2027-02-07 to 2027-03-14 +00:00` (several split by semicolons; one date with an offset
+  works too). On those dates the period's offset is used, whatever the daylight saving rule
+  says; on others the standard offset and rule apply as before. Put in date order; an
+  overlap, an end before its start or an offset past 14 hours is refused; 100 at most.
+- **Where**: Plan > Locations, an Other offsets field on each row. The command line and the
+  MCP tool keep a location's periods when they set it again, and don't set them yet; the
+  browser host's `set_location` takes an optional `offsets` and keeps them without it.
+- **Merging**: a location stays one value, as before; its periods are part of that value.
+- **Additive in the file**: a file without the key reads and writes back byte for byte; a
+  file using it won't open in 0.7.0 or earlier.
+- `plan::tests::offset_periods_win_over_the_rule` covers typing, the order and the limits,
+  and Morocco's 2027 Ramadan against a period winning over the EU rule; the strict
+  reader's tests read and write a period back.

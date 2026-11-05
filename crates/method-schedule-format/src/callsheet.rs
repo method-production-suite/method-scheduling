@@ -400,6 +400,7 @@ mod tests {
                 longitude: -118_243_700,
                 utc_offset: -420,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .unwrap();
         call_sheet(&s, b, sb, 1).unwrap()

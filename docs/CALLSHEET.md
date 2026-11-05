@@ -40,8 +40,8 @@ footer. It prints exactly the data below, nothing more (decisions.md, entry 207)
   durations added up) and its pages.
 - **Sunrise and sunset**: at the first of the day's scenes whose location is placed on
   the map (Plan > Locations...), for the day's date, in that location's local time: its
-  UTC offset, an hour more on the dates its daylight saving rule is in effect. See
-  decisions.md, BYD-08 and entry 193.
+  UTC offset, an hour more on the dates its daylight saving rule is in effect, or the offset
+  of a period typed for that date (decision 244). See decisions.md, BYD-08 and entry 193.
 - **Scenes**, in board order: scene number, I/E, set, day or night, pages, cast board IDs
   (names for cast without one), location, synopsis, shoot time, and start and end clock
   times from the running timeline (decisions.md, BYD-04).

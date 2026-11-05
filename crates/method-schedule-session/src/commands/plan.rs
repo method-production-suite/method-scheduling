@@ -151,6 +151,8 @@ pub fn locations_data<D: DocLock + ?Sized>(state: &D) -> CmdResult<Vec<LocationD
 }
 
 /// The `set_location` command.
+// One argument per field of the Locations row, as the command takes them.
+#[allow(clippy::too_many_arguments)]
 pub fn set_location<W: Shell + ?Sized, D: DocLock + ?Sized>(
     window: &W,
     state: &D,
@@ -159,16 +161,18 @@ pub fn set_location<W: Shell + ?Sized, D: DocLock + ?Sized>(
     longitude: String,
     utc_offset: String,
     daylight_saving: String,
+    offsets: Option<String>,
 ) -> CmdResult {
     let mut s = state.lock();
     s.edit(|x| {
-        place_location(
+        place_location_with(
             x,
             &name,
             &latitude,
             &longitude,
             &utc_offset,
             &daylight_saving,
+            offsets.as_deref(),
         )
     })?;
     finish(&window, &s, None)

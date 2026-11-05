@@ -233,17 +233,119 @@ pub struct GeoLocation {
     pub utc_offset: i32,
     /// When the clocks are an hour ahead (decision 193); `None`: never.
     pub daylight_saving: Option<DaylightSaving>,
+    /// Dates with a UTC offset of their own, typed from the year's announcement where the
+    /// clocks follow a lunar calendar or a decree (decision 244). In date order, not
+    /// overlapping, [`MAX_OFFSET_PERIODS`] at most; they win over `daylight_saving`.
+    pub periods: Vec<OffsetPeriod>,
 }
 
+/// A run of dates with a UTC offset of its own (decision 244): Morocco's clocks during
+/// Ramadan, say, or a year's daylight saving set by decree.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OffsetPeriod {
+    /// The first date, and the last (the same for one day).
+    pub from: Date,
+    pub to: Date,
+    /// Minutes ahead of UTC on those dates, 14 hours either way at most.
+    pub offset: i32,
+}
+
+/// The most offset periods one location keeps.
+pub const MAX_OFFSET_PERIODS: usize = 100;
+
 impl GeoLocation {
-    /// The UTC offset in effect on `date`: the standard one, an hour more while the
-    /// location's daylight saving rule is in effect.
+    /// The UTC offset in effect on `date`: a typed period's where one covers the date,
+    /// else the standard one, an hour more while the daylight saving rule is in effect.
     pub fn offset_on(&self, date: Date) -> i32 {
+        if let Some(p) = self.periods.iter().find(|p| p.from <= date && date <= p.to) {
+            return p.offset;
+        }
         match self.daylight_saving {
             Some(rule) if rule.in_effect(date) => self.utc_offset + 60,
             _ => self.utc_offset,
         }
     }
+}
+
+/// Whether offset periods may be kept as they are: each ends on or after its start, its
+/// offset within 14 hours, in date order without overlapping, [`MAX_OFFSET_PERIODS`] at
+/// most.
+pub fn periods_ok(periods: &[OffsetPeriod]) -> Result<(), String> {
+    if periods.len() > MAX_OFFSET_PERIODS {
+        return Err(format!(
+            "a location keeps {MAX_OFFSET_PERIODS} periods of its own offset at most"
+        ));
+    }
+    for (i, p) in periods.iter().enumerate() {
+        if p.to < p.from {
+            return Err(format!("the period from {} ends before it starts", p.from));
+        }
+        // unsigned_abs: i32::MIN has no i32 absolute value.
+        if p.offset.unsigned_abs() > 14 * 60 {
+            return Err(format!(
+                "the period from {} has a UTC offset past 14 hours",
+                p.from
+            ));
+        }
+        if i > 0 && p.from <= periods[i - 1].to {
+            return Err(format!(
+                "the period from {} overlaps the one before or is out of order",
+                p.from
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Offset periods as typed: entries split by `;` or line breaks, each `2027-02-07 to
+/// 2027-03-14 +00:00` (or one date and an offset), put in date order. Empty for none.
+pub fn parse_offset_periods(text: &str) -> Result<Vec<OffsetPeriod>, String> {
+    let mut out = Vec::new();
+    for entry in text
+        .split([';', '\n'])
+        .map(str::trim)
+        .filter(|x| !x.is_empty())
+    {
+        let words: Vec<&str> = entry.split_whitespace().collect();
+        let (from, to, offset) = match words.as_slice() {
+            [from, to_word, to, offset] if to_word.eq_ignore_ascii_case("to") => {
+                (*from, *to, *offset)
+            }
+            [day, offset] => (*day, *day, *offset),
+            _ => {
+                return Err(format!(
+                    "{entry:?} is not a period such as 2027-02-07 to 2027-03-14 +00:00"
+                ))
+            }
+        };
+        let date = |x: &str| {
+            x.parse::<Date>()
+                .map_err(|_| format!("{x:?} is not a date such as 2027-02-07"))
+        };
+        out.push(OffsetPeriod {
+            from: date(from)?,
+            to: date(to)?,
+            offset: parse_offset(offset)?,
+        });
+    }
+    out.sort_by_key(|p| p.from);
+    periods_ok(&out)?;
+    Ok(out)
+}
+
+/// Offset periods as [`parse_offset_periods`] reads them back.
+pub fn offset_periods_text(periods: &[OffsetPeriod]) -> String {
+    periods
+        .iter()
+        .map(|p| {
+            if p.from == p.to {
+                format!("{} {}", p.from, offset_text(p.offset))
+            } else {
+                format!("{} to {} {}", p.from, p.to, offset_text(p.offset))
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -313,6 +415,7 @@ impl Plan {
         if loc.utc_offset.unsigned_abs() > 14 * 60 {
             return Err(refuse("a UTC offset is 14 hours at most"));
         }
+        periods_ok(&loc.periods).map_err(|e| refuse(&e))?;
         let loc = GeoLocation { name, ..loc };
         match self
             .locations
@@ -470,6 +573,9 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
                 "location {:?} is off the map or its UTC offset past 14 hours",
                 l.name
             ));
+        }
+        if let Err(why) = periods_ok(&l.periods) {
+            return broken(format!("location {:?}: {why}", l.name));
         }
     }
     let mut days = HashSet::new();
@@ -1446,6 +1552,73 @@ mod tests {
     }
 
     #[test]
+    fn offset_periods_win_over_the_rule() {
+        let d = |x: &str| x.parse::<Date>().unwrap();
+        let p = parse_offset_periods(
+            "2027-03-28 to 2027-03-29 +00:00; 2027-02-07 to 2027-03-14 +00:00",
+        )
+        .unwrap();
+        assert_eq!(p[0].from, d("2027-02-07"), "put in date order");
+        assert_eq!(
+            offset_periods_text(&p),
+            "2027-02-07 to 2027-03-14 +00:00; 2027-03-28 to 2027-03-29 +00:00"
+        );
+        assert_eq!(
+            parse_offset_periods("2027-05-01 +02:00").unwrap()[0].to,
+            d("2027-05-01")
+        );
+        assert_eq!(parse_offset_periods(" ").unwrap(), []);
+        for bad in [
+            "2027-03-14 to 2027-02-07 +00:00",
+            "2027-02-07 to 2027-03-14 +15:00",
+            "2027-02-07 to 2027-03-14 +00:00; 2027-03-14 +01:00",
+            "2027-02-07 until 2027-03-14 +00:00",
+            "2027-02-30 +00:00",
+            "Ramadan +00:00",
+        ] {
+            assert!(parse_offset_periods(bad).is_err(), "{bad:?}");
+        }
+        // Morocco: +01:00 all year, +00:00 through Ramadan (dates typed for 2027).
+        let mut s = Schedule::new("T");
+        s.plan
+            .set_location(GeoLocation {
+                name: "Medina".into(),
+                latitude: 34_020_000,
+                longitude: -6_830_000,
+                utc_offset: 60,
+                daylight_saving: None,
+                periods: p.clone(),
+            })
+            .unwrap();
+        let m = s.plan.location("medina").unwrap();
+        assert_eq!(m.offset_on(d("2027-02-06")), 60);
+        assert_eq!(m.offset_on(d("2027-02-07")), 0);
+        assert_eq!(m.offset_on(d("2027-03-14")), 0);
+        assert_eq!(m.offset_on(d("2027-03-15")), 60);
+        // A period wins over the yearly rule.
+        let mut eu = m.clone();
+        eu.daylight_saving = Some(DaylightSaving::Eu);
+        assert_eq!(eu.offset_on(d("2027-03-28")), 0);
+        assert_eq!(eu.offset_on(d("2027-04-05")), 120);
+        assert!(check(&s).is_ok());
+        let mut bad = s.clone();
+        bad.plan.locations[0].periods[0].offset = i32::MIN;
+        assert!(check(&bad).is_err());
+        let mut bad = s.clone();
+        bad.plan.locations[0].periods.reverse();
+        assert!(check(&bad).is_err(), "out of order");
+        let mut over = m.clone();
+        over.periods = (0..=MAX_OFFSET_PERIODS as i32)
+            .map(|i| OffsetPeriod {
+                from: Date(i * 2),
+                to: Date(i * 2),
+                offset: 0,
+            })
+            .collect();
+        assert!(s.plan.set_location(over).is_err());
+    }
+
+    #[test]
     fn degrees_read_and_write() {
         assert_eq!(parse_degrees("34.0522", 90), Ok(34_052_200));
         assert_eq!(parse_degrees("-118.2437", 180), Ok(-118_243_700));
@@ -1519,6 +1692,7 @@ mod tests {
                 longitude: 2,
                 utc_offset: 0,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .unwrap();
         assert_eq!(s.plan.location("PIER").unwrap().name, "Pier");
@@ -1530,6 +1704,7 @@ mod tests {
                 longitude: 0,
                 utc_offset: 0,
                 daylight_saving: None,
+                periods: Vec::new(),
             })
             .is_err());
         s.delete_strip(b, br).unwrap();

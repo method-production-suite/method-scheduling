@@ -769,12 +769,18 @@ fn set_location(ctx: &Ctx, a: &Args) -> ToolResult {
             Some(r) => r,
             None => s.plan.location(&name).and_then(|l| l.daylight_saving),
         };
+        // Periods of its own offset (decision 244) are kept as they were.
+        let periods = s
+            .plan
+            .location(&name)
+            .map_or_else(Vec::new, |l| l.periods.clone());
         s.plan.set_location(GeoLocation {
             name: name.clone(),
             latitude: lat,
             longitude: lon,
             utc_offset: offset,
             daylight_saving,
+            periods,
         })?;
         Ok(daylight_saving)
     })?;

@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
     department_ok, CallTime, CrewCall, DayCrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene,
-    PersonCall, Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS,
-    MAX_CREW_OFFSET, MAX_WRAP,
+    OffsetPeriod, PersonCall, Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY,
+    MAX_CREW_CALLS, MAX_CREW_OFFSET, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -151,6 +151,19 @@ struct FileLocation {
     /// A daylight saving rule's name (decision 193); left out for none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     daylight_saving: Option<String>,
+    /// Dates with a UTC offset of their own (decision 244), in date order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    offset_periods: Vec<FileOffsetPeriod>,
+}
+
+/// A run of dates with a UTC offset of its own (decision 244).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileOffsetPeriod {
+    from: String,
+    to: String,
+    /// Always written, 0 included: it is the point of the entry.
+    utc_offset_minutes: i32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -278,6 +291,15 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
                 longitude_microdeg: l.longitude,
                 utc_offset_minutes: l.utc_offset,
                 daylight_saving: l.daylight_saving.map(|r| r.name().to_string()),
+                offset_periods: l
+                    .periods
+                    .iter()
+                    .map(|x| FileOffsetPeriod {
+                        from: x.from.to_string(),
+                        to: x.to.to_string(),
+                        utc_offset_minutes: x.offset,
+                    })
+                    .collect(),
             })
             .collect(),
         call_times: p
@@ -356,12 +378,21 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
                     })?,
             ),
         };
+        let mut periods = Vec::new();
+        for x in &l.offset_periods {
+            periods.push(OffsetPeriod {
+                from: date(&x.from)?,
+                to: date(&x.to)?,
+                offset: x.utc_offset_minutes,
+            });
+        }
         p.set_location(GeoLocation {
             name: l.name,
             latitude: l.latitude_microdeg,
             longitude: l.longitude_microdeg,
             utc_offset: l.utc_offset_minutes,
             daylight_saving,
+            periods,
         })
         .map_err(|e| bad(format!("location {name:?}: {e}")))?;
     }
