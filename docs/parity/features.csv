@@ -189,7 +189,7 @@ SAV-02,saving,Autosave with a toggle,v1,have,yes,yes,D16,
 SAV-03,saving,Opening an MMS 6 file with autosave forces Save As,skip,n/a,no,no,,
 SAV-04,saving,Cloud backup and versions,skip,n/a,no,no,,
 SAV-05,saving,Local rolling backups and crash recovery,v1,have,yes,yes,D16; D18; live note 22; note 25,Recovery after a forced kill checked live
-BYD-01,beyond,Script revision merge keeping tags and scene identity,later,have,n/a,yes,D69; E-I3; E-I6,"The reference app has no such feature (competitor list); Matched by number then heading, tags and places kept, omitted marked; report and one undo step in the app (Plan > Import Script Revision)"
+BYD-01,beyond,Script revision merge keeping tags and scene identity,later,have,n/a,yes,D69; E-I3; E-I6,"The reference app has no such feature (competitor list); Matched by number then heading, tags and places kept, omitted marked, the newest draft's color on each strip (D247); report and one undo step in the app (Plan > Import Script Revision)"
 BYD-02,beyond,Call sheet data export,later,have,n/a,yes,D70; docs/CALLSHEET.md,"The reference app has no such feature (competitor list); JSON and CSV (docs/CALLSHEET.md) from the app (Plan > Export Call Sheet Data), CLI and MCP; distribution stays out; address, directions and a map picture per location (D245)"
 BYD-03,beyond,Call sheet distribution,skip,n/a,n/a,no,,The reference app has no such feature (competitor list); Needs a service
 BYD-04,beyond,Running timeline from call time with day length and sunset warnings,later,have,n/a,yes,D71; live note 22,"The reference app has no such feature (competitor list); Call times per day; timeline with long day and sunset warnings in the app (Plan > Day Timeline), CLI and MCP; push to next day later"

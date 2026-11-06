@@ -113,6 +113,7 @@ pub const COMMANDS: &[&str] = &[
     "set_location",
     "set_location_guide",
     "set_order_weights",
+    "rename_draft",
     "remove_location_map",
     "rest_data",
     "set_turnaround",
@@ -1981,6 +1982,20 @@ mod plan_cmds {
                     utc_offset,
                     daylight_saving,
                     offsets,
+                ))
+            }
+            "rename_draft" => {
+                #[derive(Deserialize)]
+                struct A {
+                    color: String,
+                    name: String,
+                }
+                let A { color, name } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::rename_draft(
+                    &window, state, color, name,
                 ))
             }
             "set_order_weights" => {

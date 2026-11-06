@@ -169,6 +169,7 @@ const COMMANDS: &[&str] = &[
     "set_location",
     "set_location_guide",
     "set_order_weights",
+    "rename_draft",
     "add_location_map",
     "remove_location_map",
     "location_map",

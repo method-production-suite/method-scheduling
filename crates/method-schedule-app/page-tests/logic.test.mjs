@@ -869,3 +869,13 @@ test('looks: Graphite and Ledger keep text on its surfaces at 4.5:1 or better', 
     }
   }
 });
+
+test('a draft color has its swatch, whatever round it is on', () => {
+  const { draftColorClass } = L;
+  assert.equal(draftColorClass('Blue'), 'dc-blue');
+  assert.equal(draftColorClass('Double Pink'), 'dc-pink');
+  assert.equal(draftColorClass('Triple Goldenrod'), 'dc-goldenrod');
+  assert.equal(draftColorClass('Blue 4'), 'dc-blue');
+  assert.equal(draftColorClass('Director pass'), 'dc-other');
+  assert.equal(draftColorClass(''), 'dc-other');
+});

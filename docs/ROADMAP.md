@@ -250,9 +250,11 @@ through the CLI's `merge-driver` and `git-setup`. What is left is the exit's liv
 
 | Item | Size | Refs |
 |---|---|---|
-| Script revision workflow: revision colors on strips (needs a design beside the I/E and day or night colors), picking or renaming a color (each draft's color, date and changes are kept, shown on the Breakdown tab and printed since D233) | M | D69, D233, BYD-01 |
-| Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
-| Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |
+
+Done: revision colors on strips and renaming a draft's color (D247, 2026-11-06). The Method
+Budget link: the exchange frozen at version 1 (2026-10-15), Method Budget's reader built, Export
+for Budget in the app. The family strip: the suite website's bar and band carry it
+(WEBSITE.md).
 
 Done: auto-schedule improvements (D246, 2026-11-06): weights people can set, a day's length in
 the cost, and a search by swapping scenes beyond the three orders.

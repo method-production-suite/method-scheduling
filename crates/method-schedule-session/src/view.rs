@@ -443,6 +443,12 @@ pub struct StripDto {
     pub color: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     pub ink: String,
+    /// The newest script draft that changed the scene (decision 247): its color, and its
+    /// color and date in words. Left out when none did.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub draft_color: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub draft: String,
     /// The red flag clashes on a scheduled scene's day, in words (`ADA, Unavailable,
     /// 2027-03-02 to 2027-03-03, hard`). Left out when there are none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -684,6 +690,8 @@ fn strip(s: &Schedule, look: &Lookup, layout: &StripLayout, st: &Strip, index: u
         tone: "",
         color: String::new(),
         ink: String::new(),
+        draft_color: String::new(),
+        draft: String::new(),
         part: 0,
         parts: 0,
         omitted: false,
@@ -704,6 +712,10 @@ fn strip(s: &Schedule, look: &Lookup, layout: &StripLayout, st: &Strip, index: u
             out.kind = "scene";
             out.sheet = Some(id.0);
             out.omitted = s.plan.is_omitted(*id);
+            if let Some(d) = s.plan.revised_in(*id) {
+                out.draft_color = d.color.clone();
+                out.draft = crate::plan::draft_text(d);
+            }
             if let Some(h) = look.sheets.get(id) {
                 out.scene = h.scenes.clone();
                 out.int_ext = h.int_ext.clone();
@@ -1303,10 +1315,7 @@ pub fn sheet_view_in(
         revised: s
             .plan
             .revised_in(h.id)
-            .map_or(String::new(), |d| match d.date {
-                Some(x) => format!("{} draft, {x}", d.color),
-                None => format!("{} draft", d.color),
-            }),
+            .map_or(String::new(), crate::plan::draft_text),
         date: place.1.map(|d| d.to_string()),
         strip: s.sheet_place(b.id, h.id).and_then(|p| {
             let list = match p.sub_board {
