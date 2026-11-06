@@ -366,6 +366,11 @@ pub(crate) fn everything() -> Schedule {
     method_schedule_core::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
     // A crew call for one day only (decision 243).
     method_schedule_core::plan::set_day_crew_call(&mut s, brk, "Stunts", Some(45)).unwrap();
+    // Strip order weights of its own (decision 246).
+    s.plan.order_weights = Some(method_schedule_core::plan::OrderWeights {
+        cast_day: 6,
+        ..Default::default()
+    });
     // Directions to a location, and a map picture (decision 245).
     s.plan
         .set_location_guide(method_schedule_core::plan::LocationGuide {

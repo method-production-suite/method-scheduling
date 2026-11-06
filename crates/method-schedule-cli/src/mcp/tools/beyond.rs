@@ -10,7 +10,7 @@ use method_schedule_core::model::{CategoryId, StripId};
 use method_schedule_core::optimize::{apply as apply_order, suggest, Score};
 use method_schedule_core::plan::{
     self, clock_text, degrees_text, offset_text, parse_clock, parse_daylight_saving, parse_degrees,
-    parse_hours, parse_offset, GeoLocation,
+    parse_hours, parse_offset, GeoLocation, OrderWeights,
 };
 use method_schedule_core::rest::rest_report;
 use method_schedule_core::revise::{revise, revision_text, Revision};
@@ -558,14 +558,15 @@ fn drift(ctx: &Ctx, a: &Args) -> ToolResult {
     })
 }
 
-fn score_json(x: &Score) -> Value {
+fn score_json(x: &Score, w: &OrderWeights) -> Value {
     json!({
         "shoot_days": x.shoot_days,
         "cast_days": x.cast_days,
         "location_changes": x.location_changes,
         "day_night_switches": x.day_night_switches,
         "red_flag_clashes": x.red_flag_clashes,
-        "cost": x.cost(),
+        "long_day_hours": x.long_day_hours,
+        "cost": x.cost(w),
     })
 }
 
@@ -579,16 +580,16 @@ fn suggest_order(ctx: &Ctx, a: &Args) -> ToolResult {
             "{} scene(s) would move ({}); cost {} -> {}.",
             sug.moved,
             sug.rule,
-            sug.before.cost(),
-            sug.after.cost()
+            sug.before.cost(&sug.weights),
+            sug.after.cost(&sug.weights)
         ),
         data: json!({
             "order": sug.order.iter().map(|x| x.0).collect::<Vec<_>>(),
             "moved": sug.moved,
             "pinned": sug.pinned,
             "groups": sug.groups,
-            "before": score_json(&sug.before),
-            "after": score_json(&sug.after),
+            "before": score_json(&sug.before, &sug.weights),
+            "after": score_json(&sug.after, &sug.weights),
             "rule": sug.rule,
             "tried": sug.tried.iter().map(|(r, c)| json!({"rule": r, "cost": c})).collect::<Vec<_>>(),
         }),
@@ -903,16 +904,16 @@ fn apply_suggested(ctx: &Ctx, a: &Args) -> ToolResult {
         let (b, sb) = pick(s, a)?;
         let sug = suggest(s, b, sb)?;
         apply_order(s, &sug)?;
-        Ok((sug.before, sug.after, sug.moved))
+        Ok((sug.before, sug.after, sug.moved, sug.weights))
     })?;
-    let (before, after, moved) = e.out;
+    let (before, after, moved, weights) = e.out;
     Ok(done(
         &e,
         &format!("Moved {moved} scene(s)"),
         obj(vec![
             ("moved", json!(moved)),
-            ("before", score_json(&before)),
-            ("after", score_json(&after)),
+            ("before", score_json(&before, &weights)),
+            ("after", score_json(&after, &weights)),
         ]),
     ))
 }

@@ -27,6 +27,13 @@
 //! location then day or night then set, and by shared cast alone; the cheapest is
 //! suggested, the first on a tie. When none costs less than the order on the board, the
 //! board's order is the suggestion and nothing would move.
+//!
+//! **Weights and search** (decision 246): the weights are the schedule's own
+//! ([`crate::plan::OrderWeights`]), and the cost counts each hour a day runs past the long
+//! day limit. From the cheapest order so far, pairs of scenes are swapped while a swap
+//! lowers the cost, always in the same order, so the same board gives the same suggestion.
+//! The swaps are judged by a quick estimate; the result is scored like any other order
+//! and kept only when it really costs less.
 
 use std::collections::{BTreeSet, HashSet};
 
@@ -35,7 +42,9 @@ use crate::model::{
     BoardId, CategoryId, ElementId, ElementIndex, Error, Schedule, SheetId, SheetIndex, Strip,
     StripId, StripKind, SubBoardId,
 };
+use crate::plan::OrderWeights;
 use crate::redflags::red_flags;
+use crate::timeline::timelines;
 use crate::Date;
 
 /// What a schedule's order costs.
@@ -49,23 +58,20 @@ pub struct Score {
     /// Places in a day where the next scene is day after night or night after day.
     pub day_night_switches: u32,
     pub red_flag_clashes: u32,
+    /// Each day's hours past the long day limit, a part of an hour counting whole.
+    pub long_day_hours: u32,
 }
-
-/// What each count costs (decision 234): an actor's day most, a clash with a red flag
-/// more than any reshuffle saves, a company move more than a lighting change.
-pub const COST_CAST_DAY: u32 = 4;
-pub const COST_LOCATION_CHANGE: u32 = 3;
-pub const COST_DAY_NIGHT_SWITCH: u32 = 1;
-pub const COST_RED_FLAG_CLASH: u32 = 20;
 
 impl Score {
     /// The counts weighed into one number; lower is better. Shoot days don't count: a
     /// suggestion keeps every day.
-    pub fn cost(&self) -> u32 {
-        self.cast_days * COST_CAST_DAY
-            + self.location_changes * COST_LOCATION_CHANGE
-            + self.day_night_switches * COST_DAY_NIGHT_SWITCH
-            + self.red_flag_clashes * COST_RED_FLAG_CLASH
+    pub fn cost(&self, w: &OrderWeights) -> u64 {
+        let part = |n: u32, by: u32| u64::from(n) * u64::from(by);
+        part(self.cast_days, w.cast_day)
+            + part(self.location_changes, w.location_change)
+            + part(self.day_night_switches, w.day_night_switch)
+            + part(self.red_flag_clashes, w.red_flag_clash)
+            + part(self.long_day_hours, w.long_day_hour)
     }
 }
 
@@ -78,6 +84,14 @@ pub const RULES: [&str; 3] = [
 
 /// Where the suggestion came from: one of [`RULES`], or the board's own order.
 pub const KEEP: &str = "the order on the board";
+
+/// The search from the cheapest order so far (decision 246).
+pub const SWAPS: &str = "swapping scenes from the cheapest order";
+
+/// How many swaps the search tries at most, so a long schedule answers quickly.
+const MAX_SWAP_TRIES: usize = 2_000_000;
+/// With more movable scenes than this, the search is left out.
+const MAX_SEARCHED_SCENES: usize = 2000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Suggestion {
@@ -94,11 +108,13 @@ pub struct Suggestion {
     pub pinned: usize,
     /// Location and set groups.
     pub groups: usize,
-    /// The rule the suggestion follows: one of [`RULES`], or [`KEEP`] when none costs less
-    /// than the board's order.
+    /// The rule the suggestion follows: one of [`RULES`], [`SWAPS`], or [`KEEP`] when none
+    /// costs less than the board's order.
     pub rule: &'static str,
     /// Each rule tried with the cost of its order.
-    pub tried: Vec<(&'static str, u32)>,
+    pub tried: Vec<(&'static str, u64)>,
+    /// The weights the costs were worked out with.
+    pub weights: OrderWeights,
 }
 
 fn norm(t: &str) -> String {
@@ -201,7 +217,125 @@ pub fn score(s: &Schedule, board: BoardId, sub: SubBoardId) -> Result<Score, Err
         out.cast_days += cast.len() as u32;
     }
     out.red_flag_clashes = red_flags(s, board, sub)?.clashes.len() as u32;
+    let limit = s.plan.long_day();
+    out.long_day_hours = timelines(s, board, sub)?
+        .iter()
+        .map(|t| t.length.saturating_sub(limit).div_ceil(60))
+        .sum();
     Ok(out)
+}
+
+/// A scene as the search sees it.
+struct Facts {
+    place: usize,
+    dark: bool,
+    cast: Vec<u64>,
+}
+
+/// A counted entry of a day: a scene that stays, or a place the search fills.
+#[derive(Clone, Copy)]
+enum Item {
+    Fixed(usize),
+    Slot(usize),
+}
+
+/// One sub-board's days, costed quickly from what a swap can change. An estimate: a real
+/// [`score`] has the last word.
+struct Estimate {
+    weights: OrderWeights,
+    limit: u32,
+    /// The movable scenes, then the scenes that stay.
+    facts: Vec<Facts>,
+    minutes: Vec<u32>,
+    days: Vec<Vec<Item>>,
+    /// Banners and scenes that stay, in minutes.
+    base: Vec<u32>,
+    slot_day: Vec<usize>,
+    /// Per day, per movable scene: how many of its elements are flagged that date.
+    flags: Vec<Vec<u32>>,
+    words: usize,
+}
+
+impl Estimate {
+    fn day_cost(&self, day: usize, fill: &[usize], seen: &mut [u64]) -> u64 {
+        seen.fill(0);
+        let w = &self.weights;
+        let mut cost = 0u64;
+        let mut minutes = self.base[day];
+        let mut last: Option<&Facts> = None;
+        for item in &self.days[day] {
+            let i = match item {
+                Item::Fixed(i) => *i,
+                Item::Slot(k) => {
+                    let i = fill[*k];
+                    minutes += self.minutes[i];
+                    if let Some(row) = self.flags.get(day) {
+                        cost += u64::from(row[i]) * u64::from(w.red_flag_clash);
+                    }
+                    i
+                }
+            };
+            let f = &self.facts[i];
+            for (a, b) in seen.iter_mut().zip(&f.cast) {
+                *a |= *b;
+            }
+            if let Some(p) = last {
+                if p.place != f.place {
+                    cost += u64::from(w.location_change);
+                }
+                if p.dark != f.dark {
+                    cost += u64::from(w.day_night_switch);
+                }
+            }
+            last = Some(f);
+        }
+        let cast: u32 = seen.iter().map(|x| x.count_ones()).sum();
+        cost += u64::from(cast) * u64::from(w.cast_day);
+        cost + u64::from(minutes.saturating_sub(self.limit).div_ceil(60))
+            * u64::from(w.long_day_hour)
+    }
+
+    /// Swaps pairs of places while that lowers the estimate. Goes through the pairs in
+    /// order, so the same start always gives the same result.
+    fn improve(&self, fill: &mut [usize]) {
+        let mut seen = vec![0u64; self.words];
+        let mut cost: Vec<u64> = (0..self.days.len())
+            .map(|d| self.day_cost(d, fill, &mut seen))
+            .collect();
+        let mut tries = 0;
+        loop {
+            let mut better = false;
+            for a in 0..fill.len() {
+                for b in a + 1..fill.len() {
+                    if tries >= MAX_SWAP_TRIES {
+                        return;
+                    }
+                    tries += 1;
+                    let (da, db) = (self.slot_day[a], self.slot_day[b]);
+                    let old = cost[da] + if da == db { 0 } else { cost[db] };
+                    fill.swap(a, b);
+                    let new_a = self.day_cost(da, fill, &mut seen);
+                    let new_b = if da == db {
+                        0
+                    } else {
+                        self.day_cost(db, fill, &mut seen)
+                    };
+                    if new_a + new_b < old {
+                        cost[da] = new_a;
+                        if da != db {
+                            cost[db] = new_b;
+                        }
+                        better = true;
+                    } else {
+                        fill.swap(a, b);
+                    }
+                }
+            }
+            if !better {
+                return;
+            }
+        }
+    }
 }
 
 /// The next item by most shared cast with `prev` (ties: the earliest).
@@ -344,41 +478,69 @@ pub fn suggest(s: &Schedule, board: BoardId, sub: SubBoardId) -> Result<Suggesti
         }
     }
     let flagged = |i: usize, d: Date| ix.flagged(scenes[i].1, d);
-    // An order of the movable scenes into the places, red-flagged dates avoided.
-    let fill = |order: &[usize]| -> (Vec<StripId>, usize) {
-        let mut new_strips: Vec<StripId> = sb.strips.iter().map(|x| x.id).collect();
+    let weights = s.plan.order_weights();
+    // An order of the movable scenes into the places, red-flagged dates avoided: which
+    // scene goes in each place.
+    let fill = |order: &[usize]| -> Vec<usize> {
         let mut left = order.to_vec();
+        slots
+            .iter()
+            .map(|&slot| {
+                let pick = match slot_date[slot] {
+                    Some(d) => left.iter().position(|&i| !flagged(i, d)).unwrap_or(0),
+                    None => 0,
+                };
+                left.remove(pick)
+            })
+            .collect()
+    };
+    // The sub-board's strips with those scenes in the places, and how many moved.
+    let strips_of = |filled: &[usize]| -> (Vec<StripId>, usize) {
+        let mut new_strips: Vec<StripId> = sb.strips.iter().map(|x| x.id).collect();
         let mut moved = 0;
         for (k, &slot) in slots.iter().enumerate() {
-            let pick = match slot_date[slot] {
-                Some(d) => left.iter().position(|&i| !flagged(i, d)).unwrap_or(0),
-                None => 0,
-            };
-            let i = left.remove(pick);
-            new_strips[slot] = scenes[i].0;
-            if i != k {
-                moved += 1;
-            }
+            new_strips[slot] = scenes[filled[k]].0;
+            moved += usize::from(filled[k] != k);
         }
         (new_strips, moved)
     };
+    let scored = |strips: &[StripId]| -> Result<Score, Error> {
+        let mut copy = s.clone();
+        reorder(&mut copy, board, sub, strips)?;
+        score(&copy, board, sub)
+    };
     let before = score(s, board, sub)?;
-    let mut best: Option<(&'static str, Vec<StripId>, usize, Score)> = None;
+    let mut best: Option<(&'static str, Vec<usize>, Score)> = None;
     let mut tried = Vec::new();
     for (rule, order) in RULES.iter().zip(&candidates) {
-        let (strips, moved) = fill(order);
-        let mut copy = s.clone();
-        reorder(&mut copy, board, sub, &strips)?;
-        let after = score(&copy, board, sub)?;
-        tried.push((*rule, after.cost()));
-        if best.as_ref().is_none_or(|b| after.cost() < b.3.cost()) {
-            best = Some((rule, strips, moved, after));
+        let filled = fill(order);
+        let after = scored(&strips_of(&filled).0)?;
+        tried.push((*rule, after.cost(&weights)));
+        if best
+            .as_ref()
+            .is_none_or(|b| after.cost(&weights) < b.2.cost(&weights))
+        {
+            best = Some((rule, filled, after));
         }
     }
-    let (rule, order, moved, after) = match best {
-        Some(b) if b.3.cost() < before.cost() => b,
-        _ => (KEEP, sb.strips.iter().map(|x| x.id).collect(), 0, before),
+    // Keep the board's own order unless a rule beats it.
+    let (mut rule, mut filled, mut after) = match best {
+        Some(b) if b.2.cost(&weights) < before.cost(&weights) => b,
+        _ => (KEEP, (0..scenes.len()).collect(), before),
     };
+    if scenes.len() > 1 && scenes.len() <= MAX_SEARCHED_SCENES {
+        let estimate = estimate(s, &ix, board, sub, &all, &slots, &scenes, &slot_date)?;
+        let mut swapped = filled.clone();
+        estimate.improve(&mut swapped);
+        if swapped != filled {
+            let found = scored(&strips_of(&swapped).0)?;
+            tried.push((SWAPS, found.cost(&weights)));
+            if found.cost(&weights) < after.cost(&weights) {
+                (rule, filled, after) = (SWAPS, swapped, found);
+            }
+        }
+    }
+    let (order, moved) = strips_of(&filled);
     Ok(Suggestion {
         board,
         sub_board: sub,
@@ -390,6 +552,111 @@ pub fn suggest(s: &Schedule, board: BoardId, sub: SubBoardId) -> Result<Suggesti
         groups,
         rule,
         tried,
+        weights,
+    })
+}
+
+/// The facts the search needs, from the board as it stands.
+#[allow(clippy::too_many_arguments)]
+fn estimate(
+    s: &Schedule,
+    ix: &Ix<'_>,
+    board: BoardId,
+    sub: SubBoardId,
+    all: &crate::days::Days,
+    slots: &[usize],
+    scenes: &[(StripId, SheetId)],
+    slot_date: &[Option<Date>],
+) -> Result<Estimate, Error> {
+    let mut places: Vec<String> = Vec::new();
+    let mut people: Vec<ElementId> = Vec::new();
+    for sheet in s.sheets.iter().map(|h| h.id) {
+        for e in ix.cast_of(sheet) {
+            if !people.contains(&e) {
+                people.push(e);
+            }
+        }
+    }
+    let words = people.len() / 64 + 1;
+    let minutes_of = |sheet: SheetId| {
+        ix.sheets
+            .get(&sheet)
+            .and_then(|h| h.shoot_time)
+            .map_or(0, |m| m.0)
+    };
+    let mut facts_of = |sheet: SheetId| {
+        let key = ix.place_key(sheet);
+        let place = places.iter().position(|p| *p == key).unwrap_or_else(|| {
+            places.push(key);
+            places.len() - 1
+        });
+        let mut cast = vec![0u64; words];
+        for e in ix.cast_of(sheet) {
+            if let Some(n) = people.iter().position(|p| *p == e) {
+                cast[n / 64] |= 1 << (n % 64);
+            }
+        }
+        Facts {
+            place,
+            dark: ix.dark(sheet),
+            cast,
+        }
+    };
+    let mut facts: Vec<Facts> = scenes.iter().map(|(_, h)| facts_of(*h)).collect();
+    let minutes: Vec<u32> = scenes.iter().map(|(_, h)| minutes_of(*h)).collect();
+    let lengths = timelines(s, board, sub)?;
+    let mut days = Vec::new();
+    let mut base = Vec::new();
+    let mut slot_day = vec![0; slots.len()];
+    let mut flags = Vec::new();
+    for (n, d) in all.days.iter().enumerate() {
+        let mut items = Vec::new();
+        let mut length = lengths.get(n).map_or(0, |t| t.length);
+        let mut date = None;
+        for e in &d.entries {
+            date = date.or(slot_date[e.at]);
+            if let Ok(k) = slots.binary_search(&e.at) {
+                items.push(Item::Slot(k));
+                slot_day[k] = n;
+                length = length.saturating_sub(minutes[k]);
+            } else if let Some(sheet) = e.counted_sheet() {
+                facts.push(facts_of(sheet));
+                items.push(Item::Fixed(facts.len() - 1));
+            }
+        }
+        days.push(items);
+        base.push(length);
+        flags.push(
+            scenes
+                .iter()
+                .map(|(_, h)| date.map_or(0, |d| flag_count(ix, *h, d)))
+                .collect(),
+        );
+    }
+    Ok(Estimate {
+        weights: s.plan.order_weights(),
+        limit: s.plan.long_day(),
+        facts,
+        minutes,
+        days,
+        base,
+        slot_day,
+        flags,
+        words,
+    })
+}
+
+/// How many of a scene's elements have a red flag on a date.
+fn flag_count(ix: &Ix<'_>, sheet: SheetId, d: Date) -> u32 {
+    ix.sheets.get(&sheet).map_or(0, |h| {
+        h.elements
+            .iter()
+            .filter(|e| {
+                ix.elements
+                    .get(e)
+                    .is_some_and(|x| x.red_flags.iter().any(|f| f.dates.covers(d)))
+            })
+            .count() as u32
     })
 }
 
@@ -464,7 +731,13 @@ pub fn suggestion_text(sug: &Suggestion) -> String {
         sug.before.red_flag_clashes,
         sug.after.red_flag_clashes,
     ));
-    out.push_str(&row("Cost", sug.before.cost(), sug.after.cost()));
+    out.push_str(&row(
+        "Hours past long day",
+        sug.before.long_day_hours,
+        sug.after.long_day_hours,
+    ));
+    let (was, now) = (sug.before.cost(&sug.weights), sug.after.cost(&sug.weights));
+    out.push_str(&format!("  {:<20} {was:>5} -> {now}\n", "Cost"));
     let tried: Vec<String> = sug.tried.iter().map(|(r, c)| format!("{r} {c}")).collect();
     out.push_str(&format!(
         "Suggested: {} (costs tried: {}).\n",
@@ -477,6 +750,7 @@ pub fn suggestion_text(sug: &Suggestion) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::Minutes;
     use crate::model::{Place, RedFlag, RedFlagDates, RedFlagId, Sheet};
 
     /// Six scenes alternating between two locations, a day break after each pair.
@@ -643,15 +917,16 @@ mod tests {
         assert_eq!(sug.before.day_night_switches, 2);
         assert_eq!(sug.after.day_night_switches, 0);
         assert_eq!(sug.rule, RULES[1]);
+        let w = OrderWeights::default();
         assert_eq!(
-            sug.before.cost() - sug.after.cost(),
-            2 * COST_DAY_NIGHT_SWITCH
+            sug.before.cost(&w) - sug.after.cost(&w),
+            2 * u64::from(w.day_night_switch)
         );
         assert_eq!(sug.tried.len(), 3);
         assert!(sug
             .tried
             .iter()
-            .any(|(r, c)| *r == RULES[0] && *c == sug.before.cost()));
+            .any(|(r, c)| *r == RULES[0] && *c == sug.before.cost(&w)));
         let text = suggestion_text(&sug);
         assert!(
             text.contains("Suggested: location, then day or night, then set"),
@@ -674,6 +949,81 @@ mod tests {
     }
 
     /// Review: the suggestion once put both parts of a scene spanning days on one day.
+    #[test]
+    fn weights_change_what_is_cheapest_and_are_the_schedules_own() {
+        let (mut s, b, sb) = mixed();
+        let plain = suggest(&s, b, sb).unwrap();
+        assert_eq!(plain.weights, OrderWeights::default());
+        let cost = plain.after.cost(&plain.weights);
+        // Nothing costs anything: no order beats the board, and nothing would move.
+        s.plan
+            .set_order_weights(Some(OrderWeights::from_values([0, 0, 0, 0, 0])))
+            .unwrap();
+        let free = suggest(&s, b, sb).unwrap();
+        assert_eq!((free.rule, free.moved), (KEEP, 0));
+        assert_eq!(free.after.cost(&free.weights), 0);
+        // Limits, and the defaults kept as none.
+        assert!(s
+            .plan
+            .set_order_weights(Some(OrderWeights::from_values([1001, 0, 0, 0, 0])))
+            .is_err());
+        s.plan
+            .set_order_weights(Some(OrderWeights::default()))
+            .unwrap();
+        assert_eq!(s.plan.order_weights, None);
+        assert_eq!(suggest(&s, b, sb).unwrap().after.cost(&plain.weights), cost);
+    }
+
+    #[test]
+    fn a_long_day_costs_and_the_search_evens_it_out() {
+        // Four scenes on two days, both long ones on day 1: each order the rules try keeps
+        // them together, since all are at one place with one cast.
+        let mut s = Schedule::new("ZTEST Long");
+        let b = s.boards[0].id;
+        let sb = s.boards[0].sub_boards[0].id;
+        for (i, hours) in [7, 7, 1, 1].iter().enumerate() {
+            s.add_sheet(Sheet {
+                scenes: (i + 1).to_string(),
+                set: "PIER".to_string(),
+                shoot_time: Some(Minutes(hours * 60)),
+                ..Sheet::default()
+            });
+        }
+        let strips: Vec<StripId> = s.boards[0].boneyard.iter().map(|x| x.id).collect();
+        s.move_strips(
+            b,
+            &strips,
+            Place {
+                sub_board: Some(sb),
+                index: 0,
+            },
+        )
+        .unwrap();
+        for at in [2, 5] {
+            s.insert_strip(
+                b,
+                StripKind::DayBreak,
+                Place {
+                    sub_board: Some(sb),
+                    index: at,
+                },
+            )
+            .unwrap();
+        }
+        // 14 hours against the 12 hour limit: two hours past.
+        let before = score(&s, b, sb).unwrap();
+        assert_eq!(before.long_day_hours, 2);
+        let sug = suggest(&s, b, sb).unwrap();
+        assert_eq!(sug.rule, SWAPS, "{:?}", sug.tried);
+        assert_eq!(sug.after.long_day_hours, 0);
+        assert!(sug.tried.iter().any(|(r, _)| *r == SWAPS));
+        // The same board gives the same answer, so Apply finds what the preview showed.
+        assert_eq!(suggest(&s, b, sb).unwrap().order, sug.order);
+        apply(&mut s, &sug).unwrap();
+        assert_eq!(score(&s, b, sb).unwrap().long_day_hours, 0);
+        assert!(s.check().is_ok());
+    }
+
     #[test]
     fn a_scene_spanning_days_keeps_its_parts_apart() {
         let mut s = Schedule::new("T");

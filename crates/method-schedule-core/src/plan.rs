@@ -62,6 +62,64 @@ pub struct Plan {
     /// How to get to a location (decision 245): its address, directions and a map picture.
     /// By the sheets' location name, in the order added; a location needn't be on the map.
     pub location_guides: Vec<LocationGuide>,
+    /// What each count costs when suggesting a strip order (decision 246). `None`: the
+    /// defaults.
+    pub order_weights: Option<OrderWeights>,
+}
+
+/// What each count costs when strip orders are compared (decisions 234 and 246). The
+/// defaults: an actor's day most among the everyday costs, a clash with a red flag more
+/// than any reshuffle saves, a company move more than a lighting change.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OrderWeights {
+    pub cast_day: u32,
+    pub location_change: u32,
+    pub day_night_switch: u32,
+    pub red_flag_clash: u32,
+    /// Each hour, or part of one, that a day runs past the long day limit.
+    pub long_day_hour: u32,
+}
+
+impl Default for OrderWeights {
+    fn default() -> Self {
+        OrderWeights {
+            cast_day: 4,
+            location_change: 3,
+            day_night_switch: 1,
+            red_flag_clash: 20,
+            long_day_hour: 5,
+        }
+    }
+}
+
+/// The most a count can be set to cost.
+pub const MAX_ORDER_WEIGHT: u32 = 1000;
+
+impl OrderWeights {
+    /// In the order the command line and the commands list them.
+    pub fn values(&self) -> [u32; 5] {
+        [
+            self.cast_day,
+            self.location_change,
+            self.day_night_switch,
+            self.red_flag_clash,
+            self.long_day_hour,
+        ]
+    }
+
+    pub fn from_values(v: [u32; 5]) -> OrderWeights {
+        OrderWeights {
+            cast_day: v[0],
+            location_change: v[1],
+            day_night_switch: v[2],
+            red_flag_clash: v[3],
+            long_day_hour: v[4],
+        }
+    }
+
+    pub fn in_range(&self) -> bool {
+        self.values().iter().all(|v| *v <= MAX_ORDER_WEIGHT)
+    }
 }
 
 /// How to get to a location, for the call sheet (decision 245). Unique by name, without
@@ -523,6 +581,20 @@ impl Plan {
         Ok(())
     }
 
+    /// What each count costs when comparing strip orders.
+    pub fn order_weights(&self) -> OrderWeights {
+        self.order_weights.unwrap_or_default()
+    }
+
+    /// Sets the weights; the defaults, or `None`, are kept as none.
+    pub fn set_order_weights(&mut self, w: Option<OrderWeights>) -> Result<(), Error> {
+        if w.is_some_and(|w| !w.in_range()) {
+            return Err(refuse("a strip order weight is 1000 at most"));
+        }
+        self.order_weights = w.filter(|w| *w != OrderWeights::default());
+        Ok(())
+    }
+
     pub fn call_time(&self, day: StripId) -> Option<u32> {
         self.call_times
             .iter()
@@ -674,6 +746,9 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
         {
             return broken(format!("the directions of {:?} are listed twice", g.name));
         }
+    }
+    if p.order_weights.is_some_and(|w| !w.in_range()) {
+        return broken("a strip order weight is past 1000".to_string());
     }
     let mut days = HashSet::new();
     for c in &p.call_times {
@@ -1481,6 +1556,9 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
         if b.location_guide(&g.name).is_none() {
             out.push(format!("directions to {:?} removed", g.name));
         }
+    }
+    if a.order_weights != b.order_weights {
+        out.push("strip order weights changed".to_string());
     }
     if a.call_times != b.call_times {
         out.push("call times changed".to_string());

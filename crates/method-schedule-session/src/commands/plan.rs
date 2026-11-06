@@ -313,6 +313,17 @@ pub fn pin_strips<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, Some(format!("{verb} {what}.")))
 }
 
+/// The `set_order_weights` command (decision 246).
+pub fn set_order_weights<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    values: Vec<u32>,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| crate::plan::set_order_weights(x, &values))?;
+    finish(&window, &s, None)
+}
+
 /// The `suggest_order` command.
 pub fn suggest_order<D: DocLock + ?Sized>(state: &D, sub_board: u32) -> CmdResult<SuggestionDto> {
     suggestion_view(state.lock().schedule(), sub_board)

@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
     department_ok, guide_ok, CallTime, CrewCall, DayCrewCall, DayShot, Draft, GeoLocation,
-    LocationGuide, Lock, LockedScene, OffsetPeriod, PersonCall, Plan, ReviewConflict, SceneShot,
-    Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS, MAX_CREW_OFFSET, MAX_WRAP,
+    LocationGuide, Lock, LockedScene, OffsetPeriod, OrderWeights, PersonCall, Plan, ReviewConflict,
+    SceneShot, Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS, MAX_CREW_OFFSET, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -52,6 +52,20 @@ pub(crate) struct FilePlan {
     day_crew_calls: Vec<FileDayCrewCall>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     location_guides: Vec<FileLocationGuide>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    order_weights: Option<FileOrderWeights>,
+}
+
+/// What each count costs when comparing strip orders (decision 246). Left out for the
+/// defaults.
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileOrderWeights {
+    cast_day: u32,
+    location_change: u32,
+    day_night_switch: u32,
+    red_flag_clash: u32,
+    long_day_hour: u32,
 }
 
 /// How to get to a location (decision 245).
@@ -336,6 +350,13 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
             })
             .collect(),
         long_day_minutes: p.long_day,
+        order_weights: p.order_weights.map(|w| FileOrderWeights {
+            cast_day: w.cast_day,
+            location_change: w.location_change,
+            day_night_switch: w.day_night_switch,
+            red_flag_clash: w.red_flag_clash,
+            long_day_hour: w.long_day_hour,
+        }),
         turnarounds: p
             .turnarounds
             .iter()
@@ -442,6 +463,22 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
         }
     }
     p.long_day = f.long_day_minutes;
+    if let Some(w) = f.order_weights {
+        let w = OrderWeights {
+            cast_day: w.cast_day,
+            location_change: w.location_change,
+            day_night_switch: w.day_night_switch,
+            red_flag_clash: w.red_flag_clash,
+            long_day_hour: w.long_day_hour,
+        };
+        if !w.in_range() {
+            return Err(bad("a strip order weight is past 1000".to_string()));
+        }
+        if w == OrderWeights::default() {
+            return Err(default_given("order_weights", "the defaults"));
+        }
+        p.order_weights = Some(w);
+    }
     for t in f.turnarounds {
         if t.minutes == 0 || t.minutes > 48 * 60 {
             return Err(bad(format!("turnaround {} is out of range", t.minutes)));
