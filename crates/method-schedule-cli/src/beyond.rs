@@ -61,6 +61,21 @@ beyond the reference app (decisions.md, IMP-04 and BYD-01 to BYD-09):
   unlock FILE NAME                delete a lock
   drift FILE NAME                 each actor's work days added, dropped and moved since
                                   the lock
+  crew FILE [DEPARTMENT (OFFSET | --remove)]
+                                  each department's call against the company's, every
+                                  shoot day (-1:30, 0, +0:15)
+  day-crew FILE DAY DEPARTMENT (OFFSET | --remove) [--sub-board ID]
+                                  a department's call on one shoot day only
+  offsets FILE NAME TEXT          dates with a UTC offset of their own at a location on
+                                  the map (\"2027-02-07 to 2027-03-14 +00:00; ...\", empty
+                                  for none)
+  directions FILE NAME [--address TEXT] [--directions TEXT] [--map PATH | --no-map]
+                                  how to get to a location, for the call sheet
+  order-weights FILE [A,B,C,D,E | --default]
+                                  what a suggested order counts: an actor's day, a location
+                                  change, a day and night switch, a red flag clash, an hour
+                                  past the long day
+  rename-draft FILE COLOR NAME    rename a script draft's color
   pin FILE STRIP... [--unpin]     keep strips in place when suggesting an order
   suggest FILE [--apply] [--sub-board ID]
                                   a strip order grouped by location, set and cast, with
@@ -83,6 +98,12 @@ pub fn run(cmd: &str, rest: &[String]) -> Option<Result<String, String>> {
         "lock" => lock_cmd(rest),
         "unlock" => unlock_cmd(rest),
         "drift" => drift_cmd(rest),
+        "crew" => crew_cmd(rest),
+        "day-crew" => day_crew_cmd(rest),
+        "offsets" => offsets_cmd(rest),
+        "directions" => directions_cmd(rest),
+        "order-weights" => order_weights_cmd(rest),
+        "rename-draft" => rename_draft_cmd(rest),
         "pin" => pin_cmd(rest),
         "suggest" => suggest_cmd(rest),
         _ => return None,
@@ -565,6 +586,196 @@ fn pin_cmd(args: &[String]) -> Result<String, String> {
     ))
 }
 
+/// The arguments without `flags` and the value after each of `valued`. Negative numbers
+/// stay values here, where a crew offset can be one.
+fn plain<'a>(args: &'a [String], flags: &[&str], valued: &[&str]) -> Vec<&'a str> {
+    let mut out = Vec::new();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if valued.contains(&a.as_str()) {
+            it.next();
+        } else if !flags.contains(&a.as_str()) {
+            out.push(a.as_str());
+        }
+    }
+    out
+}
+
+fn crew_cmd(args: &[String]) -> Result<String, String> {
+    let usage = "crew FILE [DEPARTMENT (OFFSET | --remove)]";
+    let p = plain(args, &["--remove"], &[]);
+    let file = p.first().ok_or(format!("usage: method-schedule {usage}"))?;
+    let mut s = load(file)?;
+    let Some(department) = p.get(1) else {
+        let mut out = String::new();
+        for c in &s.plan.crew_calls {
+            out.push_str(&format!(
+                "{}  {}\n",
+                c.department,
+                plan::crew_offset_text(c.offset)
+            ));
+        }
+        return Ok(if out.is_empty() {
+            "no crew calls set\n".to_string()
+        } else {
+            out
+        });
+    };
+    let offset = if args.iter().any(|a| a == "--remove") {
+        None
+    } else {
+        let v = p.get(2).ok_or(format!("usage: method-schedule {usage}"))?;
+        Some(plan::parse_crew_offset(v)?)
+    };
+    plan::set_crew_call(&mut s, department, offset).map_err(|e| e.to_string())?;
+    save(file, &s)?;
+    Ok(match offset {
+        Some(o) => format!("{department}: {}\n", plan::crew_offset_words(o)),
+        None => format!("{department}: no call of its own\n"),
+    })
+}
+
+fn day_crew_cmd(args: &[String]) -> Result<String, String> {
+    let usage = "day-crew FILE DAY DEPARTMENT (OFFSET | --remove) [--sub-board ID]";
+    let p = plain(args, &["--remove"], &["--sub-board", "--board"]);
+    if p.len() < 3 {
+        return Err(format!("usage: method-schedule {usage}"));
+    }
+    let mut s = load(p[0])?;
+    let (b, sb) = pick(&s, args)?;
+    let n: u32 = p[1]
+        .parse()
+        .map_err(|_| format!("{:?} is not a shoot day number", p[1]))?;
+    let day = method_schedule_core::days::days(&s, b, sb)
+        .map_err(|e| e.to_string())?
+        .days
+        .iter()
+        .find(|d| d.number == n)
+        .map(|d| d.break_id)
+        .ok_or(format!("there is no shoot day {n}"))?;
+    let offset = if args.iter().any(|a| a == "--remove") {
+        None
+    } else {
+        let v = p.get(3).ok_or(format!("usage: method-schedule {usage}"))?;
+        Some(plan::parse_crew_offset(v)?)
+    };
+    plan::set_day_crew_call(&mut s, day, p[2], offset).map_err(|e| e.to_string())?;
+    save(p[0], &s)?;
+    Ok(match offset {
+        Some(o) => format!("{} on day {n}: {}\n", p[2], plan::crew_offset_words(o)),
+        None => format!("{} on day {n}: follows the every-day call\n", p[2]),
+    })
+}
+
+fn offsets_cmd(args: &[String]) -> Result<String, String> {
+    let usage = "offsets FILE NAME TEXT";
+    let [file, name, text] = args else {
+        return Err(format!("usage: method-schedule {usage}"));
+    };
+    let mut s = load(file)?;
+    let Some(l) = s.plan.location(name).cloned() else {
+        return Err(format!("{name:?} is not on the map"));
+    };
+    let periods = plan::parse_offset_periods(text)?;
+    s.plan
+        .set_location(GeoLocation { periods, ..l })
+        .map_err(|e| e.to_string())?;
+    save(file, &s)?;
+    let now = s.plan.location(name).map_or(&[][..], |l| &l.periods);
+    Ok(if now.is_empty() {
+        format!("{name} has no dates of its own offset\n")
+    } else {
+        format!("{name}: {}\n", plan::offset_periods_text(now))
+    })
+}
+
+fn directions_cmd(args: &[String]) -> Result<String, String> {
+    let usage = "directions FILE NAME [--address TEXT] [--directions TEXT] [--map PATH | --no-map]";
+    let p = plain(args, &["--no-map"], &["--address", "--directions", "--map"]);
+    let [file, name] = p[..] else {
+        return Err(format!("usage: method-schedule {usage}"));
+    };
+    let mut s = load(file)?;
+    let old = s.plan.location_guide(name).cloned().unwrap_or_default();
+    let value = |f: &str| flag(args, f).map(str::to_string);
+    let map = if args.iter().any(|a| a == "--no-map") {
+        None
+    } else {
+        value("--map").or(old.map)
+    };
+    s.plan
+        .set_location_guide(plan::LocationGuide {
+            name: name.to_string(),
+            address: value("--address").unwrap_or(old.address),
+            directions: value("--directions").unwrap_or(old.directions),
+            map,
+        })
+        .map_err(|e| e.to_string())?;
+    save(file, &s)?;
+    Ok(match s.plan.location_guide(name) {
+        Some(g) => format!(
+            "{name}: {}; {}; map {}\n",
+            if g.address.is_empty() {
+                "no address"
+            } else {
+                &g.address
+            },
+            if g.directions.is_empty() {
+                "no directions"
+            } else {
+                &g.directions
+            },
+            g.map.as_deref().unwrap_or("none")
+        ),
+        None => format!("{name} has no directions\n"),
+    })
+}
+
+fn order_weights_cmd(args: &[String]) -> Result<String, String> {
+    let usage = "order-weights FILE [A,B,C,D,E | --default]";
+    let p = plain(args, &["--default"], &[]);
+    let file = p.first().ok_or(format!("usage: method-schedule {usage}"))?;
+    let mut s = load(file)?;
+    let reset = args.iter().any(|a| a == "--default");
+    if reset || p.len() > 1 {
+        let w = if reset {
+            None
+        } else {
+            let v: Vec<u32> = p[1]
+                .split(',')
+                .map(|x| {
+                    x.trim()
+                        .parse()
+                        .map_err(|_| format!("{x:?} is not a whole number"))
+                })
+                .collect::<Result<_, String>>()?;
+            let v: [u32; 5] = v
+                .try_into()
+                .map_err(|_| "give all five weights".to_string())?;
+            Some(plan::OrderWeights::from_values(v))
+        };
+        s.plan.set_order_weights(w).map_err(|e| e.to_string())?;
+        save(file, &s)?;
+    }
+    let w = s.plan.order_weights();
+    Ok(format!(
+        "an actor's day {}, a location change {}, a day and night switch {}, a red flag clash {}, an hour past the long day {}\n",
+        w.cast_day, w.location_change, w.day_night_switch, w.red_flag_clash, w.long_day_hour
+    ))
+}
+
+fn rename_draft_cmd(args: &[String]) -> Result<String, String> {
+    let [file, color, name] = args else {
+        return Err("usage: method-schedule rename-draft FILE COLOR NAME".to_string());
+    };
+    let mut s = load(file)?;
+    s.plan
+        .rename_draft(color, name)
+        .map_err(|e| e.to_string())?;
+    save(file, &s)?;
+    Ok(format!("the {color} draft is now {}\n", name.trim()))
+}
+
 fn suggest_cmd(args: &[String]) -> Result<String, String> {
     let p = args_of(args, "suggest FILE [--apply] [--sub-board ID]", 1)?;
     let mut s = load(p[0])?;
@@ -587,6 +798,84 @@ mod tests {
 
     fn run(args: &[&str]) -> Result<String, String> {
         run_cli(&args.iter().map(|s| s.to_string()).collect::<Vec<_>>())
+    }
+
+    #[test]
+    fn the_plan_setters_work_end_to_end() {
+        let dir = std::env::temp_dir().join(format!("ms-setters-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("s.mtsc");
+        let f = file.to_str().unwrap();
+        let _ = std::fs::remove_file(&file);
+        let script = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/scripts/harbor-light.fountain"
+        );
+        run(&["import", script, "--into", f]).unwrap();
+        run(&["schedule", f]).unwrap();
+        run(&["breaks", f, "--pages", "5"]).unwrap();
+        // Crew calls, every day and for one day; a negative offset is a value.
+        assert!(run(&["crew", f, "Camera", "-1:30"])
+            .unwrap()
+            .contains("1:30 before"));
+        assert!(run(&["crew", f]).unwrap().contains("Camera  -1:30"));
+        assert!(run(&["day-crew", f, "1", "Stunts", "+0:45"])
+            .unwrap()
+            .contains("day 1"));
+        assert!(run(&["day-crew", f, "99", "Stunts", "0"]).is_err());
+        run(&["day-crew", f, "1", "Stunts", "--remove"]).unwrap();
+        run(&["crew", f, "Camera", "--remove"]).unwrap();
+        assert!(run(&["crew", f]).unwrap().contains("no crew calls"));
+        // Offsets need a location on the map, and read back.
+        assert!(run(&["offsets", f, "Pier", "2027-02-07 +00:00"]).is_err());
+        run(&["location", f, "Pier", "34.05", "-118.24", "-7"]).unwrap();
+        let t = run(&["offsets", f, "Pier", "2027-02-07 to 2027-03-14 +00:00"]).unwrap();
+        assert!(t.contains("2027-02-07"), "{t}");
+        assert!(run(&["offsets", f, "Pier", ""])
+            .unwrap()
+            .contains("no dates"));
+        // Directions: each part alone, the others kept, nothing left takes them off.
+        run(&["directions", f, "Pier", "--address", "1 Harbor Road"]).unwrap();
+        let t = run(&["directions", f, "Pier", "--map", "images/pier.png"]).unwrap();
+        assert!(
+            t.contains("1 Harbor Road") && t.contains("images/pier.png"),
+            "{t}"
+        );
+        assert!(run(&["directions", f, "Pier", "--no-map"])
+            .unwrap()
+            .contains("map none"));
+        let t = run(&["directions", f, "Pier", "--address", ""]).unwrap();
+        assert!(t.contains("has no directions"), "{t}");
+        // Weights: read, set, refused, back to the defaults.
+        assert!(run(&["order-weights", f])
+            .unwrap()
+            .contains("an actor's day 4"));
+        assert!(run(&["order-weights", f, "9,3,1,20,5"])
+            .unwrap()
+            .contains("an actor's day 9"));
+        assert!(run(&["order-weights", f, "1,2"]).is_err());
+        assert!(run(&["order-weights", f, "1001,3,1,20,5"]).is_err());
+        assert!(run(&["order-weights", f, "--default"])
+            .unwrap()
+            .contains("an actor's day 4"));
+        // A draft to rename; none by that color, or a name taken, is refused.
+        assert!(run(&["rename-draft", f, "Blue", "Teal"]).is_err());
+        let mut s = super::super::load(f).unwrap();
+        for color in ["Blue", "Pink"] {
+            s.plan.drafts.push(method_schedule_core::plan::Draft {
+                color: color.to_string(),
+                date: None,
+                changed: Vec::new(),
+                added: Vec::new(),
+                omitted: Vec::new(),
+            });
+        }
+        super::super::save(f, &s).unwrap();
+        assert!(run(&["rename-draft", f, "Blue", "pink"]).is_err());
+        assert!(run(&["rename-draft", f, "Blue", "Teal"])
+            .unwrap()
+            .contains("now Teal"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

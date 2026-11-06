@@ -3167,6 +3167,11 @@ mod tests {
             vec!["lock", &f, "White"],
             vec!["drift", &f, "White"],
             vec!["unlock", &f, "White"],
+            vec!["crew", &f, "Camera", "-1:00"],
+            vec!["day-crew", &f, "1", "Camera", "0"],
+            vec!["offsets", &f, "HARBOR", "2027-02-07 +00:00"],
+            vec!["directions", &f, "HARBOR", "--address", "1 Harbor Road"],
+            vec!["order-weights", &f, "9,3,1,20,5"],
             vec!["pin", &f, &strip],
             vec!["suggest", &f, "--apply"],
             vec!["merge-sheets", &f, &sheet, &other],
@@ -3182,7 +3187,8 @@ mod tests {
         // folder of its own); each has its own test.
         let m = merge_cmd(&args(&["merge", &copy, &copy, &copy])).unwrap();
         assert!(!m.conflicts);
-        for name in ["mcp", "merge", "merge-driver", "git-setup"] {
+        // rename-draft needs a merged draft: beyond.rs's own test has one.
+        for name in ["mcp", "merge", "merge-driver", "git-setup", "rename-draft"] {
             ran.insert(name.to_string());
         }
         let help = run_str(&["help"]).unwrap();

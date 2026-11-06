@@ -220,12 +220,141 @@ pub fn tools() -> Vec<Tool> {
                                 ],
                             ),
                         ),
+                        (
+                            "offsets",
+                            name("Dates with a UTC offset of their own, such as 2027-02-07 to 2027-03-14 +00:00, several split by semicolons; empty for none. Default: as they are."),
+                        ),
                         ("remove", boolean("Take it off the map instead.")),
                     ],
                     &["path", "revision", "name"],
                 )
             },
             run: set_location,
+        },
+        Tool {
+            name: "set_crew_call",
+            title: "Set a department's call",
+            description: "Sets a crew department's call against the company's on every shoot \
+                          day (-1:30, 0, +0:15), or removes it with null.",
+            mutating: true,
+            destructive: false,
+            schema: || {
+                object(
+                    vec![
+                        path_prop(),
+                        revision_prop(),
+                        ("department", name("The department, such as Camera.")),
+                        (
+                            "offset",
+                            nullable(name("From the call, such as -1:30, or null.")),
+                        ),
+                    ],
+                    &["path", "revision", "department", "offset"],
+                )
+            },
+            run: set_crew_call,
+        },
+        Tool {
+            name: "set_day_crew_call",
+            title: "Set a department's call for one day",
+            description: "Sets a department's call on one shoot day only: in place of its \
+                          every-day call, or a department called that day alone. Null follows \
+                          the every-day call again.",
+            mutating: true,
+            destructive: false,
+            schema: || {
+                object(
+                    vec![
+                        path_prop(),
+                        revision_prop(),
+                        board_prop(),
+                        sub_board_prop(),
+                        day_prop(),
+                        ("department", name("The department, such as Stunts.")),
+                        (
+                            "offset",
+                            nullable(name("From the call, such as +0:45, or null.")),
+                        ),
+                    ],
+                    &["path", "revision", "day", "department", "offset"],
+                )
+            },
+            run: set_day_crew_call,
+        },
+        Tool {
+            name: "set_location_guide",
+            title: "Set how to get to a location",
+            description: "Sets a location's address, directions and map picture for the call \
+                          sheet. Each part left out stays as it is; an empty text or a null map \
+                          clears it. The map is a path to a picture file, kept beside the \
+                          schedule; nothing is fetched.",
+            mutating: true,
+            destructive: false,
+            schema: || {
+                object(
+                    vec![
+                        path_prop(),
+                        revision_prop(),
+                        ("name", name("The location, as the sheets write it.")),
+                        ("address", name("The address.")),
+                        (
+                            "directions",
+                            name("The directions; may hold several lines."),
+                        ),
+                        (
+                            "map",
+                            nullable(name("A picture file's path, or null for none.")),
+                        ),
+                    ],
+                    &["path", "revision", "name"],
+                )
+            },
+            run: set_location_guide,
+        },
+        Tool {
+            name: "set_order_weights",
+            title: "Set what a suggested order counts",
+            description: "Sets what each count costs when suggest_order compares orders, each \
+                          0 to 1000. Each one left out stays as it is; reset true goes back to \
+                          the defaults (4, 3, 1, 20, 5).",
+            mutating: true,
+            destructive: false,
+            schema: || {
+                let w = |d: &str| integer(d, 0, 1000);
+                object(
+                    vec![
+                        path_prop(),
+                        revision_prop(),
+                        ("cast_day", w("An actor's day.")),
+                        ("location_change", w("A location change in a day.")),
+                        ("day_night_switch", w("A day and night switch in a day.")),
+                        ("red_flag_clash", w("A red flag clash.")),
+                        ("long_day_hour", w("An hour past the long day limit.")),
+                        ("reset", boolean("Go back to the defaults instead.")),
+                    ],
+                    &["path", "revision"],
+                )
+            },
+            run: set_order_weights,
+        },
+        Tool {
+            name: "rename_draft",
+            title: "Rename a script draft's color",
+            description: "Renames a script draft's color. Unique without regard to case.",
+            mutating: true,
+            destructive: false,
+            schema: || {
+                object(
+                    vec![
+                        path_prop(),
+                        revision_prop(),
+                        ("color", name("The draft's color now, such as Blue.")),
+                        ("name", name("The new name.")),
+                    ],
+                    &["path", "revision", "color", "name"],
+                )
+            },
+            run: rename_draft,
         },
         Tool {
             name: "set_turnaround",
@@ -611,6 +740,11 @@ fn locations(ctx: &Ctx, a: &Args) -> ToolResult {
             names.push(g.name.clone());
         }
     }
+    for g in &s.plan.location_guides {
+        if !names.iter().any(|x| x.eq_ignore_ascii_case(&g.name)) {
+            names.push(g.name.clone());
+        }
+    }
     let list: Vec<Value> = names
         .iter()
         .map(|n| {
@@ -622,6 +756,10 @@ fn locations(ctx: &Ctx, a: &Args) -> ToolResult {
                 "longitude": g.map(|g| degrees_text(g.longitude)),
                 "utc_offset": g.map(|g| offset_text(g.utc_offset)),
                 "daylight_saving": g.map(|g| g.daylight_saving.map_or("none", |r| r.name())),
+                "offsets": g.map(|g| plan::offset_periods_text(&g.periods)),
+                "address": s.plan.location_guide(n).map(|x| x.address.clone()),
+                "directions": s.plan.location_guide(n).map(|x| x.directions.clone()),
+                "map": s.plan.location_guide(n).and_then(|x| x.map.clone()),
             })
         })
         .collect();
@@ -734,6 +872,140 @@ fn set_call_time(ctx: &Ctx, a: &Args) -> ToolResult {
     ))
 }
 
+/// A crew offset as given, or null for none.
+fn crew_offset_arg(a: &Args) -> Result<Option<i32>, ToolError> {
+    a.str("offset")
+        .map(plan::parse_crew_offset)
+        .transpose()
+        .map_err(ToolError::invalid)
+}
+
+fn set_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
+    let department = a.req("department")?.to_string();
+    let offset = crew_offset_arg(a)?;
+    let e = edit(ctx, a, |s| {
+        plan::set_crew_call(s, &department, offset)?;
+        Ok(())
+    })?;
+    let what = offset.map_or("no call of its own".to_string(), plan::crew_offset_words);
+    Ok(done(
+        &e,
+        &format!("{department}: {what}"),
+        obj(vec![
+            ("department", json!(department)),
+            ("offset", json!(offset)),
+        ]),
+    ))
+}
+
+fn set_day_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
+    let n = a.req_u32("day")?;
+    let department = a.req("department")?.to_string();
+    let offset = crew_offset_arg(a)?;
+    let e = edit(ctx, a, |s| {
+        let (b, sb) = pick(s, a)?;
+        let day = shoot_days(s, b, sb)?
+            .days
+            .iter()
+            .find(|d| d.number == n)
+            .map(|d| d.break_id)
+            .ok_or_else(|| ToolError::not_found(format!("there is no shoot day {n}")))?;
+        plan::set_day_crew_call(s, day, &department, offset)?;
+        Ok(())
+    })?;
+    let what = offset.map_or(
+        "follows the every-day call".to_string(),
+        plan::crew_offset_words,
+    );
+    Ok(done(
+        &e,
+        &format!("{department} on day {n}: {what}"),
+        obj(vec![
+            ("day", json!(n)),
+            ("department", json!(department)),
+            ("offset", json!(offset)),
+        ]),
+    ))
+}
+
+fn set_location_guide(ctx: &Ctx, a: &Args) -> ToolResult {
+    let name = a.req("name")?.to_string();
+    let e = edit(ctx, a, |s| {
+        let old = s.plan.location_guide(&name).cloned().unwrap_or_default();
+        // A map left out stays; given as null, it goes.
+        let map = if a.has("map") {
+            a.str("map").map(str::to_string)
+        } else {
+            old.map
+        };
+        s.plan.set_location_guide(plan::LocationGuide {
+            name: name.clone(),
+            address: a.str("address").map_or(old.address, str::to_string),
+            directions: a.str("directions").map_or(old.directions, str::to_string),
+            map,
+        })?;
+        Ok(s.plan.location_guide(&name).cloned())
+    })?;
+    let g = e.out.clone();
+    Ok(done(
+        &e,
+        &format!("Directions to {} set", quoted(&name)),
+        obj(vec![
+            ("address", json!(g.as_ref().map(|x| x.address.clone()))),
+            (
+                "directions",
+                json!(g.as_ref().map(|x| x.directions.clone())),
+            ),
+            ("map", json!(g.and_then(|x| x.map))),
+        ]),
+    ))
+}
+
+fn set_order_weights(ctx: &Ctx, a: &Args) -> ToolResult {
+    let e = edit(ctx, a, |s| {
+        let w = if a.opt_bool("reset").unwrap_or(false) {
+            None
+        } else {
+            let was = s.plan.order_weights();
+            Some(OrderWeights {
+                cast_day: a.u32("cast_day").unwrap_or(was.cast_day),
+                location_change: a.u32("location_change").unwrap_or(was.location_change),
+                day_night_switch: a.u32("day_night_switch").unwrap_or(was.day_night_switch),
+                red_flag_clash: a.u32("red_flag_clash").unwrap_or(was.red_flag_clash),
+                long_day_hour: a.u32("long_day_hour").unwrap_or(was.long_day_hour),
+            })
+        };
+        s.plan.set_order_weights(w)?;
+        Ok(s.plan.order_weights())
+    })?;
+    let w = e.out;
+    Ok(done(
+        &e,
+        "Strip order weights set",
+        obj(vec![
+            ("cast_day", json!(w.cast_day)),
+            ("location_change", json!(w.location_change)),
+            ("day_night_switch", json!(w.day_night_switch)),
+            ("red_flag_clash", json!(w.red_flag_clash)),
+            ("long_day_hour", json!(w.long_day_hour)),
+        ]),
+    ))
+}
+
+fn rename_draft(ctx: &Ctx, a: &Args) -> ToolResult {
+    let color = a.req("color")?.to_string();
+    let name = a.req("name")?.to_string();
+    let e = edit(ctx, a, |s| {
+        s.plan.rename_draft(&color, &name)?;
+        Ok(())
+    })?;
+    Ok(done(
+        &e,
+        &format!("The {color} draft is now {}", name.trim()),
+        obj(vec![("color", json!(name.trim()))]),
+    ))
+}
+
 fn set_location(ctx: &Ctx, a: &Args) -> ToolResult {
     let name = a.req("name")?.to_string();
     if a.opt_bool("remove").unwrap_or(false) {
@@ -764,17 +1036,25 @@ fn set_location(ctx: &Ctx, a: &Args) -> ToolResult {
         .map(parse_daylight_saving)
         .transpose()
         .map_err(ToolError::invalid)?;
+    let typed_periods = a
+        .str("offsets")
+        .map(plan::parse_offset_periods)
+        .transpose()
+        .map_err(ToolError::invalid)?;
     let e = edit(ctx, a, |s| {
         // Left out, the location keeps its rule (decision 193).
         let daylight_saving = match rule {
             Some(r) => r,
             None => s.plan.location(&name).and_then(|l| l.daylight_saving),
         };
-        // Periods of its own offset (decision 244) are kept as they were.
-        let periods = s
-            .plan
-            .location(&name)
-            .map_or_else(Vec::new, |l| l.periods.clone());
+        // Periods of its own offset (decision 244) stay unless given.
+        let periods = match &typed_periods {
+            Some(p) => p.clone(),
+            None => s
+                .plan
+                .location(&name)
+                .map_or_else(Vec::new, |l| l.periods.clone()),
+        };
         s.plan.set_location(GeoLocation {
             name: name.clone(),
             latitude: lat,
@@ -922,6 +1202,82 @@ fn apply_suggested(ctx: &Ctx, a: &Args) -> ToolResult {
 mod tests {
     use super::super::super::tests::Fixture;
     use serde_json::json;
+
+    #[test]
+    fn the_plan_setters_on_a_schedule() {
+        let mut f = Fixture::new("plan-setters", false);
+        let p = "film.mtsc";
+        let rev = f.rev(p);
+        f.ok(
+            "auto_day_breaks",
+            json!({"path": p, "revision": rev, "by": "eighths", "limit": 24}),
+        );
+        let rev = f.rev(p);
+        let r = f.ok(
+            "set_crew_call",
+            json!({"path": p, "revision": rev, "department": "Camera", "offset": "-1:30"}),
+        );
+        assert_eq!(r["offset"], -90);
+        let rev = f.rev(p);
+        f.ok(
+            "set_day_crew_call",
+            json!({"path": p, "revision": rev, "day": 1, "department": "Stunts", "offset": "+0:45"}),
+        );
+        let rev = f.rev(p);
+        let c = f.ok("call_sheet", json!({"path": p, "day": 1}));
+        let crew = c["sheet"]["crew"]
+            .as_array()
+            .or(c["crew"].as_array())
+            .unwrap();
+        assert_eq!(crew.len(), 2, "{c}");
+        f.ok(
+            "set_location",
+            json!({"path": p, "revision": rev, "name": "Pier", "latitude": "34.05", "longitude": "-118.24",
+                   "offsets": "2027-02-07 to 2027-03-14 +00:00"}),
+        );
+        let rev = f.rev(p);
+        let g = f.ok(
+            "set_location_guide",
+            json!({"path": p, "revision": rev, "name": "Pier", "address": "1 Harbor Road", "map": "images/pier.png"}),
+        );
+        assert_eq!(g["map"], "images/pier.png");
+        // A part left out stays; a null map goes.
+        let rev = f.rev(p);
+        let g = f.ok(
+            "set_location_guide",
+            json!({"path": p, "revision": rev, "name": "Pier", "directions": "Left at the gate.", "map": null}),
+        );
+        assert_eq!(g["address"], "1 Harbor Road");
+        assert!(g["map"].is_null());
+        let l = f.ok("locations", json!({"path": p}));
+        let pier = l["locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|x| x["name"] == "Pier")
+            .unwrap();
+        assert_eq!(pier["directions"], "Left at the gate.");
+        assert!(pier["offsets"].as_str().unwrap().contains("2027-02-07"));
+        let rev = f.rev(p);
+        let w = f.ok(
+            "set_order_weights",
+            json!({"path": p, "revision": rev, "cast_day": 9}),
+        );
+        assert_eq!(
+            (w["cast_day"].as_u64(), w["red_flag_clash"].as_u64()),
+            (Some(9), Some(20))
+        );
+        assert_eq!(
+            f.ok("suggest_order", json!({"path": p}))["before"]["long_day_hours"],
+            0
+        );
+        let rev = f.rev(p);
+        let w = f.ok(
+            "set_order_weights",
+            json!({"path": p, "revision": rev, "reset": true}),
+        );
+        assert_eq!(w["cast_day"], 4);
+    }
 
     #[test]
     fn the_beyond_tools_on_a_schedule() {
