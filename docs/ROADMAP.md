@@ -125,11 +125,6 @@ schedule.
 
 | Item | Size | Refs |
 |---|---|---|
-| A signed and notarized `.app` and `.dmg`: the company's Developer ID is on the owner's Mac and `scripts/release-mac.sh` builds, signs and verifies (D196); notarizing waits for the owner's one-time `notarytool store-credentials method-schedule-notary` profile | S | D196, APP.md "Updates and releases" |
-| The auto-updater: built, with the owner's public key (D213, D214); still the owner's: `TAURI_SIGNING_PRIVATE_KEY` and its password in the repository's secrets, the repository public, and a first published release | S | D197, D213, D214, APP.md |
-| The release workflow: `release.yml` drafts a release with unsigned builds for all three systems on a tag, signing steps skipped until secrets exist (D196); still to add: the update manifest, and signing secrets when the owner wants CI to sign | S | `.github/workflows/release.yml` |
-| Release notes on the site's release page, written from the decisions since the last tag | S | WEBSITE.md |
-| The website: live on methodschedule.com through the suite website (decision 209); the repository public with Discussions (decision 216), help through GitHub with no email address of our own (WEBSITE.md), the security policy from the organization's `.github` repository: done | S | WEBSITE.md |
 | Crash recovery in the real window: run `scripts/crash-check.sh` in a screen block (the saving code is tested, D200) | S | APP.md "Saving and recovery" |
 
 **Exit**: a signed build installs on a clean Mac without warnings, updates itself to the
@@ -146,7 +141,8 @@ owner, 2026-10-18; D222). The plan, the crate map and every command by kind are 
 
 | Item | Size | Refs |
 |---|---|---|
-| The web smoke test in CI: `cargo xtask web --smoke` in the weekly build, after the process freeze ends on 2026-11-02 (CI changes wait until then) | S | phase 2 |
+
+Done: the web smoke test in the weekly build (2026-11-06; its first run is the next Monday's).
 
 Done: the plan brought up to date (wasm check, seams, every command mapped), and the
 crate itself with Method Budget's injected clock and `cargo xtask wasm-check` in CI, which
@@ -179,7 +175,7 @@ list for 0.5.0, when the website's sync builds it. The web refactor that closed 
 command has one body, in `method_schedule_session::commands`, which the desktop's Tauri
 commands and the browser host both call (#90), and the file commands share their
 file-free halves (#91), so the generated copy of the desktop's bodies and its script are
-gone. Left, waiting on the process freeze (2026-11-02): the smoke test in the weekly build.
+gone.
 
 Not in this milestone: moving the CLI and MCP server onto the session (Method Budget's
 cli-through-session); both keep working as they are.
@@ -216,8 +212,6 @@ automatically on both, and by hand on Linux eventually. Windows hand tests are d
 
 | Item | Size | Refs |
 |---|---|---|
-| Builds and installers: the NSIS setup on Windows, AppImage and `.deb` on Linux, under version-free names (built unsigned by `release.yml`, D196, D210); Windows ships unsigned for the first alpha, SmartScreen warning accepted | M | D196, D210 |
-| CI: Linux app builds in the weekly full build (`platforms.yml` builds and tests all three systems every Monday since 2026-10-19, ArtCraft-style; release.yml builds the installers) | S | `.github/workflows/platforms.yml` |
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
 | Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |
 | Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, or after the process freeze `deny.toml` checks per target and the plugin goes in for Windows alone. The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
