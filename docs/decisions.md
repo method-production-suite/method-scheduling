@@ -5936,8 +5936,10 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   signs the real file and checks it before anything uploads. Reader's workflow is the model.
 - **Beside the key only the prebuilt `cargo-tauri` runs** (`scripts/sign-file.sh`); the check
   (`scripts/verify-file.sh`) is minisign itself, with the public key from `tauri.conf.json`
-  and no secret in its step. The Tauri CLI writes its signature in base64, so the script decodes it
+  and no secret in its step. minisign is a pinned release checked by digest
+  (`scripts/install-minisign.sh`), since the same runner later holds the key and the write
+  token. The check also refuses a legacy signature, as the launcher does (MReview, #140). The Tauri CLI writes its signature in base64, so the script decodes it
   to what minisign reads.
 - **Tried in a container** with a throwaway key: signed and verified by minisign; no key, a wrong
-  password and a changed file each failed. xtask's `release_workflow` test holds the order and
+  password, a changed file and a legacy signature each failed. xtask's `release_workflow` test holds the order and
   that no step can be skipped. The first real run is the next rehearsal.

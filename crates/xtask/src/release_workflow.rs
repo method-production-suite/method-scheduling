@@ -118,6 +118,14 @@ fn the_release_signs_its_checksums() {
     ] {
         assert!(!s.contains("if:"), "a signing step can't be skipped: {s}");
     }
+    // The jobs that hold the key take nothing unpinned from a package archive.
+    for job in ["draft", "signing-probe"] {
+        assert!(
+            !steps(job).iter().any(|s| s.contains("apt-get")),
+            "{job} installs from a package archive"
+        );
+        assert!(at(job, "scripts/install-minisign.sh") < at(job, "scripts/sign-file.sh"));
+    }
     assert!(
         workflow.contains("needs: [check, signing-probe]"),
         "the build waits for the probe"
