@@ -156,6 +156,7 @@
     import_layouts: { accept: '.mtlayouts,.json' },
     add_element_image: { accept: PICTURE },
     add_sheet_image: { accept: PICTURE },
+    add_location_map: { accept: PICTURE },
   };
 
   // Desktop commands the page asks at start-up or in passing: answered as "nothing there"

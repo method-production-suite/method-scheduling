@@ -150,6 +150,16 @@ function parseOffsets(text) {
   return out.map((p) => (p.from === p.to ? `${p.from} ${offsetText(p.offset)}` : `${p.from} to ${p.to} ${offsetText(p.offset)}`)).join('; ');
 }
 
+/** A location's guide (decision 245): empty when it has none, added when `add` asks. */
+function guideOf(plan, name, add = false) {
+  plan.guides = plan.guides || [];
+  const found = plan.guides.find((g) => sameName(g.name, name));
+  if (found) return found;
+  const g = { name, address: '', directions: '', map: '' };
+  if (add) plan.guides.push(g);
+  return g;
+}
+
 /** As src/plan.rs place_location_with: both degrees or neither, an empty offset from the longitude; `offsets` undefined keeps them. */
 export function placeLocation(plan, name, latitude, longitude, utcOffset, daylightSaving = '', offsets = undefined) {
   const lat = String(latitude).trim();
@@ -431,12 +441,32 @@ export function planFakes(ctx) {
           utc_offset: g ? offsetText(g.utc_offset) : '',
           daylight_saving: g && g.daylight_saving ? g.daylight_saving : '',
           offsets: g ? g.offsets || '' : '',
+          address: guideOf(plan, name).address,
+          directions: guideOf(plan, name).directions,
+          map: guideOf(plan, name).map,
         };
       });
     },
     set_location: ({ name, latitude, longitude, utc_offset, daylight_saving, offsets }) => {
       return planEdit((m, plan) => placeLocation(plan, name, latitude, longitude, utc_offset, daylight_saving, offsets));
     },
+    // How to get to a location (decision 245); the fake picks images/<name>-map.png.
+    set_location_guide: ({ name, address, directions }) => {
+      return planEdit((m, plan) => {
+        Object.assign(guideOf(plan, name, true), { address: address.trim(), directions: directions.trim() });
+      });
+    },
+    add_location_map: ({ name }) => {
+      return planEdit((m, plan) => {
+        guideOf(plan, name, true).map = `images/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-map.png`;
+      });
+    },
+    remove_location_map: ({ name }) => {
+      return planEdit((m, plan) => {
+        guideOf(plan, name, true).map = '';
+      });
+    },
+    location_map: ({ name }) => (guideOf(planOf(model()), name).map ? 'data:image/gif;base64,R0lGODlhAQABAIAAAMzMzP///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==' : null),
     // As changes.rs review_view (decision 238): two conflicts kept from a merge, the first
     // on a category still there (a link), the second on a sheet since deleted.
     conflicts_data: () => {
@@ -600,6 +630,16 @@ export function planFakes(ctx) {
         ],
         elements: [{ category: 5, name: 'Hand props', elements: [{ element: 9, board_id: '', name: 'Logbook', scenes: ['5'] }] }],
         crew: crewOn(planOf(model()), sb.days[day - 1].end.id).map((c) => ({ department: c.department, offset: crewText(c.offset), offset_minutes: c.offset, call: clockText(420 + c.offset), call_minutes: 420 + c.offset, this_day_only: c.thisDay })),
+        places: [
+          {
+            name: 'Harbor',
+            latitude: '41.5000',
+            longitude: '-71.3000',
+            address: guideOf(planOf(model()), 'Harbor').address,
+            directions: guideOf(planOf(model()), 'Harbor').directions,
+            map: guideOf(planOf(model()), 'Harbor').map || null,
+          },
+        ],
         notes: ['Company move to Gull Point, 09:20, 30 minutes.', 'Scene 9 is exterior dusk: shoot before sunset at 18:19.'],
         advance: day < sb.days.length
           ? [{ day: day + 1, date: '2026-10-21', call: '07:00', call_minutes: 420, eighths: 11, pages: '1 3/8', scenes: [sc('3A', 'INT/EXT', "KIT'S TRUCK", 'DAY', '1/8', ['1'], null, null, ''), sc('7', 'INT', 'NET LOFT', 'NIGHT', '1 2/8', ['1', '4'], null, null, '')] }]

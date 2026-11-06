@@ -3,7 +3,9 @@
 //! every other element by category, sunrise and sunset, and notes. Data only: a designed
 //! call sheet is made elsewhere from the JSON or CSV (method_schedule_format::callsheet).
 
-use crate::model::{BoardId, CategoryId, ElementId, Error, Schedule, SheetId, SubBoardId};
+use crate::model::{
+    same_name, BoardId, CategoryId, ElementId, Error, Schedule, SheetId, SubBoardId,
+};
 use crate::plan::{clock_text, hours_text};
 use crate::reports::id_order;
 use crate::solar::Sun;
@@ -83,6 +85,19 @@ pub struct CallCrew {
     pub this_day: bool,
 }
 
+/// Where a location of the day is and how to get there (decision 245).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CallPlace {
+    /// As the day's first scene there has it.
+    pub name: String,
+    /// Millionths of a degree, when the location is on the map.
+    pub position: Option<(i32, i32)>,
+    pub address: String,
+    pub directions: String,
+    /// The stored path of the map picture.
+    pub map: Option<String>,
+}
+
 /// How many shoot days after the call sheet's the advance schedule covers.
 pub const ADVANCE_DAYS: usize = 2;
 
@@ -110,6 +125,8 @@ pub struct CallSheet {
     pub cast: Vec<CallCast>,
     /// Each crew department's call, in the order the schedule keeps them.
     pub crew: Vec<CallCrew>,
+    /// The day's locations in shooting order, those with a position or directions.
+    pub places: Vec<CallPlace>,
     /// Categories other than the cast, in schedule order, those with elements today.
     pub elements: Vec<CallCategory>,
     /// Banners (with their times), events on the date, and the timeline's warnings.
@@ -166,6 +183,30 @@ fn call_scene(
             h.shoot_time.map(|m| m.0)
         },
     }
+}
+
+/// Each location of the scenes once, first seen first, with what the plan knows of it.
+fn day_places(s: &Schedule, scenes: &[CallScene]) -> Vec<CallPlace> {
+    let mut out: Vec<CallPlace> = Vec::new();
+    for x in scenes {
+        let name = x.location.trim();
+        if name.is_empty() || out.iter().any(|p| same_name(&p.name, name)) {
+            continue;
+        }
+        let position = s.plan.location(name).map(|l| (l.latitude, l.longitude));
+        let guide = s.plan.location_guide(name);
+        if position.is_none() && guide.is_none() {
+            continue;
+        }
+        out.push(CallPlace {
+            name: name.to_string(),
+            position,
+            address: guide.map_or(String::new(), |g| g.address.clone()),
+            directions: guide.map_or(String::new(), |g| g.directions.clone()),
+            map: guide.and_then(|g| g.map.clone()),
+        });
+    }
+    out
 }
 
 /// A later day's scenes in brief (decision 232).
@@ -348,6 +389,7 @@ pub fn call_sheet(
     }
     let place = |c: CategoryId| s.categories.iter().position(|x| x.id == c);
     by_cat.sort_by_key(|c| place(c.category));
+    let places = day_places(s, &scenes);
     Ok(CallSheet {
         title: s.title.clone(),
         company: s.production.company.clone(),
@@ -366,6 +408,7 @@ pub fn call_sheet(
         sun: t.sun.map(|x| x.sun),
         scenes,
         cast,
+        places,
         crew: s
             .plan
             .crew_on(t.day)
@@ -387,6 +430,55 @@ pub fn call_sheet(
 mod tests {
     use super::*;
     use crate::timeline::tests::la;
+
+    #[test]
+    fn the_days_places_are_its_locations_with_something_known() {
+        let (mut s, b, sb) = la();
+        let names = ["Pier", "pier", "Mill", "Nowhere", ""];
+        for (h, n) in s.sheets.iter_mut().zip(names.iter().cycle()) {
+            h.location = (*n).to_string();
+        }
+        s.plan
+            .set_location(crate::plan::GeoLocation {
+                name: "PIER".into(),
+                latitude: 34_052_200,
+                longitude: -118_243_700,
+                utc_offset: -420,
+                daylight_saving: None,
+                periods: Vec::new(),
+            })
+            .unwrap();
+        s.plan
+            .set_location_guide(crate::plan::LocationGuide {
+                name: "mill".into(),
+                directions: "Left at the weir.".into(),
+                map: Some("images/mill.png".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        let all: Vec<CallPlace> = (1..=timelines(&s, b, sb).unwrap().len() as u32)
+            .flat_map(|d| call_sheet(&s, b, sb, d).unwrap().places)
+            .collect();
+        let pier = all.iter().find(|p| p.name.eq_ignore_ascii_case("pier"));
+        assert_eq!(pier.unwrap().position, Some((34_052_200, -118_243_700)));
+        assert_eq!(pier.unwrap().address, "");
+        // Each day lists a location once, and one nothing is known of not at all.
+        for d in 1..=timelines(&s, b, sb).unwrap().len() as u32 {
+            let c = call_sheet(&s, b, sb, d).unwrap();
+            let piers = c
+                .places
+                .iter()
+                .filter(|p| p.name.eq_ignore_ascii_case("pier"));
+            assert!(piers.count() <= 1);
+        }
+        assert!(all
+            .iter()
+            .all(|p| p.name != "Nowhere" && !p.name.is_empty()));
+        if let Some(mill) = all.iter().find(|p| p.name == "Mill") {
+            assert_eq!(mill.position, None);
+            assert_eq!(mill.map.as_deref(), Some("images/mill.png"));
+        }
+    }
 
     #[test]
     fn a_days_call_sheet() {

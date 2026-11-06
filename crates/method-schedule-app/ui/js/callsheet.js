@@ -5,7 +5,7 @@
 // the day's length and pages, sunrise and sunset. Then the scenes in shooting order with
 // their clock times, the cast with when they are on set, the crew calls by department, the
 // other elements by category, the notes and the next days in brief. Only what the schedule
-// holds: no weather or map (CALLSHEET.md, "Not included").
+// holds: no weather, and a map only as the picture chosen for a location (entry 245).
 //
 // Text goes in through textContent only (dom.js); no inline styles (print.css, .cs-*).
 
@@ -78,6 +78,26 @@ function setCell(s) {
   );
 }
 
+/** Where a location is: its name and position, then the address, directions and map. */
+function placeRow(p) {
+  const position = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : '';
+  return row(
+    el(
+      'tr',
+      {},
+      el('td', { class: 'cs-place' }, el('strong', { text: p.name }), position ? el('span', { class: 'cs-sub', text: position }) : null),
+      el(
+        'td',
+        { class: 'cs-where' },
+        p.address ? el('span', { class: 'cs-sub', text: p.address }) : null,
+        p.directions ? el('span', { class: 'cs-sub', text: p.directions }) : null,
+        p.map_url ? el('img', { class: 'cs-map', attrs: { src: p.map_url, alt: `Map of ${p.name}` } }) : null,
+        p.map && !p.map_url ? el('span', { class: 'cs-sub muted', text: `Map not found: ${p.map}` }) : null,
+      ),
+    ),
+  );
+}
+
 /** The report.js flows for a call sheet. */
 export function callSheetFlows(d) {
   const scenes = d.scenes || [];
@@ -85,6 +105,7 @@ export function callSheetFlows(d) {
   const crew = d.crew || [];
   const cats = (d.elements || []).filter((c) => (c.elements || []).length);
   const notes = d.notes || [];
+  const places = d.places || [];
   const advance = (d.advance || []).filter((a) => (a.scenes || []).length);
   const flows = [
     {
@@ -99,6 +120,17 @@ export function callSheetFlows(d) {
         : [row(el('tr', { class: 'rpt-empty' }, td('No scenes on this day.', '', 7)))],
     },
   ];
+  // Where the day's locations are (entry 245), before who is called to them.
+  if (places.length) {
+    flows.push({
+      name: 'Locations',
+      cls: 'cs-places',
+      cols: ['cs-c-place', 'cs-c-where'],
+      head: null,
+      intro: title('Locations'),
+      rows: places.map(placeRow),
+    });
+  }
   if (cast.length) {
     flows.push({
       name: 'Cast',

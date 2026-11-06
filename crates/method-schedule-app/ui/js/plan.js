@@ -299,7 +299,7 @@ export function planCommands(ctx) {
         );
         dst.value = l.daylight_saving;
         // Dates with an offset of their own, typed from the year's announcement (entry 244).
-        const own = textInput(l.offsets || '', 'pl-name');
+        const own = textInput(l.offsets || '', 'pl-address');
         own.placeholder = '2027-02-07 to 2027-03-14 +00:00';
         own.setAttribute('aria-label', `Dates with another UTC offset at ${l.name}`);
         lat.setAttribute('aria-label', `Latitude of ${l.name}`);
@@ -327,14 +327,66 @@ export function planCommands(ctx) {
         for (const i of [lat, lon, off, own]) i.addEventListener('keydown', (e) => e.key === 'Enter' && set());
         // A rule picked for a place already on the map is set at once.
         dst.addEventListener('change', () => lat.value.trim() && lon.value.trim() && set());
-        return el('tr', {}, el('td', { text: l.name }), el('td', { class: 'n', text: String(l.sheets) }), el('td', {}, lat), el('td', {}, lon), el('td', {}, off), el('td', {}, dst), el('td', {}, own), el('td', {}, button('Set', set, 'btn btn-mini')));
-      });
+        // How to get there (entry 245): a row of its own under the location, opened by its button.
+        const address = textInput(l.address || '', 'pl-address');
+        address.setAttribute('aria-label', `Address of ${l.name}`);
+        const directions = el('textarea', { class: 'pl-directions', attrs: { rows: '3', 'aria-label': `Directions to ${l.name}` } });
+        directions.value = l.directions || '';
+        const mapName = el('span', { class: 'pl-map-name' });
+        let map = l.map || '';
+        const drawMap = () => {
+          mapName.textContent = map || 'No map picture';
+          removeMap.hidden = !map;
+        };
+        const reread = async () => {
+          const back = (await invoke('locations_data')).find((x) => x.name === l.name);
+          map = back ? back.map : '';
+          later(drawMap);
+        };
+        const removeMap = button(
+          'Remove',
+          async () => {
+            if (await edit(invoke('remove_location_map', { name: l.name }), error)) await reread();
+          },
+          'btn btn-mini',
+        );
+        const addMap = button(
+          'Choose Picture…',
+          async () => {
+            if (await edit(invoke('add_location_map', { name: l.name }), error)) await reread();
+          },
+          'btn btn-mini',
+        );
+        const setGuide = () => edit(invoke('set_location_guide', { name: l.name, address: address.value, directions: directions.value }), error);
+        address.addEventListener('keydown', (e) => e.key === 'Enter' && setGuide());
+        // The row under the location holds what most don't need, so the table stays narrow.
+        const setDetails = async () => {
+          if (await setGuide()) await set();
+        };
+        const guideRow = el(
+          'tr',
+          { class: 'pl-guide' },
+          el(
+            'td',
+            { attrs: { colspan: '7' } },
+            el('label', { class: 'pl-guide-line' }, el('span', { text: 'Other offsets' }), own),
+            el('label', { class: 'pl-guide-line' }, el('span', { text: 'Address' }), address),
+            el('label', { class: 'pl-guide-line' }, el('span', { text: 'Directions' }), directions),
+            el('div', { class: 'pl-guide-line' }, el('span', { text: 'Map' }), mapName, addMap, removeMap, button('Set', setDetails, 'btn btn-mini')),
+          ),
+        );
+        guideRow.hidden = true;
+        drawMap();
+        const held = l.offsets || l.address || l.directions || l.map;
+        const open = button(held ? 'Details (set)' : 'Details', () => (guideRow.hidden = !guideRow.hidden), 'btn btn-mini');
+        return [el('tr', {}, el('td', { text: l.name }), el('td', { class: 'n', text: String(l.sheets) }), el('td', {}, lat), el('td', {}, lon), el('td', {}, off), el('td', {}, dst), el('td', { class: 'pl-row-actions' }, button('Set', set, 'btn btn-mini'), open)), guideRow];
+      }).flat();
       return box(
         'Locations',
         'pl-loc',
-        el('p', { class: 'modal-message', text: 'Degrees as 34.0522 and -118.2437 (or 118.2437W); the UTC offset as -7 or +5:30 (empty: from the longitude): the standard one with a daylight saving rule, which adds an hour in summer, else the one on the shoot dates. Where the clocks follow a lunar calendar or a decree, type the year’s dates with their offset under Other offsets, as 2027-02-07 to 2027-03-14 +00:00, several split by semicolons; they win over the rule. Clear both degrees to take a location off the map.' }),
+        el('p', { class: 'modal-message', text: 'Degrees as 34.0522 and -118.2437 (or 118.2437W); the UTC offset as -7 or +5:30 (empty: from the longitude): the standard one with a daylight saving rule, which adds an hour in summer, else the one on the shoot dates. Where the clocks follow a lunar calendar or a decree, type the year’s dates with their offset under Details, Other offsets, as 2027-02-07 to 2027-03-14 +00:00, several split by semicolons; they win over the rule. Clear both degrees to take a location off the map. Details also holds an address, directions and a map picture you choose for the call sheet; nothing is fetched from the internet.' }),
         error,
-        table(['Location', 'Sheets', 'Latitude', 'Longitude', 'UTC offset', 'Daylight saving', 'Other offsets', ''], rows),
+        table(['Location', 'Sheets', 'Latitude', 'Longitude', 'UTC offset', 'Daylight saving', ''], rows),
         el('div', { class: 'modal-actions' }, closeButton(close)),
       );
     });
@@ -689,6 +741,23 @@ export function planCommands(ctx) {
     if (!how) return;
     try {
       const data = await invoke('call_sheet_data', { sub_board: sub, day: Number(pick.value) });
+      // The map pictures, read and decoded before the page is laid out (entry 245).
+      await Promise.all(
+        (data.places || [])
+          .filter((p) => p.map)
+          .map(async (p) => {
+            try {
+              const url = await invoke('location_map', { name: p.name });
+              if (!url) return;
+              const image = new Image();
+              image.src = url;
+              await image.decode();
+              p.map_url = url;
+            } catch {
+              // The sheet says the map wasn't found, and still prints.
+            }
+          }),
+      );
       const r = await printPages((root) => layout(root, callSheetFlows(data), callSheetOpts(data)), { pdf: how === 'pdf', title: callSheetJob(data), subject: 'Call sheet' });
       if (r && r.file) ctx.say(`Saved ${r.file}.`);
     } catch (e) {

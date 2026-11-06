@@ -136,7 +136,7 @@ working formulas.
 
 The Plan menu has the planning tools: script revisions and the drafts they recorded (each
 with its color, date and changed scenes), the Day Timeline (call to wrap, sunrise and
-sunset, and each person's own call and wrap), map places for locations, turnarounds and
+sunset, and each person's own call and wrap), map places for locations with an address, directions and a map picture you choose, turnarounds and
 rest, crew calls (each department's call before or after the company's, set once for every
 shoot day, and in the Day Timeline for one day only), call sheets (printed, saved as a PDF, or as data), schedule locks and a
 suggested strip order.

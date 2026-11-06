@@ -293,6 +293,73 @@ pub fn conflicts_data(state: Doc) -> CmdResult<Vec<method_schedule_session::chan
     method_schedule_session::commands::plan::conflicts_data(&*state)
 }
 
+/// A location's address and directions (decision 245).
+#[tauri::command]
+pub fn set_location_guide<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    name: String,
+    address: String,
+    directions: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::set_location_guide(
+        &crate::app::Win(&window),
+        &*state,
+        name,
+        address,
+        directions,
+    )
+}
+
+/// Shows an Open dialog for a location's map picture, and stores its path as an element's
+/// images are. `None` when cancelled.
+#[tauri::command]
+pub async fn add_location_map<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    name: String,
+) -> CmdResult<Option<View>> {
+    let doc = state.lock().path().map(std::path::PathBuf::from);
+    let Some(path) = crate::elements::pick_image(&window, "Choose a map picture", doc.as_deref())?
+    else {
+        return Ok(None);
+    };
+    let stored = crate::elements::stored_image_path(doc.as_deref(), &path);
+    let mut s = state.lock();
+    s.edit(|x| method_schedule_session::plan::set_guide_map(x, &name, Some(stored)))?;
+    finish(&window, &s, None).map(Some)
+}
+
+/// Takes a location's map picture off; the file stays where it is.
+#[tauri::command]
+pub fn remove_location_map<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    name: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::remove_location_map(
+        &crate::app::Win(&window),
+        &*state,
+        name,
+    )
+}
+
+/// A location's map picture as a `data:` URL, or `None` with no map or when the file is
+/// missing or unreadable. Async, and the file is read with the lock let go.
+#[tauri::command]
+pub async fn location_map(state: Doc, name: String) -> CmdResult<Option<String>> {
+    let (stored, doc) = {
+        let s = state.lock();
+        let stored = s
+            .schedule()
+            .plan
+            .location_guide(&name)
+            .and_then(|g| g.map.clone());
+        (stored, s.path().map(std::path::PathBuf::from))
+    };
+    Ok(stored.and_then(|m| crate::elements::read_image(doc.as_deref(), &m)))
+}
+
 #[tauri::command]
 pub fn locations_data(state: Doc) -> CmdResult<Vec<LocationDto>> {
     method_schedule_session::commands::plan::locations_data(&*state)

@@ -1466,6 +1466,24 @@ impl M<'_> {
                     )
                 },
             ),
+            location_guides: merge_keyed(
+                cx,
+                "plan:location_guide",
+                &b.location_guides,
+                &o.location_guides,
+                &t.location_guides,
+                |g| fold(&g.name),
+                |g| format!("Directions to {}", quoted(&g.name)),
+                |g| {
+                    let map = g.map.as_ref().map(|m| format!("map {m}"));
+                    [Some(g.address.clone()), Some(g.directions.clone()), map]
+                        .into_iter()
+                        .flatten()
+                        .filter(|x| !x.is_empty())
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                },
+            ),
             call_times: merge_keyed(
                 cx,
                 "plan:call_time",
@@ -4180,6 +4198,39 @@ pub(crate) mod tests {
         assert!(p.crew_calls.len() <= MAX_CREW_CALLS);
         assert_eq!(m.schedule.title, "Retitled", "theirs' other change kept");
         assert_eq!(m.fallbacks.len(), 2, "{:?}", m.fallbacks);
+        assert!(m.schedule.check().is_ok());
+    }
+
+    #[test]
+    fn location_guides_merge_by_name() {
+        use crate::plan::LocationGuide;
+        let guide = |name: &str, address: &str| LocationGuide {
+            name: name.into(),
+            address: address.into(),
+            ..LocationGuide::default()
+        };
+        let b = one_scene();
+        let mut o = b.clone();
+        o.plan
+            .set_location_guide(guide("Pier", "1 Harbor Road"))
+            .unwrap();
+        let mut t = b.clone();
+        t.plan
+            .set_location_guide(guide("Mill", "2 Weir Lane"))
+            .unwrap();
+        // Different locations: both kept.
+        let m = merge(&b, &o, &t);
+        assert_eq!(m.schedule.plan.location_guides.len(), 2);
+        assert!(m.conflicts.is_empty(), "{:?}", m.conflicts);
+        // The same one told apart only by the case of its name: one conflict, one entry.
+        let mut t = b.clone();
+        t.plan
+            .set_location_guide(guide("PIER", "9 Quay Street"))
+            .unwrap();
+        let m = merge(&b, &o, &t);
+        assert_eq!(m.conflicts.len(), 1);
+        assert_eq!(m.conflicts[0].key, "plan:location_guide:pier");
+        assert_eq!(m.schedule.plan.location_guides.len(), 1);
         assert!(m.schedule.check().is_ok());
     }
 

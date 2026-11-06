@@ -6,7 +6,7 @@
 use serde_json::{json, Value};
 
 use method_schedule_core::callsheet::{CallScene, CallSheet};
-use method_schedule_core::plan::{clock_text, crew_offset_text, crew_offset_words};
+use method_schedule_core::plan::{clock_text, crew_offset_text, crew_offset_words, degrees_text};
 use method_schedule_core::solar::Sun;
 
 use crate::export::csv::{self as csvw, Delimiter};
@@ -101,6 +101,16 @@ pub fn to_json(c: &CallSheet) -> String {
             "call": time_text(x.call),
             "this_day_only": x.this_day,
         })).collect::<Vec<_>>(),
+        "places": c.places.iter().map(|x| json!({
+            "name": x.name,
+            "latitude_microdeg": x.position.map(|p| p.0),
+            "longitude_microdeg": x.position.map(|p| p.1),
+            "latitude": x.position.map(|p| degrees_text(p.0)),
+            "longitude": x.position.map(|p| degrees_text(p.1)),
+            "address": x.address,
+            "directions": x.directions,
+            "map": x.map,
+        })).collect::<Vec<_>>(),
         "elements": c.elements.iter().map(|cat| json!({
             "category": cat.category.0,
             "name": cat.name,
@@ -132,8 +142,8 @@ fn opt(m: Option<i32>) -> Cell {
 }
 
 /// The call sheet as tables: Day (field and value), Scenes, Cast, Elements, Notes,
-/// Advance (the next days' scenes, decision 232) and Crew (decision 242), the last two
-/// last so the first tables keep their places.
+/// Advance (the next days' scenes, decision 232), Crew (decision 242) and Places (decision
+/// 245), the last three last so the first tables keep their places.
 pub fn workbook(c: &CallSheet) -> Workbook {
     let (rise, set) = c.sun_text();
     let row = |k: &str, v: Cell| vec![Cell::text(k), v];
@@ -311,9 +321,37 @@ pub fn workbook(c: &CallSheet) -> Workbook {
             })
             .collect(),
     };
+    let places = Sheet {
+        name: "Places",
+        columns: [
+            "Location",
+            "Latitude",
+            "Longitude",
+            "Address",
+            "Directions",
+            "Map",
+        ]
+        .iter()
+        .map(|x| x.to_string())
+        .collect(),
+        rows: c
+            .places
+            .iter()
+            .map(|x| {
+                vec![
+                    Cell::text(x.name.clone()),
+                    Cell::text(x.position.map_or(String::new(), |p| degrees_text(p.0))),
+                    Cell::text(x.position.map_or(String::new(), |p| degrees_text(p.1))),
+                    Cell::text(x.address.clone()),
+                    Cell::text(x.directions.clone()),
+                    Cell::text(x.map.clone().unwrap_or_default()),
+                ]
+            })
+            .collect(),
+    };
     Workbook {
         title: c.title.clone(),
-        sheets: vec![day, scenes, cast, elements, notes, advance, crew],
+        sheets: vec![day, scenes, cast, elements, notes, advance, crew, places],
     }
 }
 
@@ -407,6 +445,36 @@ mod tests {
     }
 
     #[test]
+    fn places_in_the_json_and_the_last_table() {
+        let mut c = one_day();
+        c.places = vec![
+            method_schedule_core::callsheet::CallPlace {
+                name: "Pier".into(),
+                position: Some((34_052_200, -118_243_700)),
+                address: "1 Harbor Road".into(),
+                directions: "Left at the gate,\nthen the shed.".into(),
+                map: Some("images/pier.png".into()),
+            },
+            method_schedule_core::callsheet::CallPlace {
+                name: "Mill".into(),
+                position: None,
+                address: String::new(),
+                directions: "By the weir.".into(),
+                map: None,
+            },
+        ];
+        let j: Value = serde_json::from_str(&to_json(&c)).unwrap();
+        assert_eq!(j["places"][0]["latitude_microdeg"], 34_052_200);
+        assert_eq!(j["places"][0]["map"], "images/pier.png");
+        assert!(j["places"][1]["latitude"].is_null());
+        assert!(j["places"][1]["map"].is_null());
+        let sheets = workbook(&c).sheets;
+        let last = sheets.last().unwrap();
+        assert_eq!(last.name, "Places");
+        assert_eq!(last.rows.len(), 2);
+    }
+
+    #[test]
     fn json_and_csv() {
         let c = one_day();
         let j: Value = serde_json::from_str(&to_json(&c)).unwrap();
@@ -448,7 +516,7 @@ mod tests {
         assert_eq!(j["crew"][0]["offset"], "-1:30");
         assert_eq!(j["crew"][0]["call"], "05:30");
         assert!(
-            csv.ends_with("\r\n\r\nDepartment,Call,From the call,This day only\r\nHair and makeup,05:30,1:30 before the call,\r\n"),
+            csv.contains("\r\n\r\nDepartment,Call,From the call,This day only\r\nHair and makeup,05:30,1:30 before the call,\r\n"),
             "{csv}"
         );
     }

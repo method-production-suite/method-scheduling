@@ -29,7 +29,8 @@ section. Everything else on this page goes ahead without waiting.
   opens on an ordinary folder), the Layouts rename then click, crash recovery in the window
   (`scripts/crash-check.sh`, M2), and in the reference app E-S34 and the two report
   questions. Block 7 passed D219, the Tauri 2.12 window, menus and Save dialog, K184, M192,
-  one-day crew calls, the Red Flag Types rename, and K185 and K187 on screen.
+  one-day crew calls, the Red Flag Types rename, and K185 and K187 on screen. Also a call sheet
+  with a map picture chosen in the real Open dialog and saved as a PDF (D245).
 - **M4's live run**, about fifteen minutes with two computers on one shared folder
   (any sync service): open the same `.mtsc` on both with the network off on one, change
   different things on each (and one thing on both), turn the network back on, and check
@@ -47,6 +48,9 @@ saying it hasn't been tested by a person yet. The Windows hand checks (the same 
 Linux's, plus SmartScreen on the unsigned installer) wait until the owner says otherwise.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
+- **The call sheet's map** (D245): built as a picture you choose for each location, with its
+  address, directions and coordinates, because a map from a map service would mean going
+  online. Recommended and reversible; say if you want a map service as an opt-in instead.
 - **Merge in the browser host** (D226, D239): settled. The web-based conversion asked, so the host now
   takes the base schedule as a file beside theirs (`merge_preview`, `merge_apply`); the
   page in a browser still offers no merge picker of its own.
@@ -246,11 +250,15 @@ through the CLI's `merge-driver` and `git-setup`. What is left is the exit's liv
 
 | Item | Size | Refs |
 |---|---|---|
-| Call sheets beyond the printed sheet (decision 207): a map (the advance schedule came in D232, crew calls by department in D242, for one day only in D243); distribution stays out (BYD-03) | M | CALLSHEET.md, BYD-02 |
 | Auto-schedule improvements: weights people can set, searching beyond the three orders, a day's length in the cost (a cost and three orders since D234; a long day's tail moves to the next day by hand since D192) | M | D75, D234, BYD-06 |
 | Script revision workflow: revision colors on strips (needs a design beside the I/E and day or night colors), picking or renaming a color (each draft's color, date and changes are kept, shown on the Breakdown tab and printed since D233) | M | D69, D233, BYD-01 |
 | Method Budget live link: freeze the exchange at version 1 once Method Budget's first build reads it (owner, 2026-10-15; worked out with Method Budget), then Export for Budget in the app | M | EXCHANGE.md, D197 |
 | Method Production suite site and the family strip, once methodproduction.com is live | S | WEBSITE.md "The family" |
+
+Done: call sheets beyond the printed sheet (decision 207): the advance schedule (D232), crew
+calls by department (D242), for one day only (D243), and directions with a map picture for
+each location (D245, 2026-11-06). Weather would need a service and stays out with
+distribution (BYD-03).
 
 Done: per-person call times (D231, 2026-10-21). The Day Timeline sets each person's own
 call and wrap; the rest checks and the call sheet use them. The call sheet's advance

@@ -111,6 +111,8 @@ pub const COMMANDS: &[&str] = &[
     "set_long_day",
     "locations_data",
     "set_location",
+    "set_location_guide",
+    "remove_location_map",
     "rest_data",
     "set_turnaround",
     "crew_data",
@@ -1978,6 +1980,38 @@ mod plan_cmds {
                     utc_offset,
                     daylight_saving,
                     offsets,
+                ))
+            }
+            "set_location_guide" => {
+                #[derive(Deserialize)]
+                struct A {
+                    name: String,
+                    address: String,
+                    directions: String,
+                }
+                let A {
+                    name,
+                    address,
+                    directions,
+                } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::set_location_guide(
+                    &window, state, name, address, directions,
+                ))
+            }
+            "remove_location_map" => {
+                #[derive(Deserialize)]
+                struct A {
+                    name: String,
+                }
+                let A { name } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::remove_location_map(
+                    &window, state, name,
                 ))
             }
             "rest_data" => {

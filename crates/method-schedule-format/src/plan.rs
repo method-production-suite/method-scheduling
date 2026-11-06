@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use method_schedule_core::model::{BoardId, CategoryId, ElementId, SheetId, StripId, SubBoardId};
 use method_schedule_core::plan::{
-    department_ok, CallTime, CrewCall, DayCrewCall, DayShot, Draft, GeoLocation, Lock, LockedScene,
-    OffsetPeriod, PersonCall, Plan, ReviewConflict, SceneShot, Turnaround, DEFAULT_LONG_DAY,
-    MAX_CREW_CALLS, MAX_CREW_OFFSET, MAX_WRAP,
+    department_ok, guide_ok, CallTime, CrewCall, DayCrewCall, DayShot, Draft, GeoLocation,
+    LocationGuide, Lock, LockedScene, OffsetPeriod, PersonCall, Plan, ReviewConflict, SceneShot,
+    Turnaround, DEFAULT_LONG_DAY, MAX_CREW_CALLS, MAX_CREW_OFFSET, MAX_WRAP,
 };
 use method_schedule_core::Eighths;
 
@@ -50,6 +50,21 @@ pub(crate) struct FilePlan {
     crew_calls: Vec<FileCrewCall>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     day_crew_calls: Vec<FileDayCrewCall>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    location_guides: Vec<FileLocationGuide>,
+}
+
+/// How to get to a location (decision 245).
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FileLocationGuide {
+    name: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    address: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    directions: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    map_image: Option<String>,
 }
 
 /// A department's call on one shoot day only (decision 243).
@@ -239,6 +254,16 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
                 day: x.day.0,
                 department: x.department.clone(),
                 offset_minutes: x.offset,
+            })
+            .collect(),
+        location_guides: p
+            .location_guides
+            .iter()
+            .map(|g| FileLocationGuide {
+                name: g.name.clone(),
+                address: g.address.clone(),
+                directions: g.directions.clone(),
+                map_image: g.map.clone(),
             })
             .collect(),
         drafts: p
@@ -575,6 +600,22 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
             department: x.department,
             offset: x.offset_minutes,
         });
+    }
+    for g in f.location_guides {
+        let g = LocationGuide {
+            name: g.name,
+            address: g.address,
+            directions: g.directions,
+            map: g.map_image,
+        };
+        guide_ok(&g).map_err(bad)?;
+        if p.location_guide(&g.name).is_some() {
+            return Err(bad(format!(
+                "the directions of {:?} are listed twice",
+                g.name
+            )));
+        }
+        p.location_guides.push(g);
     }
     for x in f.person_calls {
         let who = format!("element {} on day {}", x.element, x.day);

@@ -178,6 +178,30 @@ pub fn set_location<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, None)
 }
 
+/// The `set_location_guide` command (decision 245): a location's address and directions.
+pub fn set_location_guide<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    name: String,
+    address: String,
+    directions: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_guide_text(x, &name, &address, &directions))?;
+    finish(&window, &s, None)
+}
+
+/// The `remove_location_map` command: the picture's file stays where it is.
+pub fn remove_location_map<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    name: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| set_guide_map(x, &name, None))?;
+    finish(&window, &s, None)
+}
+
 /// The `rest_data` command.
 pub fn rest_data<D: DocLock + ?Sized>(state: &D, board: u32) -> CmdResult<RestDto> {
     rest_view(state.lock().schedule(), board)

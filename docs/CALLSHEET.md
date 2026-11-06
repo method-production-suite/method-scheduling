@@ -42,6 +42,8 @@ footer. It prints exactly the data below, nothing more (decisions.md, entry 207)
   the map (Plan > Locations...), for the day's date, in that location's local time: its
   UTC offset, an hour more on the dates its daylight saving rule is in effect, or the offset
   of a period typed for that date (decision 244). See decisions.md, BYD-08 and entry 193.
+- **Locations**, each of the day's once: its position, and the address, directions and map
+  picture set under Plan > Locations (decision 245).
 - **Scenes**, in board order: scene number, I/E, set, day or night, pages, cast board IDs
   (names for cast without one), location, synopsis, shoot time, and start and end clock
   times from the running timeline (decisions.md, BYD-04).
@@ -87,12 +89,13 @@ in minutes after midnight (with the same time as `HH:MM` text in a key without
 | `elements` | array | Each category: `category` (id), `name`, `elements` (each `element`, `board_id`, `name`, `scenes`). |
 | `notes` | array of strings | |
 | `advance` | array | The next shoot days of the sub-board, up to two, empty on the last day (decision 232). Each: `day`, `date`, `call`, `call_minutes`, `eighths`, `pages`, `scenes` (each as in the top-level list). |
+| `places` | array | The day's locations in shooting order, each once, those on the map or with directions (decision 245): `name`, `latitude_microdeg`, `longitude_microdeg`, `latitude`, `longitude` (null off the map), `address`, `directions`, `map` (the picture's stored path, null for none). |
 | `crew` | array | Each crew department, in the schedule's order (decision 242): `department`, `offset`, `offset_minutes` (from the call: `-1:30` and -90 before it, `0:00` and 0 with it, `+0:15` and 15 after), `call`, `call_minutes` (null without a call time; below 0 the day before), `this_day_only` (true for a call set for this day alone, decision 243). |
 
 ## CSV
 
 One file, UTF-8 with a byte order mark (so Excel reads accented letters), records ending
-in CRLF. It holds seven tables in turn, each with its own header row and a blank line
+in CRLF. It holds eight tables in turn, each with its own header row and a blank line
 between them:
 
 1. `Field,Value`: Title, Company, Director, Producer, Board, Sub-board, Day (`3 of 20`),
@@ -107,11 +110,14 @@ between them:
 7. `Department,Call,From the call,This day only`: the crew calls, the third column in words
    (`1:30 before the call`, `with the call`; decision 242), the last `yes` for a call set
    for this day alone (decision 243).
+8. `Location,Latitude,Longitude,Address,Directions,Map`: the day's locations with a position
+   or directions (decision 245); the map is the picture's stored path.
 
 Fields are quoted only when they hold a comma, a quote or a line break. Text that a
 spreadsheet would run as a formula gets a leading `'` (as every export of ours does).
 
 ## Not included
 
-A map or directions, weather, and sending the sheet to anyone. Each is a later option;
-distribution needs a service and stays out (BYD-03).
+Weather, a map drawn from map data, and sending the sheet to anyone. A map from a map service
+would mean going online, so a location's map is a picture you choose (decision 245).
+Distribution needs a service and stays out (BYD-03).
