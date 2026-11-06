@@ -762,8 +762,8 @@ pub fn drift_view(s: &Schedule, name: &str) -> Result<DriftDto, String> {
 #[derive(Clone, Debug, Serialize)]
 pub struct ScoreRow {
     pub label: &'static str,
-    pub before: u32,
-    pub after: u32,
+    pub before: u64,
+    pub after: u64,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -780,45 +780,70 @@ pub struct SuggestionDto {
     /// 234), and each rule tried with its cost.
     pub rule: &'static str,
     pub tried: Vec<TriedDto>,
+    /// What each count costs, in the order `set_order_weights` takes them (decision 246).
+    pub weights: Vec<WeightDto>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct WeightDto {
+    pub label: &'static str,
+    pub value: u32,
+    pub standard: u32,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct TriedDto {
     pub rule: &'static str,
-    pub cost: u32,
+    pub cost: u64,
 }
 
-fn rows(a: &Score, b: &Score) -> Vec<ScoreRow> {
+/// Sets what each count costs: cast day, location change, day and night switch, red flag
+/// clash, hour past the long day. Empty goes back to the defaults.
+pub fn set_order_weights(s: &mut Schedule, values: &[u32]) -> Result<(), String> {
+    let w = match values {
+        [] => None,
+        [a, b, c, d, e] => Some(p::OrderWeights::from_values([*a, *b, *c, *d, *e])),
+        _ => return Err("Give all five weights, or none for the defaults.".to_string()),
+    };
+    s.plan.set_order_weights(w).map_err(upper)
+}
+
+fn rows(a: &Score, b: &Score, w: &p::OrderWeights) -> Vec<ScoreRow> {
     vec![
         ScoreRow {
             label: "Shoot days",
-            before: a.shoot_days,
-            after: b.shoot_days,
+            before: a.shoot_days.into(),
+            after: b.shoot_days.into(),
         },
         ScoreRow {
             label: "Cast work days",
-            before: a.cast_days,
-            after: b.cast_days,
+            before: a.cast_days.into(),
+            after: b.cast_days.into(),
         },
         ScoreRow {
             label: "Location changes in a day",
-            before: a.location_changes,
-            after: b.location_changes,
+            before: a.location_changes.into(),
+            after: b.location_changes.into(),
         },
         ScoreRow {
             label: "Day/night switches in a day",
-            before: a.day_night_switches,
-            after: b.day_night_switches,
+            before: a.day_night_switches.into(),
+            after: b.day_night_switches.into(),
         },
         ScoreRow {
             label: "Red flag clashes",
-            before: a.red_flag_clashes,
-            after: b.red_flag_clashes,
+            before: a.red_flag_clashes.into(),
+            after: b.red_flag_clashes.into(),
+        },
+        ScoreRow {
+            label: "Hours past the long day",
+            before: a.long_day_hours.into(),
+            after: b.long_day_hours.into(),
         },
         ScoreRow {
             label: "Cost",
-            before: a.cost(),
-            after: b.cost(),
+            before: a.cost(w),
+            after: b.cost(w),
         },
     ]
 }
@@ -833,13 +858,29 @@ pub fn suggestion_view(s: &Schedule, sub: u32) -> Result<SuggestionDto, String> 
         moved: sug.moved,
         pinned: sug.pinned,
         groups: sug.groups,
-        rows: rows(&sug.before, &sug.after),
+        rows: rows(&sug.before, &sug.after, &sug.weights),
         rule: sug.rule,
         tried: sug
             .tried
             .iter()
             .map(|(rule, cost)| TriedDto { rule, cost: *cost })
             .collect(),
+        weights: [
+            "An actor's day",
+            "A location change in a day",
+            "A day and night switch in a day",
+            "A red flag clash",
+            "An hour past the long day",
+        ]
+        .into_iter()
+        .zip(sug.weights.values())
+        .zip(p::OrderWeights::default().values())
+        .map(|((label, value), standard)| WeightDto {
+            label,
+            value,
+            standard,
+        })
+        .collect(),
     })
 }
 

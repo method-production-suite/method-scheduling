@@ -141,6 +141,7 @@
     "allow-set-person-call",
     "allow-set-day-crew-call",
     "allow-set-location-guide",
+    "allow-set-order-weights",
     "allow-add-location-map",
     "allow-remove-location-map",
     "allow-location-map",

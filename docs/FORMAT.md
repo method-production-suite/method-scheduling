@@ -241,6 +241,7 @@ by the next plan edit; they are never an error.
 | `crew_calls` | array of [crew call](#crew-call) | empty | Each crew department's call against the company's call on every shoot day, in the order added (entry 242). At most 100. |
 | `day_crew_calls` | array of [day crew call](#day-crew-call) | empty | A department's call on one shoot day only: in place of its every-day call that day, or a department called that day alone (entry 243). In the order added; one per department and day, 100 a day at most. |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
+| `order_weights` | object | left out | What each count costs when suggesting a strip order (entry 246): `cast_day`, `location_change`, `day_night_switch`, `red_flag_clash`, `long_day_hour`, all five, each 1000 at most. Left out for the defaults (4, 3, 1, 20, 5), which are never written. |
 | `location_guides` | array of [location guide](#location-guide) | empty | How to get to a location, for the call sheet (entry 245). One per name, without regard to case; the location needn't be on the map. |
 
 #### Location guide

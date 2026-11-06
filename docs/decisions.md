@@ -5863,3 +5863,26 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   `merge::tests::location_guides_merge_by_name`,
   `callsheet::tests::the_days_places_are_its_locations_with_something_known`, and the strict
   reader's and the host's tests cover it.
+
+## 246. Weights, long days and a search for the strip order (2026-11-06)
+
+- **The rest of BYD-06** (ROADMAP M5; the cost and three orders came in decision 234).
+- **Weights people can set**: Suggest Strip Order has a Weights button: an actor's day, a
+  location change, a day and night switch, a red flag clash and an hour past the long day,
+  each a whole number up to 1000; 0 ignores it. Kept with the schedule as `order_weights`,
+  left out at the defaults (4, 3, 1, 20, 5). A production can say a company move is what hurts.
+- **A day's length**: each hour, or part of one, that a day runs past the long day limit
+  costs 5, so a suggestion evens out heavy days. It is a new count in the table. Files with no
+  long days get the costs they had.
+- **Searching beyond the three orders**: from the cheapest order so far, pairs of scenes are
+  swapped while a swap lowers the cost. No randomness, so Apply always finds what the
+  preview showed. At most 2,000,000 swaps are tried, and none past 2000 movable scenes, so a
+  long schedule answers at once. A quick estimate judges each swap (it counts a flagged
+  element per scene, where the report counts each clash once); the result is then scored like
+  any other order and kept only when it really costs less. Named in the dialog as "swapping
+  scenes from the cheapest order". It finds a good order, not the best one.
+- **Merging**: the weights are one value.
+- **Additive in the file**: a file without the key reads and writes back byte for byte; a
+  file using it won't open in 0.7.0 or earlier.
+- `optimize::tests::weights_change_what_is_cheapest_and_are_the_schedules_own` and
+  `a_long_day_costs_and_the_search_evens_it_out` cover it, with the strict reader's tests.

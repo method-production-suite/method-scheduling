@@ -679,17 +679,56 @@ export function planCommands(ctx) {
       box(
         `Suggest Strip Order: ${dto.sub_board_name}`,
         'pl-sug',
-        el('p', { class: 'modal-message', text: 'Three orders are tried: by location then set, by location then day or night then set, and by shared cast. The one that costs least is suggested (an actor’s day costs 4, a location change 3, a day and night switch 1, a red flag clash 20). Day breaks, banners and pinned strips stay where they are. Nothing changes until Apply; Undo takes it back.' }),
+        el('p', { class: 'modal-message', text: `Three orders are tried: by location then set, by location then day or night then set, and by shared cast; then scenes are swapped while that costs less. The cheapest is suggested (${(dto.weights || []).map((w) => `${w.label.toLowerCase()} costs ${w.value}`).join(', ')}). Day breaks, banners and pinned strips stay where they are. Nothing changes until Apply; Undo takes it back.` }),
         el('p', { class: 'pl-head', text: dto.moved ? `By ${dto.rule}: ${dto.moved} scenes would move, ${dto.pinned} stay put (pinned, omitted or spanning days).` : 'No order tried costs less than the one on the board, so nothing would move.' }),
         el('p', { class: 'modal-message', text: `Costs tried: ${(dto.tried || []).map((t) => `${t.rule} ${t.cost}`).join(' · ')}.` }),
         table(
           ['', 'Now', 'Suggested'],
           dto.rows.map((r) => el('tr', { class: r.after < r.before ? 'pl-better' : r.after > r.before ? 'pl-warn' : '' }, el('td', { text: r.label }), el('td', { class: 'n', text: String(r.before) }), el('td', { class: 'n', text: String(r.after) }))),
         ),
-        el('div', { class: 'modal-actions' }, button('Cancel', () => close(null)), el('button', { class: 'btn btn-primary', text: 'Apply Order', attrs: { type: 'button', 'data-autofocus': true, disabled: dto.moved === 0 }, on: { click: () => close(true) } })),
+        el('div', { class: 'modal-actions' }, button('Weights…', () => close('weights')), button('Cancel', () => close(null)), el('button', { class: 'btn btn-primary', text: 'Apply Order', attrs: { type: 'button', 'data-autofocus': true, disabled: dto.moved === 0 }, on: { click: () => close(true) } })),
       ),
     );
+    if (go === 'weights') {
+      await orderWeights(dto.weights);
+      return suggestOrder();
+    }
     if (go) ctx.apply(invoke('apply_suggested_order', { sub_board: sub, order: dto.order }));
+  }
+
+  /** What each count costs when comparing orders (entry 246), kept with the schedule. */
+  async function orderWeights(weights) {
+    await customDialog((close) => {
+      const error = errorLine('pl-error');
+      const inputs = weights.map((w) => {
+        const i = textInput(String(w.value));
+        i.setAttribute('aria-label', w.label);
+        return i;
+      });
+      const save = async (values) => {
+        if (await edit(invoke('set_order_weights', { values }), error)) close(null);
+      };
+      const typed = () => {
+        const values = inputs.map((i) => (/^\d+$/.test(i.value.trim()) ? Number(i.value.trim()) : NaN));
+        if (values.some(Number.isNaN)) {
+          error.textContent = 'Each weight is a whole number.';
+          error.hidden = false;
+          return;
+        }
+        save(values);
+      };
+      return box(
+        'Strip Order Weights',
+        'pl-wt',
+        el('p', { class: 'modal-message', text: 'What each count costs when orders are compared. Higher means the suggestion works harder to avoid it; 0 ignores it. Kept with this schedule.' }),
+        error,
+        table(
+          ['', 'Cost', 'Standard'],
+          weights.map((w, n) => el('tr', {}, el('td', { text: w.label }), el('td', {}, inputs[n]), el('td', { class: 'n', text: String(w.standard) }))),
+        ),
+        el('div', { class: 'modal-actions' }, button('Use Standard', () => save([])), button('Cancel', () => close(null)), el('button', { class: 'btn btn-primary', text: 'Set', attrs: { type: 'button', 'data-autofocus': true }, on: { click: typed } })),
+      );
+    });
   }
 
   /** The sub-board's shoot day count and the day to offer first (the selected strip's), or null. */

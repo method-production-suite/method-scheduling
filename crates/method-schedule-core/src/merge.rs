@@ -1562,6 +1562,20 @@ impl M<'_> {
                     )
                 },
             ),
+            order_weights: field(
+                cx,
+                "plan:order_weights",
+                "Strip order weights",
+                Some(&b.order_weights),
+                &o.order_weights,
+                &t.order_weights,
+                |v| {
+                    v.map_or("the defaults".to_string(), |w| {
+                        let [a, b, c, d, e] = w.values();
+                        format!("{a}, {b}, {c}, {d}, {e}")
+                    })
+                },
+            ),
             long_day: field(
                 cx,
                 "plan:long_day",

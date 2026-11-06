@@ -197,6 +197,13 @@ export function placeLocation(plan, name, latitude, longitude, utcOffset, daylig
 }
 
 /** The names a sheet's Location field holds in the fake, standing in for the sheets'. */
+const ORDER_WEIGHTS = [
+  ["An actor's day", 4],
+  ['A location change in a day', 3],
+  ['A day and night switch in a day', 1],
+  ['A red flag clash', 20],
+  ['An hour past the long day', 5],
+];
 const SHEET_LOCATIONS = [
   ['Harbor', 3],
   ['Net loft', 2],
@@ -572,6 +579,13 @@ export function planFakes(ctx) {
       v.notice = `${pinned ? 'Pinned' : 'Unpinned'} ${n === 1 ? '1 strip' : `${n} strips`}.`;
       return v;
     },
+    set_order_weights: ({ values }) => {
+      if (values.length !== 0 && values.length !== 5) throw 'Give all five weights, or none for the defaults.';
+      if (values.some((v) => v > 1000)) throw 'A strip order weight is 1000 at most.';
+      return planEdit((m, plan) => {
+        plan.orderWeights = values.length ? values : null;
+      });
+    },
     suggest_order: ({ sub_board }) => {
       const s = suggestion(model(), sub_board);
       return {
@@ -587,8 +601,11 @@ export function planFakes(ctx) {
           { label: 'Location changes in a day', before: 3, after: 1 },
           { label: 'Day/night switches in a day', before: 2, after: 1 },
           { label: 'Red flag clashes', before: 0, after: 0 },
+          { label: 'Hours past the long day', before: 0, after: 0 },
           { label: 'Cost', before: 35, after: 20 },
         ],
+        // As plan.rs (decision 246).
+        weights: ORDER_WEIGHTS.map(([label, standard], n) => ({ label, value: (planOf(model()).orderWeights || [])[n] ?? standard, standard })),
         // As plan.rs (decision 234).
         rule: 'location, then set',
         tried: [

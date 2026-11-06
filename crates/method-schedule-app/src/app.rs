@@ -1974,6 +1974,7 @@ pub fn run() {
             crate::plan::push_past_wrap,
             crate::plan::locations_data,
             crate::plan::set_location_guide,
+            crate::plan::set_order_weights,
             crate::plan::add_location_map,
             crate::plan::remove_location_map,
             crate::plan::location_map,

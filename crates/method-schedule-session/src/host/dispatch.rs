@@ -112,6 +112,7 @@ pub const COMMANDS: &[&str] = &[
     "locations_data",
     "set_location",
     "set_location_guide",
+    "set_order_weights",
     "remove_location_map",
     "rest_data",
     "set_turnaround",
@@ -1980,6 +1981,19 @@ mod plan_cmds {
                     utc_offset,
                     daylight_saving,
                     offsets,
+                ))
+            }
+            "set_order_weights" => {
+                #[derive(Deserialize)]
+                struct A {
+                    values: Vec<u32>,
+                }
+                let A { values } = match args::<A>(command, a) {
+                    Ok(v) => v,
+                    Err(e) => return Some(Err(e)),
+                };
+                to_reply(crate::commands::plan::set_order_weights(
+                    &window, state, values,
                 ))
             }
             "set_location_guide" => {

@@ -293,6 +293,20 @@ pub fn conflicts_data(state: Doc) -> CmdResult<Vec<method_schedule_session::chan
     method_schedule_session::commands::plan::conflicts_data(&*state)
 }
 
+/// What each count costs when suggesting a strip order (decision 246).
+#[tauri::command]
+pub fn set_order_weights<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    values: Vec<u32>,
+) -> CmdResult {
+    method_schedule_session::commands::plan::set_order_weights(
+        &crate::app::Win(&window),
+        &*state,
+        values,
+    )
+}
+
 /// A location's address and directions (decision 245).
 #[tauri::command]
 pub fn set_location_guide<R: Runtime>(
