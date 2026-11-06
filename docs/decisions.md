@@ -5898,7 +5898,8 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   conflict and red flag marks, so the strip's own colors keep their meaning and the row stays
   the same height. Scenes no draft changed have no mark, so a schedule with no revisions looks
   as it did. `Double Blue` and `Blue 4` use blue's swatch; a color named by hand has a plain
-  one. Not on the printed board yet. Built on that recommendation; reversible.
+  one. On the printed board too, in its colors (a black and white copy shows only that the scene
+  changed). Built on that recommendation; reversible.
 - **Renaming**: Plan > Script Drafts has a field on each draft, so a production's own names and
   order can stand (a color is text since decision 233). Unique without regard to case, 40
   characters at most. The next revision takes the next usual color not already taken, so a

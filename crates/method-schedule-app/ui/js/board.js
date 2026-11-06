@@ -21,10 +21,10 @@
 import { el } from './dom.js';
 import { dateInput, dayDate, showDate } from './dates.js';
 import { setRules, dynamicStyles } from './dynstyle.js';
-import { DEFAULT_LAYOUT, boardTracks, cellClass, cellText, gridRules, labelOf, stripCell, stripGrid } from './strips.js';
+import { DEFAULT_LAYOUT, boardTracks, cellClass, cellText, draftMark, gridRules, labelOf, stripCell, stripGrid } from './strips.js';
 import { colorClass, paintStrips } from './colors.js';
 import { customDialog } from './modal.js';
-import { STRIP_MARK, bannerFontClass, bannerHex, bannerHexRules, dayLead, draftColorClass } from './logic.js';
+import { STRIP_MARK, bannerFontClass, bannerHex, bannerHexRules, dayLead } from './logic.js';
 
 const BONEYARD = 'boneyard';
 /** Must match `.strips > .line` in styles.css. */
@@ -301,14 +301,6 @@ function stripRow(strip, selected, pos, size) {
   // What was shot of it (M5): marked, dimmed once finished, and said in its title.
   else if (strip.shot_text) row.title = `Scene ${strip.scene || '(no number)'}: ${strip.shot_text}`;
   return row;
-}
-
-/**
- * The swatch on a scene a script draft changed (entry 247): the newest draft's color, said
- * in its title. Small, so the strip's own colors still read.
- */
-function draftMark(strip) {
-  return el('span', { class: `draft-mark ${draftColorClass(strip.draft_color)}`, title: strip.draft, attrs: { role: 'img', 'aria-label': strip.draft } });
 }
 
 /**
