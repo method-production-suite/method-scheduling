@@ -89,6 +89,9 @@ struct FileDayCrewCall {
     department: String,
     /// Always written, 0 included, as in [`FileCrewCall`].
     offset_minutes: i32,
+    /// The department isn't called that day (decision 248); the offset is then 0.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    off: bool,
 }
 
 /// A crew department's call against the company's (decision 242).
@@ -268,6 +271,7 @@ pub(crate) fn out_plan(p: &Plan) -> Option<FilePlan> {
                 day: x.day.0,
                 department: x.department.clone(),
                 offset_minutes: x.offset,
+                off: x.off,
             })
             .collect(),
         location_guides: p
@@ -632,10 +636,14 @@ pub(crate) fn in_plan(f: Option<FilePlan>) -> Result<Plan, FormatError> {
                 x.day
             )));
         }
+        if x.off && x.offset_minutes != 0 {
+            return Err(bad(format!("{who} is off that day, so its offset is 0")));
+        }
         p.day_crew_calls.push(DayCrewCall {
             day: StripId(x.day),
             department: x.department,
             offset: x.offset_minutes,
+            off: x.off,
         });
     }
     for g in f.location_guides {

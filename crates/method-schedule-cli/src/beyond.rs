@@ -64,8 +64,9 @@ beyond the reference app (decisions.md, IMP-04 and BYD-01 to BYD-09):
   crew FILE [DEPARTMENT (OFFSET | --remove)]
                                   each department's call against the company's, every
                                   shoot day (-1:30, 0, +0:15)
-  day-crew FILE DAY DEPARTMENT (OFFSET | --remove) [--sub-board ID]
-                                  a department's call on one shoot day only
+  day-crew FILE DAY DEPARTMENT (OFFSET | off | --remove) [--sub-board ID]
+                                  a department's call on one shoot day only, or off to
+                                  leave it out of that day
   offsets FILE NAME TEXT          dates with a UTC offset of their own at a location on
                                   the map (\"2027-02-07 to 2027-03-14 +00:00; ...\", empty
                                   for none)
@@ -636,7 +637,7 @@ fn crew_cmd(args: &[String]) -> Result<String, String> {
 }
 
 fn day_crew_cmd(args: &[String]) -> Result<String, String> {
-    let usage = "day-crew FILE DAY DEPARTMENT (OFFSET | --remove) [--sub-board ID]";
+    let usage = "day-crew FILE DAY DEPARTMENT (OFFSET | off | --remove) [--sub-board ID]";
     let p = plain(args, &["--remove"], &["--sub-board", "--board"]);
     if p.len() < 3 {
         return Err(format!("usage: method-schedule {usage}"));
@@ -653,6 +654,11 @@ fn day_crew_cmd(args: &[String]) -> Result<String, String> {
         .find(|d| d.number == n)
         .map(|d| d.break_id)
         .ok_or(format!("there is no shoot day {n}"))?;
+    if p.get(3).is_some_and(|v| v.eq_ignore_ascii_case("off")) {
+        plan::set_day_crew_off(&mut s, day, p[2]).map_err(|e| e.to_string())?;
+        save(p[0], &s)?;
+        return Ok(format!("{} on day {n}: not called\n", p[2]));
+    }
     let offset = if args.iter().any(|a| a == "--remove") {
         None
     } else {
@@ -824,6 +830,11 @@ mod tests {
             .contains("day 1"));
         assert!(run(&["day-crew", f, "99", "Stunts", "0"]).is_err());
         run(&["day-crew", f, "1", "Stunts", "--remove"]).unwrap();
+        assert!(run(&["day-crew", f, "1", "Camera", "off"])
+            .unwrap()
+            .contains("not called"));
+        assert!(run(&["day-crew", f, "1", "Stunts", "off"]).is_err());
+        run(&["day-crew", f, "1", "Camera", "--remove"]).unwrap();
         run(&["crew", f, "Camera", "--remove"]).unwrap();
         assert!(run(&["crew", f]).unwrap().contains("no crew calls"));
         // Offsets need a location on the map, and read back.

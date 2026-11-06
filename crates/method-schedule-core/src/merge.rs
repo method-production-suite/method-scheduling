@@ -1656,7 +1656,13 @@ impl M<'_> {
                         self.strip_name_by_id(x.day)
                     )
                 },
-                |x| crate::plan::crew_offset_words(x.offset),
+                |x| {
+                    if x.off {
+                        "not called that day".to_string()
+                    } else {
+                        crate::plan::crew_offset_words(x.offset)
+                    }
+                },
             ),
             pinned: merge_ids(cx, Some(&b.pinned), &o.pinned, &t.pinned),
             omitted: merge_ids(cx, Some(&b.omitted), &o.omitted, &t.omitted),

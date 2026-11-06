@@ -202,6 +202,7 @@ export function planCommands(ctx) {
           const input = textInput(c.this_day);
           input.placeholder = c.every_day;
           input.setAttribute('aria-label', `${c.department}'s call this day against the company call`);
+          input.title = 'A time from the company call for this day, or off to leave the department out of it. Empty follows every day’s.';
           let sent = c.this_day;
           const set = () => {
             if (input.value.trim() === sent) return;
