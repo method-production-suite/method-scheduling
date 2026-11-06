@@ -393,6 +393,22 @@ export function planCommands(ctx) {
   }
 
   /** The script drafts merged so far, newest first (entry 233): a list, nothing to edit. */
+  /** A draft's heading, and the field that renames its color (entry 247). */
+  function renameLines(d, error) {
+    const words = () => [d.color, d.date ? showDate(d.date) : ''].filter(Boolean).join(' · ');
+    const head = el('p', { class: 'pl-head', text: words() });
+    const name = textInput(d.color, 'pl-name');
+    name.setAttribute('aria-label', `New color for the ${d.color} draft`);
+    const rename = async () => {
+      const typed = name.value.trim();
+      if (typed === d.color || !(await edit(invoke('rename_draft', { color: d.color, name: typed }), error))) return;
+      d.color = typed;
+      head.textContent = words();
+    };
+    name.addEventListener('keydown', (e) => e.key === 'Enter' && rename());
+    return [head, el('p', { class: 'pl-rename' }, name, button('Rename', rename, 'btn btn-mini'))];
+  }
+
   async function drafts() {
     let list;
     try {
@@ -407,11 +423,12 @@ export function planCommands(ctx) {
     }
     await customDialog((close) => {
       const scenes = (label, names) => (names.length ? el('li', { text: `${label}: ${names.join('; ')}` }) : '');
+      const error = errorLine('pl-error');
       const rows = [...list].reverse().map((d) =>
         el(
           'div',
           { class: 'pl-draft' },
-          el('p', { class: 'pl-head', text: [d.color, d.date ? showDate(d.date) : ''].filter(Boolean).join(' · ') }),
+          ...renameLines(d, error),
           el('ul', { class: 'pl-lines' }, scenes('Changed', d.changed), scenes('New', d.added), scenes('Omitted', d.omitted)),
         ),
       );
@@ -419,6 +436,7 @@ export function planCommands(ctx) {
         'Script Drafts',
         'pl-drafts',
         el('p', { class: 'modal-message', text: 'Each revision merged into this schedule, newest first, with its color and date and the scenes it changed, added and omitted. The Breakdown tab shows each sheet’s newest draft.' }),
+        error,
         el('div', { class: 'pl-body' }, ...rows),
         el('div', { class: 'modal-actions' }, button('Print…', () => printDrafts(list)), closeButton(close)),
       );

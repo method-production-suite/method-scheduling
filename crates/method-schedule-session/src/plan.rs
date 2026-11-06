@@ -784,6 +784,14 @@ pub struct SuggestionDto {
     pub weights: Vec<WeightDto>,
 }
 
+/// A draft's color and date in words, as the Breakdown tab and the board's mark say it.
+pub fn draft_text(d: &p::Draft) -> String {
+    match d.date {
+        Some(x) => format!("{} draft, {x}", d.color),
+        None => format!("{} draft", d.color),
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct WeightDto {
     pub label: &'static str,

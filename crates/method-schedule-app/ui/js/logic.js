@@ -957,6 +957,20 @@ const CS_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Fr
 const CS_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** "Tuesday, Oct 20, 2026" from `YYYY-MM-DD`; null for no date. */
+/**
+ * The swatch class for a draft's color (entry 247): `Double Blue` and `Blue 4` are blue;
+ * a color named by hand has its own plain mark.
+ */
+export function draftColorClass(color) {
+  const known = ['white', 'blue', 'pink', 'yellow', 'green', 'goldenrod', 'buff', 'salmon', 'cherry'];
+  const word = String(color || '')
+    .toLowerCase()
+    .replace(/^(double|triple)\s+/, '')
+    .replace(/\s+\d+$/, '')
+    .trim();
+  return known.includes(word) ? `dc-${word}` : 'dc-other';
+}
+
 export function callSheetDate(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
   if (!m) return null;

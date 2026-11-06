@@ -313,6 +313,18 @@ pub fn pin_strips<W: Shell + ?Sized, D: DocLock + ?Sized>(
     finish(&window, &s, Some(format!("{verb} {what}.")))
 }
 
+/// The `rename_draft` command (decision 247).
+pub fn rename_draft<W: Shell + ?Sized, D: DocLock + ?Sized>(
+    window: &W,
+    state: &D,
+    color: String,
+    name: String,
+) -> CmdResult {
+    let mut s = state.lock();
+    s.edit(|x| x.plan.rename_draft(&color, &name).map_err(upper))?;
+    finish(&window, &s, None)
+}
+
 /// The `set_order_weights` command (decision 246).
 pub fn set_order_weights<W: Shell + ?Sized, D: DocLock + ?Sized>(
     window: &W,

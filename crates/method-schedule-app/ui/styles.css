@@ -288,6 +288,16 @@ input.date-field[aria-invalid="true"] { border-color: var(--error); outline: 1px
   cursor: default;
 }
 .row:last-child { border-bottom: none; }
+.draft-mark { display: inline-block; width: 8px; height: 8px; margin-right: 3px; border: 1px solid #333; vertical-align: baseline; background: transparent; }
+.draft-mark.dc-white { background: #fff; }
+.draft-mark.dc-blue { background: #8fb8e8; }
+.draft-mark.dc-pink { background: #f2a9c4; }
+.draft-mark.dc-yellow { background: #f4e04d; }
+.draft-mark.dc-green { background: #8fd18f; }
+.draft-mark.dc-goldenrod { background: #daa520; }
+.draft-mark.dc-buff { background: #e8d5a8; }
+.draft-mark.dc-salmon { background: #f49a84; }
+.draft-mark.dc-cherry { background: #c2264b; }
 .row .fc-id { font-variant-numeric: tabular-nums; }
 /* Which part of a scene spanning days (decision 76). */
 .row .part { font-size: 11px; color: var(--muted); }

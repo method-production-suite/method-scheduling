@@ -5886,3 +5886,22 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   file using it won't open in 0.7.0 or earlier.
 - `optimize::tests::weights_change_what_is_cheapest_and_are_the_schedules_own` and
   `a_long_day_costs_and_the_search_evens_it_out` cover it, with the strict reader's tests.
+
+## 247. Revision colors on strips, and renaming a draft's color (2026-11-06)
+
+- **BYD-01's next step** (ROADMAP M5; drafts and their colors came in decision 233, which left
+  the design open because the board already colors strips by I/E and day or night).
+- **The design**: a small swatch at the start of a scene's strip, in the color of the newest
+  draft that changed or added it, its title saying `Pink draft, 2026-10-19`. It sits with the
+  conflict and red flag marks, so the strip's own colors keep their meaning and the row stays
+  the same height. Scenes no draft changed have no mark, so a schedule with no revisions looks
+  as it did. `Double Blue` and `Blue 4` use blue's swatch; a color named by hand has a plain
+  one. Not on the printed board yet. Built on that recommendation; reversible.
+- **Renaming**: Plan > Script Drafts has a field on each draft, so a production's own names and
+  order can stand (a color is text since decision 233). Unique without regard to case, 40
+  characters at most. The next revision takes the next usual color not already taken, so a
+  rename can't make two drafts share one. Picking the color as a revision is merged is left out:
+  renaming afterward does the same job.
+- **No change to the file format**.
+- `revise::tests::each_draft_is_recorded_with_its_color_and_date` covers renaming and the next
+  color; the page test covers the swatch's name.

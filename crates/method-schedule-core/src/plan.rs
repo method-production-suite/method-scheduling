@@ -256,6 +256,9 @@ pub struct Draft {
     pub omitted: Vec<SheetId>,
 }
 
+/// The most characters in a draft's color when renamed.
+pub const MAX_DRAFT_COLOR: usize = 40;
+
 /// The usual order of revision colors, the original draft first.
 pub const REVISION_COLORS: [&str; 9] = [
     "White",
@@ -623,6 +626,42 @@ impl Plan {
 
     pub fn is_omitted(&self, sheet: SheetId) -> bool {
         self.omitted.contains(&sheet)
+    }
+
+    /// The next draft's color (decision 233): the usual order, past any name already taken
+    /// by a renamed draft.
+    pub fn next_draft_color(&self) -> String {
+        (self.drafts.len() + 1..)
+            .map(draft_color)
+            .find(|c| !self.drafts.iter().any(|d| same_name(&d.color, c)))
+            .expect("the colors never run out")
+    }
+
+    /// Renames a draft's color (decision 247), so a production's own order or names can
+    /// stand. Unique without regard to case; its scenes stay as they are.
+    pub fn rename_draft(&mut self, color: &str, name: &str) -> Result<(), Error> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        if name.chars().count() > MAX_DRAFT_COLOR {
+            return Err(refuse("a draft's color is 40 characters at most"));
+        }
+        let at = self
+            .drafts
+            .iter()
+            .position(|d| same_name(&d.color, color))
+            .ok_or_else(|| refuse("that draft is no longer in this schedule"))?;
+        if self
+            .drafts
+            .iter()
+            .enumerate()
+            .any(|(i, d)| i != at && same_name(&d.color, name))
+        {
+            return Err(refuse("another draft already has that color"));
+        }
+        self.drafts[at].color = name.to_string();
+        Ok(())
     }
 
     /// The newest draft that changed or added `sheet` (decision 233).

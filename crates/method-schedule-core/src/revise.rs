@@ -288,7 +288,7 @@ pub fn revise(
     }
     let changed: Vec<SheetId> = out.changed().map(|r| r.sheet).collect();
     if !(changed.is_empty() && out.added.is_empty() && out.omitted.is_empty()) {
-        let color = crate::plan::draft_color(s.plan.drafts.len() + 1);
+        let color = s.plan.next_draft_color();
         s.plan.drafts.push(crate::plan::Draft {
             color: color.clone(),
             date,
@@ -588,6 +588,16 @@ Hello.
         assert_eq!(draft_color(10), "Double Blue");
         assert_eq!(draft_color(19), "Triple Blue");
         assert_eq!(draft_color(28), "Blue 4");
+        // A name taken by a rename is passed over, so the next draft can't repeat it.
+        let mut r = s.clone();
+        r.plan.rename_draft("BLUE", "Yellow").unwrap();
+        assert_eq!(r.plan.drafts[0].color, "Yellow");
+        assert_eq!(r.plan.next_draft_color(), "Green");
+        assert!(r.plan.rename_draft("Pink", "yellow").is_err());
+        assert!(r.plan.rename_draft("Pink", "  ").is_err());
+        assert!(r.plan.rename_draft("Mauve", "Teal").is_err());
+        assert!(r.plan.rename_draft("Pink", &"x".repeat(41)).is_err());
+        assert!(r.check().is_ok());
         // Two drafts of one color don't pass check.
         let mut bad = s.clone();
         bad.plan.drafts[1].color = "blue".into();

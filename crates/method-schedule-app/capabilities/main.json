@@ -142,6 +142,7 @@
     "allow-set-day-crew-call",
     "allow-set-location-guide",
     "allow-set-order-weights",
+    "allow-rename-draft",
     "allow-add-location-map",
     "allow-remove-location-map",
     "allow-location-map",

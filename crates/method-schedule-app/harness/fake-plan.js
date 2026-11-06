@@ -493,6 +493,11 @@ export function planFakes(ctx) {
         plan.conflicts = keys ? (plan.conflicts || []).filter((c) => !keys.includes(c.key)) : [];
       }),
     // As plan.rs drafts_view (decision 233): a fixed history for the page.
+    rename_draft: ({ color, name }) => {
+      if (!name.trim()) throw 'A name is needed.';
+      if (name.trim().toLowerCase() === 'pink' && color !== 'Pink') throw 'Another draft already has that color.';
+      return planEdit(() => {});
+    },
     drafts_data: () => [
       { color: 'Blue', date: '2026-10-12', changed: ['Scene 3, EXT. HARBOR WALL'], added: ['Scene 3A, INT/EXT. KIT\'S TRUCK'], omitted: [] },
       { color: 'Pink', date: '2026-10-19', changed: ['Scene 1, INT. NET LOFT', 'Scene 2, EXT. BOATYARD'], added: [], omitted: ['Scene 4, INT. NET LOFT'] },

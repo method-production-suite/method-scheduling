@@ -293,6 +293,22 @@ pub fn conflicts_data(state: Doc) -> CmdResult<Vec<method_schedule_session::chan
     method_schedule_session::commands::plan::conflicts_data(&*state)
 }
 
+/// Renames a script draft's color (decision 247).
+#[tauri::command]
+pub fn rename_draft<R: Runtime>(
+    window: WebviewWindow<R>,
+    state: Doc,
+    color: String,
+    name: String,
+) -> CmdResult {
+    method_schedule_session::commands::plan::rename_draft(
+        &crate::app::Win(&window),
+        &*state,
+        color,
+        name,
+    )
+}
+
 /// What each count costs when suggesting a strip order (decision 246).
 #[tauri::command]
 pub fn set_order_weights<R: Runtime>(

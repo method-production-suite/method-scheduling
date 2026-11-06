@@ -341,7 +341,7 @@ function stripDto(s, index) {
   // Parts of a scene spanning days (src/view.rs, parts_of): the strips of one sheet on the sub-boards.
   const sameSheet = model.subs.flatMap((x) => x.strips).filter((x) => x.kind === 'scene' && x.sheet === s.sheet);
   const partOf = sameSheet.length > 1 ? { part: sameSheet.findIndex((x) => x.id === s.id) + 1, parts: sameSheet.length } : {};
-  return { ...base, ...partOf, sheet: s.sheet, scene: s.n, int_ext: s.ie, set: s.set, time_of_day: s.tod, pages: pages(s.eighths), cast: cast.map((e) => e.name), cells, tone: tone(s), ...colored };
+  return { ...base, ...partOf, sheet: s.sheet, scene: s.n, int_ext: s.ie, set: s.set, time_of_day: s.tod, pages: pages(s.eighths), cast: cast.map((e) => e.name), cells, tone: tone(s), ...colored, ...(s.n === '3' ? { draft_color: 'Blue', draft: 'Blue draft, 2026-10-12' } : {}) };
 }
 
 // The calendar: weekly days off and per-date marks ({ date: 'work' | 'off' | 'holiday' |
