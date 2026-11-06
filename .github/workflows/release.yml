@@ -121,7 +121,9 @@ jobs:
       - name: Tauri CLI
         run: bash scripts/install-tauri-cli.sh
       - name: minisign
-        run: sudo apt-get install -y minisign
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y minisign
       - name: Sign a test file
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -475,7 +477,9 @@ jobs:
       - name: Tauri CLI
         run: bash scripts/install-tauri-cli.sh
       - name: minisign
-        run: sudo apt-get install -y minisign
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y minisign
       - name: Sign SHA256SUMS with the update key
         # Never skipped: a release that can't sign doesn't draft.
         env:
