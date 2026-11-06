@@ -98,6 +98,13 @@ jobs:
         # crates/method-schedule-app/ui/js/logic.js under Node's built-in test runner,
         # which the runner image has; no npm (decisions.md, entry 137).
         run: node --test crates/method-schedule-app/page-tests/logic.test.mjs
+      - name: The browser build's smoke test
+        # Builds the page for a browser and runs the sample through it under Node, nothing
+        # shown (crates/xtask/src/web.rs). The command line matches Cargo.lock's wasm-bindgen.
+        run: |
+          version="$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"$/\1/p')"
+          cargo install wasm-bindgen-cli --version "$version" --locked
+          cargo xtask web --smoke
       - name: Feature list, site and brand files are up to date
         run: |
           python3 scripts/site.py --check
