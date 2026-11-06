@@ -366,6 +366,8 @@ pub(crate) fn everything() -> Schedule {
     method_schedule_core::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
     // A crew call for one day only (decision 243).
     method_schedule_core::plan::set_day_crew_call(&mut s, brk, "Stunts", Some(45)).unwrap();
+    // A department left out of one day (decision 248).
+    method_schedule_core::plan::set_day_crew_off(&mut s, brk, "Camera").unwrap();
     // Strip order weights of its own (decision 246).
     s.plan.order_weights = Some(method_schedule_core::plan::OrderWeights {
         cast_day: 6,

@@ -357,6 +357,7 @@ time has none. The call sheet lists them (CALLSHEET.md).
 | `day` | integer | | The day break that closes the shoot day, as in a call time. Dropped with it. |
 | `department` | string | | As in a crew call; unique on its day without regard to case. Matching a crew call's department, it replaces that call on the day; otherwise the department is called that day alone. |
 | `offset_minutes` | integer | | As in a crew call. Always written. |
+| `off` | boolean | `false` | The department isn't called that day: it needs a crew call to leave out, and the offset is 0 (entry 248). |
 
 #### Lock
 

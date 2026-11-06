@@ -258,8 +258,9 @@ pub fn tools() -> Vec<Tool> {
             name: "set_day_crew_call",
             title: "Set a department's call for one day",
             description: "Sets a department's call on one shoot day only: in place of its \
-                          every-day call, or a department called that day alone. Null follows \
-                          the every-day call again.",
+                          every-day call, a department called that day alone, or off to leave \
+                          an every-day department out of it. Null follows the every-day call \
+                          again.",
             mutating: true,
             destructive: false,
             schema: || {
@@ -273,7 +274,7 @@ pub fn tools() -> Vec<Tool> {
                         ("department", name("The department, such as Stunts.")),
                         (
                             "offset",
-                            nullable(name("From the call, such as +0:45, or null.")),
+                            nullable(name("From the call, such as +0:45, off, or null.")),
                         ),
                     ],
                     &["path", "revision", "day", "department", "offset"],
@@ -901,7 +902,10 @@ fn set_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
 fn set_day_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
     let n = a.req_u32("day")?;
     let department = a.req("department")?.to_string();
-    let offset = crew_offset_arg(a)?;
+    let off = a
+        .str("offset")
+        .is_some_and(|v| v.trim().eq_ignore_ascii_case("off"));
+    let offset = if off { None } else { crew_offset_arg(a)? };
     let e = edit(ctx, a, |s| {
         let (b, sb) = pick(s, a)?;
         let day = shoot_days(s, b, sb)?
@@ -910,13 +914,21 @@ fn set_day_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
             .find(|d| d.number == n)
             .map(|d| d.break_id)
             .ok_or_else(|| ToolError::not_found(format!("there is no shoot day {n}")))?;
-        plan::set_day_crew_call(s, day, &department, offset)?;
+        if off {
+            plan::set_day_crew_off(s, day, &department)?;
+        } else {
+            plan::set_day_crew_call(s, day, &department, offset)?;
+        }
         Ok(())
     })?;
-    let what = offset.map_or(
-        "follows the every-day call".to_string(),
-        plan::crew_offset_words,
-    );
+    let what = if off {
+        "not called".to_string()
+    } else {
+        offset.map_or(
+            "follows the every-day call".to_string(),
+            plan::crew_offset_words,
+        )
+    };
     Ok(done(
         &e,
         &format!("{department} on day {n}: {what}"),
@@ -924,6 +936,7 @@ fn set_day_crew_call(ctx: &Ctx, a: &Args) -> ToolResult {
             ("day", json!(n)),
             ("department", json!(department)),
             ("offset", json!(offset)),
+            ("off", json!(off)),
         ]),
     ))
 }

@@ -743,7 +743,8 @@ or null to clear.
 company's on every shoot day (`-1:30`, `0`, `+0:15`), or null to remove it (entry 242).
 
 **`set_day_crew_call`** `{path, revision, board?, sub_board?, day, department, offset}`: its
-call on one shoot day only; null follows the every-day call again (entry 243).
+call on one shoot day only, or `off` to leave an every-day department out of it (entry 248);
+null follows the every-day call again (entry 243).
 
 **`set_location_guide`** `{path, revision, name, address?, directions?, map?}`: how to get to a
 location, for the call sheet (entry 245). A part left out stays; empty text or a null map clears

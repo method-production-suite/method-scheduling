@@ -243,11 +243,12 @@ export function planFakes(ctx) {
 
   /** As Plan::crew_on (decision 243): every day's calls with the day's own, then its own alone. */
   function crewOn(plan, day) {
-    const own = (plan.dayCrew || []).filter((x) => x.day === day);
+    const own = (plan.dayCrew || []).filter((x) => x.day === day && !x.off);
+    const out = (plan.dayCrew || []).filter((x) => x.day === day && x.off);
     const find = (name) => own.find((x) => sameName(x.department, name));
     const every = plan.crew || [];
     return [
-      ...every.map((c) => (find(c.department) ? { department: c.department, offset: find(c.department).offset, thisDay: true } : { ...c, thisDay: false })),
+      ...every.filter((c) => !out.some((x) => sameName(x.department, c.department))).map((c) => (find(c.department) ? { department: c.department, offset: find(c.department).offset, thisDay: true } : { ...c, thisDay: false })),
       ...own.filter((x) => !every.some((c) => sameName(c.department, x.department))).map((x) => ({ department: x.department, offset: x.offset, thisDay: true })),
     ];
   }
@@ -309,8 +310,9 @@ export function planFakes(ctx) {
           return { element, name, call: own.call ?? '', wrap: own.wrap ?? '' };
         }),
         // As plan.rs day_crew (decision 243).
-        crew: crewOn(plan, id).map((c) => {
+        crew: [...crewOn(plan, id), ...(plan.dayCrew || []).filter((x) => x.day === id && x.off).map((x) => ({ department: x.department, off: true }))].map((c) => {
           const every = (plan.crew || []).find((x) => sameName(x.department, c.department));
+          if (c.off) return { department: c.department, this_day: 'off', every_day: crewText(every.offset), call: '' };
           return { department: c.department, this_day: c.thisDay ? crewText(c.offset) : '', every_day: every ? crewText(every.offset) : '', call: call === null ? '' : clockText(call + c.offset) };
         }),
       };
@@ -389,10 +391,17 @@ export function planFakes(ctx) {
       const name = String(department).trim();
       if (!name || name.length > 100) throw 'A department is one line of 1 to 100 characters.';
       const t = String(value).trim();
-      const offset = t ? read(() => parseCrew(t)) : null;
+      const off = t.toLowerCase() === 'off';
+      if (off && !(planOf(model()).crew || []).some((c) => sameName(c.department, name))) throw 'Only a department called every day can be left out of one.';
+      const offset = off ? 0 : t ? read(() => parseCrew(t)) : null;
       return planEdit((m, plan) => {
         plan.dayCrew = plan.dayCrew || [];
         const at = plan.dayCrew.findIndex((x) => x.day === day && sameName(x.department, name));
+        if (off) {
+          if (at >= 0) plan.dayCrew[at] = { day, department: name, offset: 0, off: true };
+          else plan.dayCrew.push({ day, department: name, offset: 0, off: true });
+          return;
+        }
         if (offset === null) {
           if (at >= 0) plan.dayCrew.splice(at, 1);
         } else if (at >= 0) plan.dayCrew[at] = { day, department: name, offset };

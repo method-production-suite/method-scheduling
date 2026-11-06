@@ -174,6 +174,9 @@ pub struct DayCrewCall {
     pub day: StripId,
     pub department: String,
     pub offset: i32,
+    /// The department isn't called that day (decision 248): its every-day call is left out
+    /// of the day. The offset is then 0.
+    pub off: bool,
 }
 
 /// A department's call as it holds on one day: [`Plan::crew_on`].
@@ -698,6 +701,7 @@ impl Plan {
         let mut out: Vec<CrewOnDay> = self
             .crew_calls
             .iter()
+            .filter(|x| !own(&x.department).is_some_and(|d| d.off))
             .map(|x| match own(&x.department) {
                 Some(d) => CrewOnDay {
                     department: x.department.clone(),
@@ -711,7 +715,11 @@ impl Plan {
                 },
             })
             .collect();
-        for d in self.day_crew_calls.iter().filter(|x| x.day == day) {
+        for d in self
+            .day_crew_calls
+            .iter()
+            .filter(|x| x.day == day && !x.off)
+        {
             if self.crew_call(&d.department).is_none() {
                 out.push(CrewOnDay {
                     department: d.department.clone(),
@@ -721,6 +729,15 @@ impl Plan {
             }
         }
         out
+    }
+
+    /// The departments left out of the day closed by `day` (decision 248), by name.
+    pub fn crew_off(&self, day: StripId) -> Vec<&str> {
+        self.day_crew_calls
+            .iter()
+            .filter(|x| x.day == day && x.off)
+            .map(|x| x.department.as_str())
+            .collect()
     }
 
     /// The day closed by `day` as shot, if reported.
@@ -890,6 +907,12 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
                 x.department, x.day.0
             ));
         }
+        if x.off && x.offset != 0 {
+            return broken(format!(
+                "{:?} is off day {}, so its offset is 0",
+                x.department, x.day.0
+            ));
+        }
         let before = &p.day_crew_calls[..i];
         if before
             .iter()
@@ -1028,7 +1051,11 @@ pub fn tidy(s: &mut Schedule) {
     p.days_shot.retain(|d| breaks.contains(&d.day));
     p.person_calls
         .retain(|x| breaks.contains(&x.day) && elements.contains(&x.element));
-    p.day_crew_calls.retain(|x| breaks.contains(&x.day));
+    // Leaving a department out means nothing once it has no every-day call to leave out.
+    let every: Vec<String> = p.crew_calls.iter().map(|c| c.department.clone()).collect();
+    p.day_crew_calls.retain(|x| {
+        breaks.contains(&x.day) && (!x.off || every.iter().any(|n| same_name(n, &x.department)))
+    });
     p.scenes_shot
         .retain(|x| breaks.contains(&x.day) && sheets.contains(&x.sheet));
     p.turnarounds.retain(|t| cats.contains(&t.category));
@@ -1262,6 +1289,27 @@ pub fn set_crew_call(s: &mut Schedule, department: &str, offset: Option<i32>) ->
 /// that day's company call, or removes it with `None` so the day follows the every-day
 /// call again (or, for a department without one, no longer calls it). One already set
 /// keeps its place and takes the name as typed now.
+/// Leaves a department with an every-day call out of one shoot day (decision 248). The
+/// call sheet doesn't list it that day; [`set_day_crew_call`] with `None` brings it back.
+pub fn set_day_crew_off(s: &mut Schedule, day: StripId, department: &str) -> Result<(), Error> {
+    let name = department.trim();
+    if s.plan.crew_call(name).is_none() {
+        return Err(refuse(
+            "only a department called every day can be left out of one",
+        ));
+    }
+    set_day_crew_call(s, day, name, Some(0))?;
+    if let Some(x) = s
+        .plan
+        .day_crew_calls
+        .iter_mut()
+        .find(|x| x.day == day && same_name(&x.department, name))
+    {
+        x.off = true;
+    }
+    Ok(())
+}
+
 pub fn set_day_crew_call(
     s: &mut Schedule,
     day: StripId,
@@ -1291,6 +1339,7 @@ pub fn set_day_crew_call(
         Some(x) => {
             x.department = name.to_string();
             x.offset = offset;
+            x.off = false;
         }
         None if full => {
             return Err(refuse(
@@ -1301,6 +1350,7 @@ pub fn set_day_crew_call(
             day,
             department: name.to_string(),
             offset,
+            off: false,
         }),
     }
     tidy(s);
@@ -1710,6 +1760,53 @@ mod tests {
             set_crew_call(&mut s, &format!("Department {i}"), Some(0)).unwrap();
         }
         assert!(set_crew_call(&mut s, "One too many", Some(0)).is_err());
+    }
+
+    #[test]
+    fn a_department_can_be_left_out_of_a_day() {
+        let (mut s, _, sb) = crate::timeline::tests::la();
+        let day = s.boards[0]
+            .sub_boards
+            .iter()
+            .find(|x| x.id == sb)
+            .unwrap()
+            .strips
+            .iter()
+            .find(|x| x.kind == StripKind::DayBreak)
+            .unwrap()
+            .id;
+        // Only a department called every day.
+        assert!(set_day_crew_off(&mut s, day, "Camera").is_err());
+        set_crew_call(&mut s, "Camera", Some(-30)).unwrap();
+        set_crew_call(&mut s, "Grip", Some(0)).unwrap();
+        set_day_crew_off(&mut s, day, "camera").unwrap();
+        let names = |s: &Schedule| -> Vec<String> {
+            s.plan
+                .crew_on(day)
+                .into_iter()
+                .map(|x| x.department)
+                .collect()
+        };
+        assert_eq!(names(&s), ["Grip"]);
+        assert_eq!(s.plan.crew_off(day), ["camera"]);
+        assert!(s.check().is_ok());
+        // Empty brings it back; an offset of its own does too.
+        set_day_crew_call(&mut s, day, "Camera", None).unwrap();
+        assert_eq!(names(&s), ["Camera", "Grip"]);
+        set_day_crew_off(&mut s, day, "Camera").unwrap();
+        set_day_crew_call(&mut s, day, "Camera", Some(15)).unwrap();
+        assert_eq!(s.plan.crew_on(day)[0].offset, 15);
+        assert!(s.plan.crew_off(day).is_empty());
+        // With no every-day call left, nothing to leave out: tidied away.
+        set_day_crew_off(&mut s, day, "Grip").unwrap();
+        set_crew_call(&mut s, "Grip", None).unwrap();
+        tidy(&mut s);
+        assert!(s.plan.crew_off(day).is_empty());
+        // Check holds the offset at 0.
+        set_day_crew_off(&mut s, day, "Camera").unwrap();
+        let mut bad = s.clone();
+        bad.plan.day_crew_calls[0].offset = 5;
+        assert!(bad.check().is_err());
     }
 
     #[test]

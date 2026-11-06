@@ -5806,7 +5806,7 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   kept side's list for it stands and the merge says so, instead of the whole merge falling
   back to one side (MReview's audit of #126).
 - **Additive in the file**: a file without the key reads and writes back byte for byte.
-- **Not yet**: leaving a department out on one day (set its call for the day instead), crew
+- **Not yet**: crew
   names under each department. The command line's `crew` and `day-crew` and the MCP's
   `set_crew_call` and `set_day_crew_call` set them since 2026-11-06.
 - `plan::tests::crew_calls_for_one_day` and
@@ -5907,3 +5907,20 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **No change to the file format**.
 - `revise::tests::each_draft_is_recorded_with_its_color_and_date` covers renaming and the next
   color; the page test covers the swatch's name.
+
+## 248. Leaving a department out of one day (2026-11-06)
+
+- **Decision 243's open item**: a department called every day may not be needed on one of them.
+  In the Day Timeline, type `off` for it; the call sheet doesn't list it that day, in print, in
+  the JSON or in the CSV. The row stays in the Day Timeline saying `off`, so it can be brought
+  back by clearing it, or given a call of its own.
+- **Only a department with an every-day call**, since nothing else is there to leave out. If
+  its every-day call goes, the mark goes too.
+- **In the file**: `off` on a day crew call, offset 0. Additive: a file without it reads and writes
+  back byte for byte; a file using it won't open in 0.7.0 or earlier.
+- **Merging**: part of the day's call for that department, as before, shown as "not called that
+  day".
+- **Elsewhere**: the command line's `day-crew FILE DAY DEPARTMENT off`, and `off` as the MCP's
+  `offset`.
+- `plan::tests::a_department_can_be_left_out_of_a_day` covers it, with the command line's test and
+  the strict reader's.

@@ -125,7 +125,8 @@ pub struct DayDto {
 #[derive(Clone, Debug, Serialize)]
 pub struct DayCrewDto {
     pub department: String,
-    /// This day's own offset as typed back (`-1:30`); empty when it follows every day's.
+    /// This day's own offset as typed back (`-1:30`), or `off` when it isn't called that
+    /// day (decision 248); empty when it follows every day's.
     pub this_day: String,
     /// The every-day offset (`-1:30`); empty for a department called this day alone.
     pub every_day: String,
@@ -134,7 +135,17 @@ pub struct DayCrewDto {
 }
 
 fn day_crew(s: &Schedule, t: &method_schedule_core::timeline::DayTimeline) -> Vec<DayCrewDto> {
-    s.plan
+    let off = s.plan.crew_off(t.day).into_iter().map(|name| DayCrewDto {
+        department: name.to_string(),
+        this_day: "off".to_string(),
+        every_day: s
+            .plan
+            .crew_call(name)
+            .map_or(String::new(), |c| crew_offset_text(c.offset)),
+        call: String::new(),
+    });
+    let on: Vec<DayCrewDto> = s
+        .plan
         .crew_on(t.day)
         .into_iter()
         .map(|x| DayCrewDto {
@@ -152,7 +163,8 @@ fn day_crew(s: &Schedule, t: &method_schedule_core::timeline::DayTimeline) -> Ve
                 .map_or(String::new(), |c| t.time_text(c as i32 + x.offset)),
             department: x.department,
         })
-        .collect()
+        .collect();
+    on.into_iter().chain(off).collect()
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -356,7 +368,8 @@ pub fn set_own_call(
 }
 
 /// Sets `department`'s call on the day `day` closes only (decision 243), from its typed
-/// offset; empty follows the every-day call again.
+/// offset; `off` leaves it out of the day (decision 248); empty follows the every-day call
+/// again.
 pub fn set_day_crew(
     s: &mut Schedule,
     day: u32,
@@ -364,6 +377,9 @@ pub fn set_day_crew(
     value: &str,
 ) -> Result<(), String> {
     let v = value.trim();
+    if v.eq_ignore_ascii_case("off") {
+        return p::set_day_crew_off(s, StripId(day), department).map_err(upper);
+    }
     let m = if v.is_empty() {
         None
     } else {
