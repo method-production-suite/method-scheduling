@@ -59,6 +59,53 @@ pub struct Plan {
     /// that day, or a department called that day alone. Kept by the day break, in the order
     /// added.
     pub day_crew_calls: Vec<DayCrewCall>,
+    /// How to get to a location (decision 245): its address, directions and a map picture.
+    /// By the sheets' location name, in the order added; a location needn't be on the map.
+    pub location_guides: Vec<LocationGuide>,
+}
+
+/// How to get to a location, for the call sheet (decision 245). Unique by name, without
+/// regard to case; at least one of the other fields is set.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LocationGuide {
+    pub name: String,
+    pub address: String,
+    /// Several lines are kept.
+    pub directions: String,
+    /// A picture file the person chose, stored as a path as an element's images are: the
+    /// schedule file never holds the picture, and the app never fetches one.
+    pub map: Option<String>,
+}
+
+/// The most characters in a location's address, and in its directions.
+pub const MAX_GUIDE_TEXT: usize = 2000;
+
+/// What a location guide must be, for the setter, the file reader and the check alike.
+pub fn guide_ok(g: &LocationGuide) -> Result<(), String> {
+    if g.name.trim().is_empty() || g.name != g.name.trim() {
+        return Err("a location's directions need its name, with no spaces around it".to_string());
+    }
+    for (what, text) in [("address", &g.address), ("directions", &g.directions)] {
+        if text != text.trim() {
+            return Err(format!("the {what} of {:?} has spaces around it", g.name));
+        }
+        if text.chars().count() > MAX_GUIDE_TEXT {
+            return Err(format!(
+                "the {what} of {:?} is longer than {MAX_GUIDE_TEXT} characters",
+                g.name
+            ));
+        }
+    }
+    if g.map.as_deref().is_some_and(|m| m.trim().is_empty()) {
+        return Err(format!("the map of {:?} has an empty path", g.name));
+    }
+    if g.address.is_empty() && g.directions.is_empty() && g.map.is_none() {
+        return Err(format!(
+            "the directions of {:?} hold nothing: leave them out",
+            g.name
+        ));
+    }
+    Ok(())
 }
 
 /// A department's call on one shoot day only (decision 243), against that day's company
@@ -435,6 +482,47 @@ impl Plan {
         self.locations.len() != before
     }
 
+    /// How to get to a location, by name without regard to case (decision 245).
+    pub fn location_guide(&self, name: &str) -> Option<&LocationGuide> {
+        let name = name.trim();
+        if name.is_empty() {
+            return None;
+        }
+        self.location_guides
+            .iter()
+            .find(|g| same_name(&g.name, name))
+    }
+
+    /// Adds a location's guide or replaces the one with the same name; one with nothing in
+    /// it is taken off. Text is trimmed, a blank map path is no map.
+    pub fn set_location_guide(&mut self, g: LocationGuide) -> Result<(), Error> {
+        let g = LocationGuide {
+            name: g.name.trim().to_string(),
+            address: g.address.trim().to_string(),
+            directions: g.directions.trim().to_string(),
+            map: g.map.filter(|m| !m.trim().is_empty()),
+        };
+        if g.name.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        let at = self
+            .location_guides
+            .iter()
+            .position(|o| same_name(&o.name, &g.name));
+        if g.address.is_empty() && g.directions.is_empty() && g.map.is_none() {
+            if let Some(at) = at {
+                self.location_guides.remove(at);
+            }
+            return Ok(());
+        }
+        guide_ok(&g).map_err(|e| refuse(&e))?;
+        match at {
+            Some(at) => self.location_guides[at] = g,
+            None => self.location_guides.push(g),
+        }
+        Ok(())
+    }
+
     pub fn call_time(&self, day: StripId) -> Option<u32> {
         self.call_times
             .iter()
@@ -576,6 +664,15 @@ pub(crate) fn check(s: &Schedule) -> Result<(), Error> {
         }
         if let Err(why) = periods_ok(&l.periods) {
             return broken(format!("location {:?}: {why}", l.name));
+        }
+    }
+    for (i, g) in p.location_guides.iter().enumerate() {
+        guide_ok(g).or_else(broken)?;
+        if p.location_guides[..i]
+            .iter()
+            .any(|o| same_name(&o.name, &g.name))
+        {
+            return broken(format!("the directions of {:?} are listed twice", g.name));
         }
     }
     let mut days = HashSet::new();
@@ -1375,6 +1472,16 @@ pub fn changes(a: &Plan, b: &Plan) -> Vec<String> {
             out.push(format!("location {:?} taken off the map", l.name));
         }
     }
+    for g in &b.location_guides {
+        if a.location_guide(&g.name) != Some(g) {
+            out.push(format!("directions to {:?} changed", g.name));
+        }
+    }
+    for g in &a.location_guides {
+        if b.location_guide(&g.name).is_none() {
+            out.push(format!("directions to {:?} removed", g.name));
+        }
+    }
     if a.call_times != b.call_times {
         out.push("call times changed".to_string());
     }
@@ -1549,6 +1656,41 @@ mod tests {
         }
         assert!(set_day_crew_call(&mut s, d2, "One too many", Some(0)).is_err());
         assert!(check(&s).is_ok());
+    }
+
+    #[test]
+    fn a_location_guide_is_found_by_name_and_goes_when_empty() {
+        let mut p = Plan::default();
+        let guide = |address: &str, map: Option<&str>| LocationGuide {
+            name: " Pier ".into(),
+            address: address.into(),
+            directions: String::new(),
+            map: map.map(str::to_string),
+        };
+        p.set_location_guide(guide("  1 Harbor Road ", None))
+            .unwrap();
+        let g = p
+            .location_guide("PIER")
+            .expect("found without regard to case");
+        assert_eq!(
+            (g.name.as_str(), g.address.as_str()),
+            ("Pier", "1 Harbor Road")
+        );
+        // Replaced, not listed twice; a map alone is enough.
+        p.set_location_guide(guide("", Some("images/pier.png")))
+            .unwrap();
+        assert_eq!(p.location_guides.len(), 1);
+        assert_eq!(p.location_guides[0].map.as_deref(), Some("images/pier.png"));
+        // Too long is refused and changes nothing; nothing in it takes it off.
+        let long = "x".repeat(MAX_GUIDE_TEXT + 1);
+        assert!(p.set_location_guide(guide(&long, None)).is_err());
+        assert_eq!(p.location_guides.len(), 1);
+        p.set_location_guide(guide(" ", Some(" "))).unwrap();
+        assert!(p.location_guides.is_empty());
+        assert!(
+            guide_ok(&guide("", None)).is_err(),
+            "the reader refuses an empty one"
+        );
     }
 
     #[test]

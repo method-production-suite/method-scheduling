@@ -641,6 +641,13 @@
 .method-report col.cs-c-scenes { width: 20%; }
 .method-report col.cs-c-call { width: 20%; }
 .method-report col.cs-c-on { width: 20%; }
+/* A location of the day (entry 245). The map keeps a fixed height, so a page measures the
+   same before and after the picture decodes, and prints in gray with the rest of the ink. */
+.method-report col.cs-c-place { width: 24%; }
+.method-report col.cs-c-where { width: 76%; }
+.method-report td.cs-place strong { display: block; font-weight: 600; }
+.method-report td.cs-where .cs-sub { display: block; white-space: pre-line; overflow-wrap: anywhere; }
+.method-report td.cs-where .cs-map { display: block; height: 2.6in; max-width: 100%; margin-top: 3pt; object-fit: contain; object-position: left top; filter: grayscale(1); }
 .method-report col.cs-c-dept { width: 40%; }
 .method-report col.cs-c-crew-call { width: 20%; }
 .method-report col.cs-c-from { width: 40%; }

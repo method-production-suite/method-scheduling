@@ -50,8 +50,10 @@ pub(super) const COMMANDS: &[&str] = &[
     "merge_apply",
     "add_element_image",
     "add_sheet_image",
+    "add_location_map",
     "element_image",
     "sheet_image",
+    "location_map",
 ];
 
 /// The ones that change no open schedule: allowed while the host is read-only. Opening a
@@ -70,6 +72,7 @@ pub(super) const READS: &[&str] = &[
     "export_drift",
     "element_image",
     "sheet_image",
+    "location_map",
     "revise_pick",
     "what_changed",
     "merge_preview",
@@ -138,13 +141,14 @@ struct FileArg {
     pictures: Vec<FileIn>,
 }
 
-/// Every picture path a schedule stores, on its elements and sheets.
+/// Every picture path a schedule stores, on its elements and sheets and as locations' maps.
 fn stored_pictures(s: &method_schedule_core::Schedule) -> Vec<String> {
     let mut out: Vec<String> = s
         .elements
         .iter()
         .flat_map(|e| e.images.iter())
         .chain(s.sheets.iter().flat_map(|h| h.images.iter()))
+        .chain(s.plan.location_guides.iter().filter_map(|g| g.map.as_ref()))
         .cloned()
         .collect();
     out.sort();
@@ -219,6 +223,17 @@ struct ImageArgs {
     #[serde(alias = "sheet")]
     element: u32,
     file: FileIn,
+}
+
+#[derive(Deserialize)]
+struct MapArgs {
+    name: String,
+    file: FileIn,
+}
+
+#[derive(Deserialize)]
+struct MapOfArgs {
+    name: String,
 }
 
 #[derive(Deserialize)]
@@ -678,6 +693,27 @@ impl Host {
                     }
                     reply(finish(&W, &s, None))
                 }
+                "add_location_map" => {
+                    let i: MapArgs = args(command, a)?;
+                    let state = need()?;
+                    let stored = self.take_image(&i.file)?;
+                    let mut s = state.lock();
+                    s.edit(|x| crate::plan::set_guide_map(x, &i.name, Some(stored)))?;
+                    reply(finish(&W, &s, None))
+                }
+                "location_map" => {
+                    let i: MapOfArgs = args(command, a)?;
+                    let state = need()?;
+                    let s = state.lock();
+                    let url = s
+                        .schedule()
+                        .plan
+                        .location_guide(&i.name)
+                        .and_then(|g| g.map.as_deref())
+                        .and_then(|stored| self.image(stored))
+                        .and_then(elements::image_data_url);
+                    reply(Ok(url))
+                }
                 "element_image" | "sheet_image" => {
                     let i: ImageAtArgs = args(command, a)?;
                     let state = need()?;
@@ -844,6 +880,68 @@ mod tests {
                 &json!({ "sub_board": sub, "report": "x", "format": "csv" })
             )
             .is_err());
+    }
+
+    #[test]
+    fn a_locations_map_goes_in_the_store_and_comes_back() {
+        let (mut h, _) = sample();
+        h.dispatch(
+            "add_location_map",
+            &json!({ "name": "Pier", "file": file("Pier map.png", PNG) }),
+        )
+        .unwrap();
+        assert!(h.image_names().contains(&"images/Pier map.png".to_string()));
+        let url = h
+            .dispatch("location_map", &json!({ "name": "PIER" }))
+            .unwrap();
+        assert!(url.as_str().unwrap().starts_with("data:image/png;base64,"));
+        // None for a location with no map; not a picture is refused.
+        let none = h
+            .dispatch("location_map", &json!({ "name": "Mill" }))
+            .unwrap();
+        assert!(none.is_null());
+        assert!(h
+            .dispatch(
+                "add_location_map",
+                &json!({ "name": "Pier", "file": file("notes.txt", b"hello") }),
+            )
+            .is_err());
+        // Text and picture stay through each other's changes; the file stays in the store.
+        h.dispatch(
+            "set_location_guide",
+            &json!({ "name": "Pier", "address": "1 Harbor Road", "directions": "" }),
+        )
+        .unwrap();
+        let list = h.dispatch("locations_data", &json!({})).unwrap();
+        let pier = list
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|l| l["name"] == "Pier")
+            .unwrap();
+        assert_eq!(pier["address"], "1 Harbor Road");
+        assert_eq!(pier["map"], "images/Pier map.png");
+        h.dispatch("remove_location_map", &json!({ "name": "Pier" }))
+            .unwrap();
+        let list = h.dispatch("locations_data", &json!({})).unwrap();
+        let pier = list
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|l| l["name"] == "Pier")
+            .unwrap();
+        assert_eq!(pier["address"], "1 Harbor Road");
+        assert_eq!(pier["map"], "");
+        // Read-only: a map shows, but none is added.
+        h.set_read_only(true);
+        assert!(h
+            .dispatch("location_map", &json!({ "name": "Pier" }))
+            .is_ok());
+        let refused = h.dispatch(
+            "add_location_map",
+            &json!({ "name": "Pier", "file": file("b.png", PNG) }),
+        );
+        assert_eq!(refused.unwrap_err().message(), super::super::READ_ONLY);
     }
 
     #[test]

@@ -366,6 +366,15 @@ pub(crate) fn everything() -> Schedule {
     method_schedule_core::plan::set_crew_call(&mut s, "Camera", Some(0)).unwrap();
     // A crew call for one day only (decision 243).
     method_schedule_core::plan::set_day_crew_call(&mut s, brk, "Stunts", Some(45)).unwrap();
+    // Directions to a location, and a map picture (decision 245).
+    s.plan
+        .set_location_guide(method_schedule_core::plan::LocationGuide {
+            name: "Pier".into(),
+            address: "1 Harbor Road".into(),
+            directions: "Left at the gate.\nPark by the shed.".into(),
+            map: Some("images/pier-map.png".into()),
+        })
+        .unwrap();
     // A merge conflict kept for review (decision 238).
     s.plan
         .conflicts

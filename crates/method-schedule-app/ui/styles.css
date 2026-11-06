@@ -1348,6 +1348,14 @@ table.dood-grid.dood-vertical { width: auto; }
 }
 .pl-dialog input.pl-short { width: 6.5em; }
 .pl-dialog input.pl-name { width: 14em; }
+.pl-dialog .pl-row-actions { white-space: nowrap; }
+.pl-dialog .pl-row-actions .btn + .btn { margin-left: 4px; }
+.pl-dialog input.pl-address { width: 100%; }
+.pl-dialog textarea.pl-directions { width: 100%; font: inherit; resize: vertical; }
+.pl-dialog .pl-guide-line { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 2px 6px; align-items: start; margin: 2px 0; }
+.pl-dialog div.pl-guide-line { display: flex; gap: 6px; align-items: center; }
+.pl-dialog div.pl-guide-line > span:first-child { width: 7.5em; flex: none; }
+.pl-dialog .pl-map-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .pl-check { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
 table.pl-table { border-collapse: collapse; width: 100%; background: var(--surface); border: 1px solid var(--line); }
 table.pl-table th, table.pl-table td { padding: 1px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }

@@ -241,6 +241,18 @@ by the next plan edit; they are never an error.
 | `crew_calls` | array of [crew call](#crew-call) | empty | Each crew department's call against the company's call on every shoot day, in the order added (entry 242). At most 100. |
 | `day_crew_calls` | array of [day crew call](#day-crew-call) | empty | A department's call on one shoot day only: in place of its every-day call that day, or a department called that day alone (entry 243). In the order added; one per department and day, 100 a day at most. |
 | `person_calls` | array of [person call](#person-call) | empty | An element's own call or wrap on one shoot day, in place of the company's (entry 231). One per element and day. |
+| `location_guides` | array of [location guide](#location-guide) | empty | How to get to a location, for the call sheet (entry 245). One per name, without regard to case; the location needn't be on the map. |
+
+#### Location guide
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `name` | string | | A sheet's location name, trimmed. |
+| `address` | string | empty | Trimmed, 2000 characters at most. |
+| `directions` | string | empty | May hold several lines. Trimmed, 2000 characters at most. |
+| `map_image` | string | none | A picture file, as a path as an element's [images](#images) are. The picture is never inside the schedule file. |
+
+At least one of the last three is set.
 
 #### Location
 

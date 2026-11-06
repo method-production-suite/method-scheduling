@@ -5833,3 +5833,33 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - `plan::tests::offset_periods_win_over_the_rule` covers typing, the order and the limits,
   and Morocco's 2027 Ramadan against a period winning over the EU rule; the strict
   reader's tests read and write a period back.
+
+## 245. Directions and a map picture on the call sheet (2026-11-06)
+
+- **The last of the call sheet row** (ROADMAP M5, decision 207): the crew needs to know where
+  the day's locations are and how to reach them.
+- **No map service**: tiles or a map link fetched by the app would break the rule of no
+  network except update checks (SUITE-STANDARDS, Network and privacy). So a location's map
+  is a picture the person chooses (a screenshot, a scan, a hand-drawn plan), stored as a
+  path beside the schedule as an element's images are, and the schedule file stays small. Built
+  on that recommendation; reversible, since nothing else depends on it.
+- **What a location holds**: an address, directions (several lines) and the map, under Plan >
+  Locations, the Details button on each row, which now holds Other offsets too (decision 244)
+  so the table fits the window. They sit apart from the map position, so a
+  location with no coordinates can have directions. Taking a location off the map keeps them.
+- **On the call sheet**: a Locations section after the scenes, each of the day's locations
+  once with its coordinates (anyone can type those into their phone), address, directions
+  and map. In the JSON as `places`, in the CSV as an eighth table. A location nothing is
+  known of isn't listed. The picture prints at a fixed height and in gray, so the sheet
+  still copies and faxes; a missing file prints "Map not found" and the path, and the
+  sheet still prints.
+- **Merging**: a location's guide is one value, keyed as names are compared.
+- **The browser host**: `add_location_map` takes the picture as a file, and it goes in the
+  picture store and downloads beside the schedule like the others.
+- **Additive in the file**: a file without the key reads and writes back byte for byte; a
+  file using it won't open in 0.7.0 or earlier.
+- **Not yet**: setting these from the command line or MCP.
+- `plan::tests::a_location_guide_is_found_by_name_and_goes_when_empty`,
+  `merge::tests::location_guides_merge_by_name`,
+  `callsheet::tests::the_days_places_are_its_locations_with_something_known`, and the strict
+  reader's and the host's tests cover it.

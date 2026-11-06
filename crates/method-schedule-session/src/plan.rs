@@ -458,6 +458,10 @@ pub struct LocationDto {
     /// Dates with a UTC offset of their own as typed back (`2027-02-07 to 2027-03-14
     /// +00:00; ...`), empty for none (decision 244).
     pub offsets: String,
+    /// How to get there (decision 245); the map is its stored path, empty for none.
+    pub address: String,
+    pub directions: String,
+    pub map: String,
 }
 
 pub fn locations_view(s: &Schedule) -> Vec<LocationDto> {
@@ -473,11 +477,20 @@ pub fn locations_view(s: &Schedule) -> Vec<LocationDto> {
             names.push(g.name.clone());
         }
     }
+    for g in &s.plan.location_guides {
+        if !names.iter().any(|x| x.eq_ignore_ascii_case(&g.name)) {
+            names.push(g.name.clone());
+        }
+    }
     names
         .into_iter()
         .map(|n| {
             let g = s.plan.location(&n);
+            let guide = s.plan.location_guide(&n);
             LocationDto {
+                address: guide.map_or(String::new(), |x| x.address.clone()),
+                directions: guide.map_or(String::new(), |x| x.directions.clone()),
+                map: guide.and_then(|x| x.map.clone()).unwrap_or_default(),
                 sheets: s
                     .sheets
                     .iter()
@@ -494,6 +507,48 @@ pub fn locations_view(s: &Schedule) -> Vec<LocationDto> {
             }
         })
         .collect()
+}
+
+/// A location's address and directions as typed; its map stays (decision 245). All empty
+/// takes the guide off.
+pub fn set_guide_text(
+    s: &mut Schedule,
+    name: &str,
+    address: &str,
+    directions: &str,
+) -> Result<(), String> {
+    let map = s.plan.location_guide(name).and_then(|g| g.map.clone());
+    s.plan
+        .set_location_guide(p::LocationGuide {
+            name: name.to_string(),
+            address: address.to_string(),
+            directions: directions.to_string(),
+            map,
+        })
+        .map_err(upper)
+}
+
+/// Gives a location a map picture, by its stored path, or takes it off; the file itself is
+/// never touched. Its address and directions stay.
+pub fn set_guide_map(s: &mut Schedule, name: &str, map: Option<String>) -> Result<(), String> {
+    if map
+        .as_deref()
+        .is_some_and(|m| crate::elements::image_type(std::path::Path::new(m)).is_none())
+    {
+        return Err("Choose a PNG, JPEG, GIF, WebP, TIFF, HEIC or BMP image.".to_string());
+    }
+    let g = s.plan.location_guide(name);
+    let (address, directions) = g.map_or((String::new(), String::new()), |g| {
+        (g.address.clone(), g.directions.clone())
+    });
+    s.plan
+        .set_location_guide(p::LocationGuide {
+            name: name.to_string(),
+            address,
+            directions,
+            map,
+        })
+        .map_err(upper)
 }
 
 /// Places `name` on the map from typed degrees and offset and a daylight saving rule
