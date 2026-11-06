@@ -155,7 +155,7 @@ it has already been written.
 
 ## Tools
 
-74 tools; `--read-only` keeps the 22 that read.
+79 tools; `--read-only` keeps the 22 that read.
 
 | Group | Tools |
 |---|---|
@@ -168,7 +168,7 @@ it has already been written.
 | Calendar | `set_start_date`, `set_day_kind`, `set_weekly_off`, `add_event`, `delete_event` |
 | Red flags | `red_flags` (read), `set_red_flag`, `add_red_flags`, `delete_red_flag`, `set_red_flag_type_color`, `add_standard_red_flag_types` (write) |
 | Reports | `report`, `report_list` (read), `set_production`, `set_dood_codes`, `set_prep_wrap` (write) |
-| Beyond the reference app | `timeline`, `call_sheet`, `rest_report`, `drift`, `suggest_order`, `locations` (read), `revise_script`, `set_call_time`, `set_location`, `set_turnaround`, `lock_schedule`, `pin_strips`, `push_past_wrap`, `apply_order` (write) |
+| Beyond the reference app | `timeline`, `call_sheet`, `rest_report`, `drift`, `suggest_order`, `locations` (read), `revise_script`, `set_call_time`, `set_location`, `set_crew_call`, `set_day_crew_call`, `set_location_guide`, `set_order_weights`, `rename_draft`, `set_turnaround`, `lock_schedule`, `pin_strips`, `push_past_wrap`, `apply_order` (write) |
 
 Every tool that works on one schedule takes `path`. Every reading result has `path` and
 `revision`; every change returns `path`, `changed` and `revision`, plus what is listed.
@@ -739,8 +739,25 @@ decisions.md, entry 233), and `text`, the report in lines.
 **`set_call_time`** `{path, revision, board?, sub_board?, day, call}`: `call` as `HH:MM`
 or null to clear.
 
+**`set_crew_call`** `{path, revision, department, offset}`: a department's call against the
+company's on every shoot day (`-1:30`, `0`, `+0:15`), or null to remove it (entry 242).
+
+**`set_day_crew_call`** `{path, revision, board?, sub_board?, day, department, offset}`: its
+call on one shoot day only; null follows the every-day call again (entry 243).
+
+**`set_location_guide`** `{path, revision, name, address?, directions?, map?}`: how to get to a
+location, for the call sheet (entry 245). A part left out stays; empty text or a null map clears
+it. Returns `address`, `directions`, `map`.
+
+**`set_order_weights`** `{path, revision, cast_day?, location_change?, day_night_switch?,
+red_flag_clash?, long_day_hour?, reset?}`: what each count costs when comparing orders, 0 to
+1000 (entry 246). One left out stays; `reset` goes back to the defaults. Returns all five.
+
+**`rename_draft`** `{path, revision, color, name}`: renames a script draft's color (entry 247).
+
 **`set_location`** `{path, revision, name, latitude?, longitude?, utc_offset?,
-daylight_saving?, remove?}`: degrees as decimals (`34.0522`, `-118.2437`) or with a
+daylight_saving?, offsets?, remove?}`: `offsets` as `2027-02-07 to 2027-03-14 +00:00`, several
+split by semicolons, empty for none, left out to keep them (entry 244); degrees as decimals (`34.0522`, `-118.2437`) or with a
 compass letter (`118.2437W`), up to six decimals; `utc_offset` as `-7`, `+05:30` or
 `UTC-08:00` (default: the longitude's hour), the standard offset when there is a daylight
 saving rule; `daylight_saving` one of `none`, `us_canada`, `eu`, `australia` (Australia's

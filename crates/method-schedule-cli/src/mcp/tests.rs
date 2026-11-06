@@ -1635,7 +1635,7 @@ fn tools_list_schemas_are_valid() {
     let mut f = Fixture::new("schemas", false);
     let r = f.rpc("tools/list", json!({}));
     let tools = r["result"]["tools"].as_array().unwrap().clone();
-    assert_eq!(tools.len(), 74);
+    assert_eq!(tools.len(), 79);
     for t in &tools {
         let name = t["name"].as_str().unwrap();
         schema::check(&t["inputSchema"], name).unwrap_or_else(|e| panic!("{e}"));

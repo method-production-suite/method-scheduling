@@ -5807,7 +5807,8 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   back to one side (MReview's audit of #126).
 - **Additive in the file**: a file without the key reads and writes back byte for byte.
 - **Not yet**: leaving a department out on one day (set its call for the day instead), crew
-  names under each department, and setting crew calls from the command line or MCP.
+  names under each department. The command line's `crew` and `day-crew` and the MCP's
+  `set_crew_call` and `set_day_crew_call` set them since 2026-11-06.
 - `plan::tests::crew_calls_for_one_day` and
   `merge::tests::crew_calls_for_one_day_merge_by_day_and_department` cover it, with the
   `callsheet` tests in core and the strict reader's.
@@ -5824,8 +5825,8 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   works too). On those dates the period's offset is used, whatever the daylight saving rule
   says; on others the standard offset and rule apply as before. Put in date order; an
   overlap, an end before its start or an offset past 14 hours is refused; 100 at most.
-- **Where**: Plan > Locations, an Other offsets field on each row. The command line and the
-  MCP tool keep a location's periods when they set it again, and don't set them yet; the
+- **Where**: Plan > Locations, an Other offsets field on each row. The command line's `offsets`
+  and the MCP's `set_location` set them (2026-11-06); both keep them otherwise; the
   browser host's `set_location` takes an optional `offsets` and keeps them without it.
 - **Merging**: a location stays one value, as before; its periods are part of that value.
 - **Additive in the file**: a file without the key reads and writes back byte for byte; a
@@ -5858,7 +5859,8 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   picture store and downloads beside the schedule like the others.
 - **Additive in the file**: a file without the key reads and writes back byte for byte; a
   file using it won't open in 0.7.0 or earlier.
-- **Not yet**: setting these from the command line or MCP.
+- **Then (2026-11-06)**: the command line's `directions` and the MCP's `set_location_guide` set
+  them too.
 - `plan::tests::a_location_guide_is_found_by_name_and_goes_when_empty`,
   `merge::tests::location_guides_merge_by_name`,
   `callsheet::tests::the_days_places_are_its_locations_with_something_known`, and the strict
