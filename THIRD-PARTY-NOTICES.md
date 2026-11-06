@@ -2065,7 +2065,7 @@ License: MIT (offered: Zlib OR Apache-2.0 OR MIT). Source: https://github.com/Lo
 
 Copyright (c) 2019 Daniel "Lokathor" Gee.
 
-### tokio 1.53.1
+### tokio 1.53.3
 
 License: MIT (offered: MIT). Source: https://github.com/tokio-rs/tokio
 
