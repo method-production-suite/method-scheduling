@@ -15,7 +15,13 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None waiting. v0.7.0 was published on 2026-10-30 (tag on 62e9139, the owner's yes).
+- **A 0.8.0 release**, when the owner wants one: main has decisions 242 to 248 since v0.7.0
+  (published 2026-10-30, tag on 62e9139). Recommended once #133 is merged, so the rehearsal
+  also runs its AppImage check. These decisions add file keys, so files using them won't open
+  in 0.7.0.
+- **#133 and #131**: both are with MReview, which is asking the owner. #133 keeps the library
+  behind the AppImage's abort on launch (issue 52) out of releases. #131 tightens `cargo deny`
+  and moves tokio.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest
@@ -48,6 +54,11 @@ saying it hasn't been tested by a person yet. The Windows hand checks (the same 
 Linux's, plus SmartScreen on the unsigned installer) wait until the owner says otherwise.
 
 **Decisions** (each with a recommendation; reversible ones are built on it)
+- **Revision colors on strips** (D247): built as a small swatch at the start of the strip,
+  so the I/E and day or night colors keep their meaning. Reversible.
+- **Moving to the suite's shared updater** (M3): recommended as its own piece of work just
+  before a release, not squeezed in. It changes how every release is signed and how every
+  copy installs an update, so it needs a release-workflow review and a real update rehearsal.
 - **The call sheet's map** (D245): built as a picture you choose for each location, with its
   address, directions and coordinates, because a map from a map service would mean going
   online. Recommended and reversible; say if you want a map service as an opt-in instead.
@@ -108,7 +119,7 @@ outside downloads it.
 
 | Item | Size | Refs |
 |---|---|---|
-| Open engine checks still to see in the reference app: whether a fixed built-in category set exists beyond the cast (E-L5), and whether an element left off the board counts in a category's element count (E-S34); every other queued check was answered in screen block 4 (behavior note 27) | S | engine-checks.md queue |
+| Open engine check still to see in the reference app: whether an element left off the board counts in a category's element count (E-S34; E-L5 is settled, screen block 7); every other queued check was answered in screen block 4 (behavior note 27) | S | engine-checks.md queue |
 | Screen block 8: what block 7 (2026-11-04, cut short; screen-block-7.md) didn't run: K185 and K187 on paper; the Layouts rename then click; and in the reference app E-S34, and whether its spreadsheets follow a report's filters and without holds and whether a cast member off the board gets a name with Cast names on (RPT-03, RPT-10). Block 7 passed D219, K184, M192, the Red Flag Types rename, K185 and K187 on screen, and E-L5; block 6 (2026-10-17) passed G167 to G171, J179 to J182, K183, K186, K188, M193, M194 and the new screens | S | screen-block-7.md, screen-block-6.md |
 | Live checks still open: DOD-06 and DOD-07 in the window, BYD-10 (behavior note 27's small items passed in screen block 6) | S | behavior note 27 |
 
@@ -214,7 +225,7 @@ automatically on both, and by hand on Linux eventually. Windows hand tests are d
 |---|---|---|
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
 | Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |
-| Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, or after the process freeze `deny.toml` checks per target and the plugin goes in for Windows alone. The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
+| Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, or `deny.toml` checks per target and the plugin goes in for Windows alone (the freeze is over; this changes `Cargo.lock`, so it follows #131). The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
 | The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. Also carries the release-workflow fix that compiles before any signing key is unpacked (local branch `ci/compile-before-secrets`) | M | D213, D214, SUITE-STANDARDS.md section 1 |
 
 **Exit**: the live check list from screen block 3 passes on Linux, and both systems'
