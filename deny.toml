@@ -4,7 +4,13 @@
 [advisories]
 # Every advisory fails, unmaintained and unsound ones included, unless it is
 # listed here with the reason it does not apply.
+# `unsound` says so out loud: by default cargo-deny reports those only for a direct dependency.
+unsound = "all"
 ignore = [
+    # Unsound in one iterator; glib through Tauri's gtk on Linux. Our crates don't use it
+    # directly; calls inside Tauri and gtk weren't traced. Surfaced when `unsound` went to
+    # "all". Drop it when Tauri moves off it.
+    { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: via Tauri's gtk crates, no direct use in ours, calls inside them not traced" },
     # Unmaintained, no fix upstream; reached only through Tauri (gtk's macros on
     # Linux; urlpattern in tauri-utils). Drop each when Tauri moves off it.
     { id = "RUSTSEC-2024-0370", reason = "proc-macro-error: build-time macro under Tauri's gtk crates" },
