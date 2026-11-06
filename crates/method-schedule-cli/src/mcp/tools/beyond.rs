@@ -1237,6 +1237,23 @@ mod tests {
             json!({"path": p, "revision": rev, "day": 1, "department": "Stunts", "offset": "+0:45"}),
         );
         let rev = f.rev(p);
+        let r = f.ok(
+            "set_day_crew_call",
+            json!({"path": p, "revision": rev, "day": 1, "department": "Camera", "offset": "off"}),
+        );
+        assert_eq!(r["off"], true);
+        let rev = f.rev(p);
+        let c = f.ok("call_sheet", json!({"path": p, "day": 1}));
+        let off = c["sheet"]["crew"]
+            .as_array()
+            .or(c["crew"].as_array())
+            .unwrap();
+        assert_eq!(off.len(), 1, "{c}");
+        f.ok(
+            "set_day_crew_call",
+            json!({"path": p, "revision": rev, "day": 1, "department": "Camera", "offset": null}),
+        );
+        let rev = f.rev(p);
         let c = f.ok("call_sheet", json!({"path": p, "day": 1}));
         let crew = c["sheet"]["crew"]
             .as_array()
