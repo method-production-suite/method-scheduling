@@ -22,6 +22,9 @@
 #                      the signed updater archive and the draft gets latest.json
 #                      (scripts/update-manifest.py; decision 213). Without, no manifest:
 #                      installed apps don't see the release.
+#   SHA256SUMS:        the same update key signs it as SHA256SUMS.minisig (SUITE-STANDARDS.md
+#                      section 3). Unlike the steps above this one is never skipped: without
+#                      the key the run fails, in signing-probe, before anything is built.
 #   Windows signing:   WINDOWS_CERTIFICATE (a code signing .pfx, base64),
 #                      WINDOWS_CERTIFICATE_PASSWORD. The suite's model step; no certificate
 #                      exists yet, so the first Windows alpha ships unsigned.
@@ -100,9 +103,40 @@ jobs:
         # nothing is skipped. Build and draft both need this job.
         run: python3 scripts/check-crate-ages.py
 
+  signing-probe:
+    name: the update key signs
+    # Every run, rehearsals too, and before the long builds: proves the key in the secrets signs
+    # a file the app's public key checks, so a release can't fail at its last step, or go out
+    # without SHA256SUMS.minisig.
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.check.outputs.ref }}
+          persist-credentials: false
+      - name: Tauri CLI
+        run: bash scripts/install-tauri-cli.sh
+      - name: minisign
+        # Pinned by digest in the script: this runner later holds the key.
+        run: bash scripts/install-minisign.sh
+      - name: Sign a test file
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf 'probe\n' > "$RUNNER_TEMP/probe"
+          bash scripts/sign-file.sh "$RUNNER_TEMP/probe"
+      - name: Check it against the app's public key
+        run: bash scripts/verify-file.sh "$RUNNER_TEMP/probe"
+
   build:
     name: build (${{ matrix.name }})
-    needs: check
+    needs: [check, signing-probe]
     strategy:
       fail-fast: false
       matrix:
@@ -434,6 +468,34 @@ jobs:
           else
             echo "::notice::No updater archive in this release: no latest.json, so installed apps won't see it (decision 213)."
           fi
+      - name: SHA256SUMS
+        # Lists every file the release offers, by bare name, as Method Reader's does
+        # (SUITE-STANDARDS.md section 3): the launcher and people check downloads against it.
+        # Checked here before anything is uploaded.
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum -- * > "$RUNNER_TEMP/SHA256SUMS"
+          mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
+          sha256sum -c SHA256SUMS
+          if [ "$(wc -l < SHA256SUMS)" -ne "$(( $(ls | wc -l) - 1 ))" ]; then
+            echo "::error::SHA256SUMS doesn't list every file in the release."
+            exit 1
+          fi
+      - name: Tauri CLI
+        run: bash scripts/install-tauri-cli.sh
+      - name: minisign
+        # Pinned by digest in the script: this runner later holds the key.
+        run: bash scripts/install-minisign.sh
+      - name: Sign SHA256SUMS with the update key
+        # Never skipped: a release that can't sign doesn't draft.
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash scripts/sign-file.sh dist/SHA256SUMS
+      - name: Check the signature before it goes up
+        # Anyone can do the same: minisign -Vm SHA256SUMS -P <the public key in docs/RELEASING.md>.
+        run: bash scripts/verify-file.sh dist/SHA256SUMS
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -452,19 +514,6 @@ jobs:
           fi
           prerelease=()
           case "$version" in *-*) prerelease=(--prerelease) ;; esac
-          # SHA256SUMS lists every file the release offers, by bare name, as Method
-          # Reader's does (SUITE-STANDARDS.md section 3): the launcher and people check
-          # downloads against it. Checked here before anything is uploaded.
-          (
-            cd dist
-            sha256sum -- * > "$RUNNER_TEMP/SHA256SUMS"
-            mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
-            sha256sum -c SHA256SUMS
-            if [ "$(wc -l < SHA256SUMS)" -ne "$(( $(ls | wc -l) - 1 ))" ]; then
-              echo "::error::SHA256SUMS doesn't list every file in the release."
-              exit 1
-            fi
-          )
           ls -l dist
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber

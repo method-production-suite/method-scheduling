@@ -82,6 +82,60 @@ fn no_cargo_after_a_secret() {
     assert_eq!(violations(&workflow), Vec::<String>::new());
 }
 
+/// SHA256SUMS is signed on every release, and the run stops if it can't be: no `if:` on the
+/// steps, signed before the draft goes up, and the key proved before anything is built.
+#[test]
+fn the_release_signs_its_checksums() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/release.yml");
+    let workflow = std::fs::read_to_string(&path).expect("release.yml");
+    let jobs = jobs(&workflow);
+    let steps = |job: &str| {
+        &jobs
+            .iter()
+            .find(|(name, _)| name == job)
+            .unwrap_or_else(|| panic!("no job {job}"))
+            .1
+    };
+    let at = |job: &str, text: &str| {
+        steps(job)
+            .iter()
+            .position(|s| s.contains(text))
+            .unwrap_or_else(|| panic!("{job} has no step with {text}"))
+    };
+    let sums = at("draft", "sha256sum -- *");
+    let sign = at("draft", "scripts/sign-file.sh dist/SHA256SUMS");
+    let check = at("draft", "scripts/verify-file.sh dist/SHA256SUMS");
+    let draft = at("draft", "gh release create");
+    assert!(sums < sign && sign < check && check < draft);
+    let probe = at("signing-probe", "scripts/sign-file.sh");
+    let proved = at("signing-probe", "scripts/verify-file.sh");
+    assert!(probe < proved);
+    for s in [
+        &steps("draft")[sign],
+        &steps("draft")[check],
+        &steps("signing-probe")[probe],
+        &steps("signing-probe")[proved],
+    ] {
+        assert!(!s.contains("if:"), "a signing step can't be skipped: {s}");
+    }
+    // The jobs that hold the key take nothing unpinned from a package archive.
+    for job in ["draft", "signing-probe"] {
+        assert!(
+            !steps(job).iter().any(|s| s.contains("apt-get")),
+            "{job} installs from a package archive"
+        );
+        assert!(at(job, "scripts/install-minisign.sh") < at(job, "scripts/sign-file.sh"));
+    }
+    assert!(
+        workflow.contains("needs: [check, signing-probe]"),
+        "the build waits for the probe"
+    );
+    assert!(
+        workflow.contains("needs: [check, build]"),
+        "the draft follows the build"
+    );
+}
+
 #[test]
 fn the_check_catches_cargo_after_a_secret() {
     let bad = "jobs:\n  build:\n    steps:\n      - name: Compile\n        run: cargo tauri build --no-bundle\n      - name: Key\n        env:\n          K: ${{ secrets.KEY }}\n        run: echo\n      - name: Bundle\n        run: |\n          # cargo is fine in a comment\n          cargo tauri bundle\n";

@@ -62,9 +62,12 @@ commands for each step; how the build, signing and updates work is in
   `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` and, when the
   updater secrets are set, the update archive and `latest.json`, plus `SHA256SUMS`
   listing every one of them by bare name (checked before upload; the launcher verifies
-  downloads against it).
+  downloads against it), and `SHA256SUMS.minisig`, its signature with the update key. A run
+  that can't sign fails: the `signing-probe` job proves the key before anything is built, on
+  rehearsals too. Anyone can check it, in a folder holding the file:
+  `minisign -Vm SHA256SUMS -P RWR2zjht2ygERmWrVTxHTnMHSTeIqf4kMRZcjbDfnu93Drc2mI8MO+zC`.
 - **Check the draft**: signatures, notarization, Gatekeeper, the architecture check,
-  `latest.json`, `SHA256SUMS` and the files' sizes. Report to MOrg, then publish it: the
+  `latest.json`, `SHA256SUMS` and its `.minisig` (the command above) and the files' sizes. Report to MOrg, then publish it: the
   owner's one yes covers the tag and publishing, unless he says stop (CLAUDE.md, "Faster
   releases"). A failed check stops it.
 

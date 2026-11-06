@@ -5925,3 +5925,21 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
   `offset`.
 - `plan::tests::a_department_can_be_left_out_of_a_day` covers it, with the command line's test and
   the strict reader's.
+
+## 249. SHA256SUMS signed with the update key (2026-11-06)
+
+- **SUITE-STANDARDS section 3's "later"**, asked for by the launcher, which is starting to require
+  it. Each release attaches `SHA256SUMS.minisig`, a plain minisign signature with the app's
+  update key, so the checksums can be trusted and not just compared. No new key or secret.
+- **A release that can't sign fails.** A `signing-probe` job proves the key on every run,
+  rehearsals too, before the builds start, by signing a test file and checking it. The draft job
+  signs the real file and checks it before anything uploads. Reader's workflow is the model.
+- **Beside the key only the prebuilt `cargo-tauri` runs** (`scripts/sign-file.sh`); the check
+  (`scripts/verify-file.sh`) is minisign itself, with the public key from `tauri.conf.json`
+  and no secret in its step. minisign is a pinned release checked by digest
+  (`scripts/install-minisign.sh`), since the same runner later holds the key and the write
+  token. The check also refuses a legacy signature, as the launcher does (MReview, #140). The Tauri CLI writes its signature in base64, so the script decodes it
+  to what minisign reads.
+- **Tried in a container** with a throwaway key: signed and verified by minisign; no key, a wrong
+  password, a changed file and a legacy signature each failed. xtask's `release_workflow` test holds the order and
+  that no step can be skipped. The first real run is the next rehearsal.
