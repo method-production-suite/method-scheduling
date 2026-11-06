@@ -11,7 +11,7 @@ import { dayDate } from './dates.js';
 import { setRules } from './dynstyle.js';
 import { customDialog } from './modal.js';
 import { layout, printPages, row, td } from './report.js';
-import { layoutHead, printShares, sceneRows, stripGrid } from './strips.js';
+import { draftMark, layoutHead, printShares, sceneRows, stripGrid } from './strips.js';
 import { colorClass, paintStrips } from './colors.js';
 import { bannerLook, dayExtras, shootDayText } from './board.js';
 import { dayLead } from './logic.js';
@@ -49,7 +49,7 @@ export function boardFlows(board, { only = false, picked = new Set(), boneyard =
       return;
     }
     const cls = `bp scene ${st.tone || ''}${colorClass(st, palette)}${st.omitted ? ' omitted' : ''}${size}`;
-    const lines = sceneRows(grid, st.cells, cls, { first: (t) => `${t}${st.parts > 1 ? ` (${st.part}/${st.parts})` : ''}${st.omitted ? ' (omitted)' : ''}` });
+    const lines = sceneRows(grid, st.cells, cls, { lead: st.draft ? [draftMark(st)] : null, first: (t) => `${t}${st.parts > 1 ? ` (${st.part}/${st.parts})` : ''}${st.omitted ? ' (omitted)' : ''}` });
     lines.forEach((tr, i) => rows.push(row(tr, keep || i < lines.length - 1)));
   };
   const flows = [];

@@ -8,7 +8,7 @@
 
 import { el } from './dom.js';
 import { customDialog, errorLine } from './modal.js';
-import { countCategories, countSay, listSay, ruleClass } from './logic.js';
+import { countCategories, countSay, draftColorClass, listSay, ruleClass } from './logic.js';
 
 const cell = (tag, text, cls) => el(tag, { class: cls || '', text: text === null || text === undefined ? '' : String(text) });
 
@@ -303,6 +303,14 @@ export function sceneRows(grid, cells, cls, { lead = null, first = (t) => t, sub
     out.push(el('tr', { class: `${cls}${line > 0 ? ' bp-line' : ''}` }, ...tds));
   }
   return out;
+}
+
+/**
+ * The swatch on a scene a script draft changed (entry 247): the newest draft's color, said
+ * in its title. Small, so the strip's own colors still read. On the board and in print.
+ */
+export function draftMark(strip) {
+  return el('span', { class: `draft-mark ${draftColorClass(strip.draft_color)}`, title: strip.draft, attrs: { role: 'img', 'aria-label': strip.draft } });
 }
 
 /** The column headings for a layout's columns: the first line's fields. */
