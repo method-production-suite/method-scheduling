@@ -369,6 +369,15 @@ jobs:
             Linux)
               one "$root/deb/*.deb" Method-Schedule-linux-amd64.deb
               one "$root/appimage/*.AppImage" Method-Schedule-linux-x86_64.AppImage
+              # A bundled libwayland-client stops current Mesa loading, and the app aborts on
+              # launch on rolling distributions (docs/research/linux-appimage-egl.md).
+              chmod +x dist/Method-Schedule-linux-x86_64.AppImage
+              (cd dist && ./Method-Schedule-linux-x86_64.AppImage --appimage-extract >/dev/null)
+              if find dist/squashfs-root -name 'libwayland-client*.so*' | grep -q .; then
+                echo "::error::The AppImage bundles libwayland-client."
+                exit 1
+              fi
+              rm -rf dist/squashfs-root
               ;;
           esac
           ls -l dist
