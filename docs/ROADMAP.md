@@ -26,14 +26,10 @@ section. Everything else on this page goes ahead without waiting.
   half opening under Rosetta (the one that needs the screen), and a checksum. The commands
   are in [research/release-0.3.0.md](research/release-0.3.0.md); use the newest version
   number in them.
-- **Screen block 8**, the rest of block 7 (2026-11-04, cut short; results in
-  [research/screen-block-7.md](research/screen-block-7.md)), on the owner's yes: the board
-  saved as a PDF for K185 and K187 on paper (test files in `~/Documents`, so the save panel
-  opens on an ordinary folder), the Layouts rename then click, crash recovery in the window
-  (`scripts/crash-check.sh`, M2), and in the reference app E-S34 and the two report
-  questions. Block 7 passed D219, the Tauri 2.12 window, menus and Save dialog, K184, M192,
-  one-day crew calls, the Red Flag Types rename, and K185 and K187 on screen. Also a call sheet
-  with a map picture chosen in the real Open dialog and saved as a PDF (D245).
+- **Left over from screen block 8** (2026-11-06; results in
+  [research/screen-block-8.md](research/screen-block-8.md)), about ten minutes, on the owner's
+  yes: printing on a physical printer, the fixed rule under a field in a saved PDF, and in
+  the reference app E-S34 and the two report questions.
 - **M4's live run**, about fifteen minutes with two computers on one shared folder
   (any sync service): open the same `.mtsc` on both with the network off on one, change
   different things on each (and one thing on both), turn the network back on, and check
@@ -117,7 +113,7 @@ outside downloads it.
 | Item | Size | Refs |
 |---|---|---|
 | Open engine check still to see in the reference app: whether an element left off the board counts in a category's element count (E-S34; E-L5 is settled, screen block 7); every other queued check was answered in screen block 4 (behavior note 27) | S | engine-checks.md queue |
-| Screen block 8: what block 7 (2026-11-04, cut short; screen-block-7.md) didn't run: K185 and K187 on paper; the Layouts rename then click; and in the reference app E-S34, and whether its spreadsheets follow a report's filters and without holds and whether a cast member off the board gets a name with Cast names on (RPT-03, RPT-10). Block 7 passed D219, K184, M192, the Red Flag Types rename, K185 and K187 on screen, and E-L5; block 6 (2026-10-17) passed G167 to G171, J179 to J182, K183, K186, K188, M193, M194 and the new screens | S | screen-block-7.md, screen-block-6.md |
+| Left from screen block 8 (2026-11-06; screen-block-8.md): a physical printer, the fixed `_` rule in a saved PDF, and in the reference app E-S34, and whether its spreadsheets follow a report's filters and without holds and whether a cast member off the board gets a name with Cast names on (RPT-03, RPT-10) | S | screen-block-8.md |
 | Live checks still open: DOD-06 and DOD-07 in the window, BYD-10 (behavior note 27's small items passed in screen block 6) | S | behavior note 27 |
 
 **Exit**: every review finding fixed or written up as a decision; no open engine check
@@ -133,7 +129,6 @@ schedule.
 
 | Item | Size | Refs |
 |---|---|---|
-| Crash recovery in the real window: run `scripts/crash-check.sh` in a screen block (the saving code is tested, D200) | S | APP.md "Saving and recovery" |
 
 **Exit**: a signed build installs on a clean Mac without warnings, updates itself to the
 next build, and the site links to it.

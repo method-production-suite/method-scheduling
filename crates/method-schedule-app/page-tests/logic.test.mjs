@@ -775,6 +775,13 @@ test('the printed call sheet says dates, lengths, times and the sun plainly (dec
   assert.doesNotMatch(cs, /background/);
 });
 
+test('a rule under a field prints: it wins over the printed strip\'s own bottom line (screen block 8)', () => {
+  const css = readFileSync(new URL('../ui/print.css', import.meta.url), 'utf8');
+  const line = css.indexOf('tr.bp td { padding-top');
+  const rule = css.indexOf('tr.bp td.rl-under { border-bottom: 1px solid #000; }');
+  assert.ok(line >= 0 && rule > line);
+});
+
 test('looks: Paper by default, Graphite and Ledger by choice, one layout (decision 208)', () => {
   assert.deepEqual(L.THEMES.map(([v]) => v), ['paper', 'graphite', 'ledger']);
   assert.equal(L.themeAttr('paper'), null, 'Paper is the stylesheet as written');

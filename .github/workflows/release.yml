@@ -502,7 +502,8 @@ jobs:
           name: release-files
           path: dist/*
           if-no-files-found: error
-          retention-days: 30
+          # A rehearsal's signature vouches for files that never ship: not kept for long.
+          retention-days: 1
 
   draft:
     name: draft release
@@ -524,7 +525,7 @@ jobs:
         with:
           name: release-files
           path: dist
-      - name: Every file is what was signed
+      - name: Every file matches the list
         run: |
           set -euo pipefail
           cd dist
