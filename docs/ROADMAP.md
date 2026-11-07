@@ -15,11 +15,10 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **A 0.8.0 release**, when the owner wants one: main has decisions 242 to 249 since v0.7.0
-  (published 2026-10-30, tag on 62e9139). Its rehearsal is the first real run of the AppImage
-  check (#133) and of signing SHA256SUMS (#140), and both results get read from its log. New
-  file keys mean files using them won't open in 0.7.0. It would be the first release the
-  launcher can require a signature from.
+- **v0.8.0's tag**: the owner said yes to starting it (2026-11-06), which covers this release
+  PR and a rehearsal; the tag and publishing need their own yes, once the rehearsal is green.
+  Files using the new keys won't open in 0.7.0. It is the first release the launcher can require
+  a signature from.
 
 **Needs the owner's hands or hardware**
 - **The update and both-chips tests**, about five minutes on the Mac, now on the newest

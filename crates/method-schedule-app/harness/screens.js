@@ -29,6 +29,7 @@ const RECORDED = {
   dood_grid: () => answers.dood_grid,
   // A fresh install: nothing to recover, no update waiting, no What's New.
   recovery_list: () => [],
+  copies_found: () => [],
   open_pending: () => null,
   update_status: () => ({ phase: 'idle', version: null, manual: false, said: null, automatic: true, available: true }),
   update_whats_new: () => null,

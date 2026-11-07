@@ -5943,3 +5943,7 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Tried in a container** with a throwaway key: signed and verified by minisign; no key, a wrong
   password, a changed file and a legacy signature each failed. xtask's `release_workflow` test holds the order and
   that no step can be skipped. The first real run is the next rehearsal.
+- **Then (the 0.8.0 release PR)**: an `assemble` job makes the manifest, SHA256SUMS and its signature,
+  and checks it, on rehearsals too, so a rehearsal runs the real signing on the real files and not
+  only a test file (Budget's rehearsal had just failed on a command its tests skipped). The key is
+  there with no write token; the draft job writes and holds no key.

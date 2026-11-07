@@ -102,24 +102,38 @@ fn the_release_signs_its_checksums() {
             .position(|s| s.contains(text))
             .unwrap_or_else(|| panic!("{job} has no step with {text}"))
     };
-    let sums = at("draft", "sha256sum -- *");
-    let sign = at("draft", "scripts/sign-file.sh dist/SHA256SUMS");
-    let check = at("draft", "scripts/verify-file.sh dist/SHA256SUMS");
-    let draft = at("draft", "gh release create");
-    assert!(sums < sign && sign < check && check < draft);
+    let sums = at("assemble", "sha256sum -- *");
+    let sign = at("assemble", "scripts/sign-file.sh dist/SHA256SUMS");
+    let check = at("assemble", "scripts/verify-file.sh dist/SHA256SUMS");
+    let upload = at("assemble", "name: release-files");
+    assert!(sums < sign && sign < check && check < upload);
+    // Rehearsals run the real signing too: only the draft job skips them. It writes, and
+    // holds no key.
+    let job_text = |job: &str| {
+        let i = workflow.find(&format!("\n  {job}:\n")).expect("the job");
+        workflow[i + 1..]
+            .split("\n  draft:\n")
+            .next()
+            .unwrap_or("")
+            .to_string()
+    };
+    assert!(!job_text("assemble").contains("if: needs.check.outputs.rehearsal"));
+    assert!(!job_text("assemble").contains("contents: write"));
+    assert!(!steps("draft").iter().any(|s| s.contains("secrets.")));
+    assert!(at("draft", "sha256sum -c SHA256SUMS") < at("draft", "gh release create"));
     let probe = at("signing-probe", "scripts/sign-file.sh");
     let proved = at("signing-probe", "scripts/verify-file.sh");
     assert!(probe < proved);
     for s in [
-        &steps("draft")[sign],
-        &steps("draft")[check],
+        &steps("assemble")[sign],
+        &steps("assemble")[check],
         &steps("signing-probe")[probe],
         &steps("signing-probe")[proved],
     ] {
         assert!(!s.contains("if:"), "a signing step can't be skipped: {s}");
     }
     // The jobs that hold the key take nothing unpinned from a package archive.
-    for job in ["draft", "signing-probe"] {
+    for job in ["assemble", "signing-probe"] {
         assert!(
             !steps(job).iter().any(|s| s.contains("apt-get")),
             "{job} installs from a package archive"
@@ -131,8 +145,8 @@ fn the_release_signs_its_checksums() {
         "the build waits for the probe"
     );
     assert!(
-        workflow.contains("needs: [check, build]"),
-        "the draft follows the build"
+        workflow.contains("needs: [check, assemble]"),
+        "the draft follows the signing"
     );
 }
 
