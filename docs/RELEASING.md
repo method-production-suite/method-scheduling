@@ -63,8 +63,8 @@ commands for each step; how the build, signing and updates work is in
   updater secrets are set, the update archive and `latest.json`, plus `SHA256SUMS`
   listing every one of them by bare name (checked before upload; the launcher verifies
   downloads against it), and `SHA256SUMS.minisig`, its signature with the update key. A run
-  that can't sign fails: the `signing-probe` job proves the key before anything is built, on
-  rehearsals too. Anyone can check it, in a folder holding the file:
+  that can't sign fails: the `signing-probe` job proves the key before anything is built, and the
+  `assemble` job signs the real files, both on rehearsals too (only the upload is left for the tag). Anyone can check it, in a folder holding the file:
   `minisign -Vm SHA256SUMS -P RWR2zjht2ygERmWrVTxHTnMHSTeIqf4kMRZcjbDfnu93Drc2mI8MO+zC`.
 - **Check the draft**: signatures, notarization, Gatekeeper, the architecture check,
   `latest.json`, `SHA256SUMS` and its `.minisig` (the command above) and the files' sizes. Report to MOrg, then publish it: the

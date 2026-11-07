@@ -23,8 +23,9 @@
 #                      (scripts/update-manifest.py; decision 213). Without, no manifest:
 #                      installed apps don't see the release.
 #   SHA256SUMS:        the same update key signs it as SHA256SUMS.minisig (SUITE-STANDARDS.md
-#                      section 3). Unlike the steps above this one is never skipped: without
-#                      the key the run fails, in signing-probe, before anything is built.
+#                      section 3), in the assemble job, on rehearsals too. Unlike the steps
+#                      above this one is never skipped: without the key the run fails, in
+#                      signing-probe, before anything is built.
 #   Windows signing:   WINDOWS_CERTIFICATE (a code signing .pfx, base64),
 #                      WINDOWS_CERTIFICATE_PASSWORD. The suite's model step; no certificate
 #                      exists yet, so the first Windows alpha ships unsigned.
@@ -431,20 +432,20 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-  draft:
-    name: draft release
-    # The only job with write access: it drafts the release with the notes and the bundles.
-    # Publishing the draft is left to a person. A rehearsal drafts nothing.
+  assemble:
+    name: the release files
+    # Every run, rehearsals too, so the real signing path runs on the real files before any tag:
+    # the update manifest, SHA256SUMS over everything, its signature, and the check of it. The
+    # key is here and the write token isn't: only the draft job can write, and it holds no key.
     needs: [check, build]
-    if: needs.check.outputs.rehearsal != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write # create the draft release and upload its files
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check.outputs.tag }}
+          ref: ${{ needs.check.outputs.ref }}
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -458,12 +459,12 @@ jobs:
           merge-multiple: true
       - name: Update manifest
         env:
-          TAG: ${{ needs.check.outputs.tag }}
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
           set -euo pipefail
           mkdir -p updater
           if [ -n "$(ls -A updater)" ]; then
-            python3 scripts/update-manifest.py --dir updater --version "${TAG#v}" --out updater/latest.json
+            python3 scripts/update-manifest.py --dir updater --version "$VERSION" --out updater/latest.json
             cp updater/* dist/
           else
             echo "::notice::No updater archive in this release: no latest.json, so installed apps won't see it (decision 213)."
@@ -496,6 +497,39 @@ jobs:
       - name: Check the signature before it goes up
         # Anyone can do the same: minisign -Vm SHA256SUMS -P <the public key in docs/RELEASING.md>.
         run: bash scripts/verify-file.sh dist/SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-files
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+  draft:
+    name: draft release
+    # The only job with write access: it drafts the release with the notes and the files the
+    # assemble job signed, and holds no key. Publishing the draft is left to a person. A rehearsal
+    # drafts nothing.
+    needs: [check, assemble]
+    if: needs.check.outputs.rehearsal != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the draft release and upload its files
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.check.outputs.tag }}
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-files
+          path: dist
+      - name: Every file is what was signed
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum -c SHA256SUMS
+          test -s SHA256SUMS.minisig
       - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
