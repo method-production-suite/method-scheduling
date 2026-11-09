@@ -5861,8 +5861,10 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **Additive in the file**: a file without the key reads and writes back byte for byte; a
   file using it won't open in 0.7.0 or earlier.
 - **Then (2026-11-06)**: the command line's `directions` and the MCP's `set_location_guide` set
-  them too. The map must be a picture by its name, the app's image types, checked in the engine
-  so every way in refuses another file (MReview's audit of #136; reading it already refused one).
+  them too. Setting a map takes only a picture by its name, the app's image types, checked in the
+  engine so the app, the command line and MCP all refuse another file (MReview's audit of #136).
+  Reading doesn't check: 0.8.0's command line and MCP stored any path, and that file must still
+  open; showing such a map already said "Map not found".
 - `plan::tests::a_location_guide_is_found_by_name_and_goes_when_empty`,
   `merge::tests::location_guides_merge_by_name`,
   `callsheet::tests::the_days_places_are_its_locations_with_something_known`, and the strict
