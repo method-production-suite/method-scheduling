@@ -5851,8 +5851,9 @@ leaves M1; if the owner wants it, it comes back as a strip height option.
 - **On the call sheet**: a Locations section after the scenes, each of the day's locations
   once with its coordinates (anyone can type those into their phone), address, directions
   and map. In the JSON as `places`, in the CSV as an eighth table. A location nothing is
-  known of isn't listed. The picture prints at a fixed height and in gray, so the sheet
-  still copies and faxes; a missing file prints "Map not found" and the path, and the
+  known of isn't listed. The picture prints at a fixed height and in its own colors (a gray
+  filter was dropped: screen block 8 found it doesn't reach the saved PDF, and a map reads better
+  in color); a missing file prints "Map not found" and the path, and the
   sheet still prints.
 - **Merging**: a location's guide is one value, keyed as names are compared.
 - **The browser host**: `add_location_map` takes the picture as a file, and it goes in the

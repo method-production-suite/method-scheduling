@@ -359,6 +359,8 @@
    lines of the same height; a two-line banner two of them. */
 .method-report .rpt-table tr.bp td { padding-top: 1.25pt; padding-bottom: 1.25pt; line-height: 11.4pt; border-bottom: 0.5pt solid #999; }
 .method-report .rpt-table tr.bp.bp-line td { padding-top: 1.25pt; }
+/* A rule under a field (decision 185) wins over the strip's own bottom line, or it doesn't print. */
+.method-report .rpt-table tr.bp td.rl-under { border-bottom: 1px solid #000; }
 .method-report .rpt-table tr.bp.banner.tall { height: 28.8pt; }
 .method-report .rpt-table tr.bp.int-day td { background: #fff; }
 .method-report .rpt-table tr.bp.ext-day td { background: #fff4bf; }
@@ -642,12 +644,13 @@
 .method-report col.cs-c-call { width: 20%; }
 .method-report col.cs-c-on { width: 20%; }
 /* A location of the day (entry 245). The map keeps a fixed height, so a page measures the
-   same before and after the picture decodes, and prints in gray with the rest of the ink. */
+   same before and after the picture decodes. It prints in its own colors: the picture is the
+   one thing on the sheet that isn't ink only. */
 .method-report col.cs-c-place { width: 24%; }
 .method-report col.cs-c-where { width: 76%; }
 .method-report td.cs-place strong { display: block; font-weight: 600; }
 .method-report td.cs-where .cs-sub { display: block; white-space: pre-line; overflow-wrap: anywhere; }
-.method-report td.cs-where .cs-map { display: block; height: 2.6in; max-width: 100%; margin-top: 3pt; object-fit: contain; object-position: left top; filter: grayscale(1); }
+.method-report td.cs-where .cs-map { display: block; height: 2.6in; max-width: 100%; margin-top: 3pt; object-fit: contain; object-position: left top; }
 .method-report col.cs-c-dept { width: 40%; }
 .method-report col.cs-c-crew-call { width: 20%; }
 .method-report col.cs-c-from { width: 40%; }
