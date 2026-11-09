@@ -135,6 +135,11 @@ pub struct LocationGuide {
     pub map: Option<String>,
 }
 
+/// The picture types a location's map can be, by extension: the app's image types.
+pub const MAP_IMAGE_TYPES: [&str; 9] = [
+    "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "heic", "bmp",
+];
+
 /// The most characters in a location's address, and in its directions.
 pub const MAX_GUIDE_TEXT: usize = 2000;
 
@@ -156,6 +161,20 @@ pub fn guide_ok(g: &LocationGuide) -> Result<(), String> {
     }
     if g.map.as_deref().is_some_and(|m| m.trim().is_empty()) {
         return Err(format!("the map of {:?} has an empty path", g.name));
+    }
+    // A picture by its name, the same types the app's Open dialog offers, wherever it is set
+    // from: the app, the command line, MCP or a file.
+    if let Some(m) = g.map.as_deref() {
+        let ext = std::path::Path::new(m)
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(str::to_ascii_lowercase);
+        if !ext.is_some_and(|e| MAP_IMAGE_TYPES.contains(&e.as_str())) {
+            return Err(format!(
+                "the map of {:?} is not a PNG, JPEG, GIF, WebP, TIFF, HEIC or BMP picture",
+                g.name
+            ));
+        }
     }
     if g.address.is_empty() && g.directions.is_empty() && g.map.is_none() {
         return Err(format!(
@@ -1905,6 +1924,13 @@ mod tests {
             guide_ok(&guide("", None)).is_err(),
             "the reader refuses an empty one"
         );
+        // A map is a picture by its name, however it is set.
+        assert!(p.set_location_guide(guide("", Some("notes.txt"))).is_err());
+        assert!(p
+            .set_location_guide(guide("", Some("images/no-extension")))
+            .is_err());
+        p.set_location_guide(guide("", Some("Maps/Pier.JPG")))
+            .unwrap();
     }
 
     #[test]

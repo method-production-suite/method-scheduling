@@ -127,8 +127,6 @@ week of runs.
 **Goal**: a production can download a Mac app, open a sample, and trust it with a real
 schedule.
 
-| Item | Size | Refs |
-|---|---|---|
 
 **Exit**: a signed build installs on a clean Mac without warnings, updates itself to the
 next build, and the site links to it.
@@ -142,8 +140,6 @@ partner's web app can host Method Schedule's page with the engine in the browser
 owner, 2026-10-18; D222). The plan, the crate map and every command by kind are in
 [research/web-session.md](research/web-session.md). Ahead of M3; the owner can reorder.
 
-| Item | Size | Refs |
-|---|---|---|
 
 Done: the web smoke test in the weekly build (2026-11-06; its first run is the next Monday's).
 
@@ -245,8 +241,6 @@ through the CLI's `merge-driver` and `git-setup`. What is left is the exit's liv
 
 **Goal**: the things users say the reference app never did (behavior note 13).
 
-| Item | Size | Refs |
-|---|---|---|
 
 Done: revision colors on strips and renaming a draft's color (D247, 2026-11-06). The Method
 Budget link: the exchange frozen at version 1 (2026-10-15), Method Budget's reader built, Export
