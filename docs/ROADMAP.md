@@ -38,7 +38,9 @@ section. Everything else on this page goes ahead without waiting.
 - **A Linux machine, eventually**, for M3's hand checks there (the screen block 3 list),
   including the keys: every shortcut is Ctrl there, and a test keeps them off the keys the
   usual Linux desktops keep for themselves; pressing them is the live check. Also
-  double-clicking a `.mtsc` and a `.mtst` (both associated in `tauri.conf.json`).
+  double-clicking a `.mtsc` and a `.mtst` (both associated in `tauri.conf.json`), and an
+  element picture and a location map in each of BMP, TIFF and HEIC: BMP should draw, and
+  TIFF and HEIC should show the file's name in place of the picture (D104).
 
 **Deferred (the owner, 2026-10-20)**: "defer windows tests indefinitely. We can do linux ones
 eventually." Windows is still built and tested automatically (the weekly build and every
@@ -212,9 +214,8 @@ automatically on both, and by hand on Linux eventually. Windows hand tests are d
 | Item | Size | Refs |
 |---|---|---|
 | Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
-| Image types (TIFF, HEIC, BMP) as each web view shows them | S | D104, IMP-09 |
 | Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, which is what's left: tried on 2026-11-06, a Windows-only dependency and targets in `deny.toml` still fail on zvariant, zvariant_derive and zbus_names, and add about 430 lines to `Cargo.lock` for a feature with no Windows hand test (deferred). Wait for the plugin to move off them. The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
-| The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. Also carries the release-workflow fix that compiles before any signing key is unpacked (local branch `ci/compile-before-secrets`) | M | D213, D214, SUITE-STANDARDS.md section 1 |
+| The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. (The release workflow already compiles before any signing key is unpacked, #53.) | M | D213, D214, SUITE-STANDARDS.md section 1 |
 
 **Exit**: the live check list from screen block 3 passes on Linux, and both systems'
 installers build, pass their automatic tests and update themselves (Windows hand checks
