@@ -60,6 +60,14 @@ pub const IMAGE_TYPES: &[(&str, &str)] = &[
     ("bmp", "image/bmp"),
 ];
 
+/// The engine's list of map picture types is this list's extensions (decision 245).
+#[cfg(test)]
+#[test]
+fn map_types_are_the_image_types() {
+    let ours: Vec<&str> = IMAGE_TYPES.iter().map(|(e, _)| *e).collect();
+    assert_eq!(ours, method_schedule_core::plan::MAP_IMAGE_TYPES);
+}
+
 /// The engine's refusals, as the page says them.
 pub fn say(e: Error) -> String {
     match e {

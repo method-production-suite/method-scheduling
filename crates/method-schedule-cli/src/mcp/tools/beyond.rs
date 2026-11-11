@@ -1279,6 +1279,15 @@ mod tests {
         );
         assert_eq!(g["address"], "1 Harbor Road");
         assert!(g["map"].is_null());
+        let rev = f.rev(p);
+        let r = f.rpc(
+            "tools/call",
+            json!({"name": "set_location_guide", "arguments": {"path": p, "revision": rev, "name": "Pier", "map": "notes.txt"}}),
+        );
+        assert!(
+            r["result"]["isError"] == true || r.get("error").is_some(),
+            "{r}"
+        );
         let l = f.ok("locations", json!({"path": p}));
         let pier = l["locations"]
             .as_array()

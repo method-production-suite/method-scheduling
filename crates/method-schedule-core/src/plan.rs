@@ -135,6 +135,21 @@ pub struct LocationGuide {
     pub map: Option<String>,
 }
 
+/// The picture types a location's map can be, by extension: the app's image types.
+pub const MAP_IMAGE_TYPES: [&str; 9] = [
+    "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "heic", "bmp",
+];
+
+/// Whether a map path names a picture by its extension. Checked when a map is set (the app,
+/// the command line, MCP), not when a file is read: 0.8.0's command line and MCP stored any
+/// path, and a file holding one must still open. Showing the map refuses a non-picture anyway.
+pub fn is_map_picture(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| MAP_IMAGE_TYPES.contains(&e.to_ascii_lowercase().as_str()))
+}
+
 /// The most characters in a location's address, and in its directions.
 pub const MAX_GUIDE_TEXT: usize = 2000;
 
@@ -580,6 +595,12 @@ impl Plan {
             return Ok(());
         }
         guide_ok(&g).map_err(|e| refuse(&e))?;
+        if !g.map.as_deref().is_none_or(is_map_picture) {
+            return Err(refuse(&format!(
+                "the map of {:?} is not a PNG, JPEG, GIF, WebP, TIFF, HEIC or BMP picture",
+                g.name
+            )));
+        }
         match at {
             Some(at) => self.location_guides[at] = g,
             None => self.location_guides.push(g),
@@ -1905,6 +1926,20 @@ mod tests {
             guide_ok(&guide("", None)).is_err(),
             "the reader refuses an empty one"
         );
+        // A map is a picture by its name, however it is set.
+        assert!(p.set_location_guide(guide("", Some("notes.txt"))).is_err());
+        assert!(p
+            .set_location_guide(guide("", Some("images/no-extension")))
+            .is_err());
+        p.set_location_guide(guide("", Some("Maps/Pier.JPG")))
+            .unwrap();
+        // A file written by 0.8.0 with another path still reads: only setting checks.
+        assert!(guide_ok(&LocationGuide {
+            name: "Pier".into(),
+            map: Some("notes.txt".into()),
+            ..LocationGuide::default()
+        })
+        .is_ok());
     }
 
     #[test]
