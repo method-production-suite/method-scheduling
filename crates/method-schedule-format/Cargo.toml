@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 method-schedule-core = { path = "../method-schedule-core" }
 serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.151"
+serde_json = "=1.0.154"
 
 # The engine's seeded generators for the fuzz and property tests: no new crate
 # (decision 172).
