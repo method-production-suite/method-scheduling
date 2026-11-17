@@ -5,7 +5,7 @@ at your option: see [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APAC
 Copyright (c) 2026 Method Production Suite Team and the Method Schedule contributors.
 
 The app (`method-schedule-app`) and the command line (`method-schedule`) are built with
-the 442 third-party Rust crates below, each listed with the license we take it
+the 441 third-party Rust crates below, each listed with the license we take it
 under (where a crate offers a choice) and its copyright lines. Each license's full text
 follows the list. The app draws its window with the system's own web view (WebKit on
 macOS and Linux, WebView2 on Windows), which is part of the operating system and not
@@ -1579,7 +1579,7 @@ License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/rust-lang/
 
 Authors: The Rust Project Developers
 
-### rustix 1.1.5
+### rustix 1.1.6
 
 License: MIT (offered: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT). Source: https://github.com/bytecodealliance/rustix
 
@@ -2448,12 +2448,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 Copyright (c) Microsoft Corporation.
 
 ### windows-sys 0.52.0
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows-sys 0.59.0
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
