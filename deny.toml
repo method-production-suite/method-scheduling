@@ -12,13 +12,8 @@ ignore = [
     # "all". Drop it when Tauri moves off it.
     { id = "RUSTSEC-2024-0429", reason = "glib VariantStrIter: via Tauri's gtk crates, no direct use in ours, calls inside them not traced" },
     # Unmaintained, no fix upstream; reached only through Tauri (gtk's macros on
-    # Linux; urlpattern in tauri-utils). Drop each when Tauri moves off it.
+    # Linux). Drop it when Tauri moves off it.
     { id = "RUSTSEC-2024-0370", reason = "proc-macro-error: build-time macro under Tauri's gtk crates" },
-    { id = "RUSTSEC-2025-0075", reason = "unic-char-range: via urlpattern in tauri-utils" },
-    { id = "RUSTSEC-2025-0080", reason = "unic-common: via urlpattern in tauri-utils" },
-    { id = "RUSTSEC-2025-0081", reason = "unic-char-property: via urlpattern in tauri-utils" },
-    { id = "RUSTSEC-2025-0098", reason = "unic-ucd-version: via urlpattern in tauri-utils" },
-    { id = "RUSTSEC-2025-0100", reason = "unic-ucd-ident: via urlpattern in tauri-utils" },
 ]
 
 [licenses]
