@@ -14,4 +14,4 @@ path = "src/main.rs"
 method-schedule-core = { path = "../method-schedule-core" }
 method-schedule-format = { path = "../method-schedule-format" }
 # For `method-schedule mcp` (docs/MCP.md): the version method-schedule-format pins, so no new crates.
-serde_json = "=1.0.151"
+serde_json = "=1.0.154"
