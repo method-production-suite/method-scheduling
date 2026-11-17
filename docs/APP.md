@@ -1648,7 +1648,7 @@ app's key equivalents (behavior note 19).
   Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (a location
   with none keeps one UTC offset; decisions.md, entries 193 and 230), and
   sending call sheets (it needs a service, BYD-03).
-- **Updates and releases**: the release and Apple signing secrets in CI, a public
-  repository and a first published release (the updater and its key are in, entries 213
-  and 214; "Updates and releases" above), updates on Windows and Linux, and notarizing the
-  first build (it waits for the owner's notary profile, decision 196).
+- **Updates and releases**: updates on Windows and Linux. The update manifest lists only
+  the Mac app (`scripts/update-manifest.py`); the Windows and Linux downloads are installed
+  by hand. Signed, notarized releases with the updater and its key are in (entries 196,
+  213 and 214; "Updates and releases" above).

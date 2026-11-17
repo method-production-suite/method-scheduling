@@ -251,7 +251,7 @@ by the next plan edit; they are never an error.
 | `name` | string | | A sheet's location name, trimmed. |
 | `address` | string | empty | Trimmed, 2000 characters at most. |
 | `directions` | string | empty | May hold several lines. Trimmed, 2000 characters at most. |
-| `map_image` | string | none | A picture file, as a path as an element's [images](#images) are. The picture is never inside the schedule file. |
+| `map_image` | string | none | A picture file (PNG, JPEG, GIF, WebP, TIFF, HEIC or BMP, by its name; another path is kept and read, and shows as not found), as a path as an element's [images](#images) are. The picture is never inside the schedule file. |
 
 At least one of the last three is set.
 

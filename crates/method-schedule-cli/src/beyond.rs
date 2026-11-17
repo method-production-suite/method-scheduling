@@ -855,6 +855,7 @@ mod tests {
         assert!(run(&["directions", f, "Pier", "--no-map"])
             .unwrap()
             .contains("map none"));
+        assert!(run(&["directions", f, "Pier", "--map", "notes.txt"]).is_err());
         let t = run(&["directions", f, "Pier", "--address", ""]).unwrap();
         assert!(t.contains("has no directions"), "{t}");
         // Weights: read, set, refused, back to the defaults.
