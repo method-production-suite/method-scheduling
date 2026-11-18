@@ -13,8 +13,8 @@ publish = false
 [dependencies]
 method-schedule-core = { path = "../method-schedule-core" }
 method-schedule-format = { path = "../method-schedule-format" }
-serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.151"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [features]
 # The system clock as the default (src/clock.rs): for the desktop, never for
