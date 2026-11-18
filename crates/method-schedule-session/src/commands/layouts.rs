@@ -1,16 +1,8 @@
 //! The `layouts` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `layouts.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
-use crate::board::EditResult;
+use super::{edit_with, CmdResult, DocLock, Shell};
 use crate::layouts::*;
-use method_schedule_core::Schedule;
-use std::path::{Path, PathBuf};
 
 /// Adds a named layout (from the Strip Layout or Day Breaks dialog), and with `board` picks
 /// it there, as one undo step.

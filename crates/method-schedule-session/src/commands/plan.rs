@@ -1,22 +1,11 @@
 //! The `plan` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `plan.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
+use super::{finish, today, CmdResult, DocLock, Shell};
 use crate::plan::*;
-use crate::session;
-use crate::view::View;
 use method_schedule_core::drift::{lock, unlock};
-use method_schedule_core::fdx;
-use method_schedule_core::fountain::ImportedScript;
 use method_schedule_core::model::{BoardId, StripId};
 use method_schedule_core::plan::{self as p};
-use method_schedule_core::revise::{import_tagged, revise, revision_text};
-use std::sync::Mutex;
 
 /// The `timeline_data` command.
 pub fn timeline_data<D: DocLock + ?Sized>(

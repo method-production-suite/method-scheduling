@@ -1,11 +1,8 @@
 //! The `app` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `app.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
 use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
+    board_edit, edit, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult, DocLock, Shell,
 };
 use crate::board;
 use crate::calendar::{self, EventInput};
@@ -13,13 +10,9 @@ use crate::clipboard;
 use crate::elements;
 use crate::explain::ExplainDto;
 use crate::redflags;
-use crate::session::{self, Session};
 use crate::sheet;
-use crate::view::{self, CalendarDto, DoodGridDto, ElementDaysDto, ElementsDto, SheetDto, View};
+use crate::view::{self, CalendarDto, DoodGridDto, ElementDaysDto, ElementsDto, SheetDto};
 use method_schedule_core::model::{BoardId, SheetId};
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
 
 /// The `get_view` command.
 pub fn get_view<W: Shell + ?Sized, D: DocLock + ?Sized>(window: &W, state: &D) -> CmdResult {

@@ -1,16 +1,9 @@
 //! The `reportsetup` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `reportsetup.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
-use crate::board::EditResult;
+use super::{edit, finish, CmdResult, DocLock, Shell};
 use crate::reportsetup::*;
 use method_schedule_core::headers::HeaderId;
-use method_schedule_core::model::Schedule;
 
 /// The report list, the production info and what the filters can pick.
 pub fn report_list<D: DocLock + ?Sized>(state: &D) -> CmdResult<ReportsDto> {
