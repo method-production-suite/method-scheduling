@@ -5,7 +5,7 @@ at your option: see [LICENSE-MIT](LICENSE-MIT) and [LICENSE-APACHE](LICENSE-APAC
 Copyright (c) 2026 Method Production Suite Team and the Method Schedule contributors.
 
 The app (`method-schedule-app`) and the command line (`method-schedule`) are built with
-the 441 third-party Rust crates below, each listed with the license we take it
+the 428 third-party Rust crates below, each listed with the license we take it
 under (where a crate offers a choice) and its copyright lines. Each license's full text
 follows the list. The app draws its window with the system's own web view (WebKit on
 macOS and Linux, WebView2 on Windows), which is part of the operating system and not
@@ -185,12 +185,6 @@ License: MIT (offered: MIT). Source: https://github.com/mdsteele/rust-cfb
 
 Copyright (c) 2017 Matthew D. Steele
 
-### cfb 0.7.3
-
-License: MIT (offered: MIT). Source: https://github.com/mdsteele/rust-cfb
-
-Copyright (c) 2017 Matthew D. Steele
-
 ### cfg-if 1.0.5
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/rust-lang/cfg-if
@@ -364,12 +358,6 @@ Copyright (c) 2016 Jelte Fennema
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/RustCrypto/traits
 
 Copyright (c) 2017 Artyom Pavlov
-
-### dirs 6.0.0
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/soc/dirs-rs
-
-Copyright (c) 2018-2019 dirs-rs contributors
 
 ### dirs 7.0.0
 
@@ -921,12 +909,6 @@ License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/indexmap-r
 
 Copyright (c) 2016--2017
 
-### infer 0.19.0
-
-License: MIT (offered: MIT). Source: https://github.com/bojand/infer
-
-Copyright (c) 2019 Bojan
-
 ### infer 0.22.0
 
 License: MIT (offered: MIT). Source: https://github.com/bojand/infer
@@ -1135,7 +1117,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/hyperium/m
 
 Copyright (c) 2014 Sean McArthur
 
-### minisign-verify 0.2.5
+### minisign-verify 0.3.0
 
 License: MIT (offered: MIT). Source: https://github.com/jedisct1/rust-minisign-verify
 
@@ -1557,7 +1539,7 @@ Copyright 2016 Sean McArthur
 
 Copyright (c) 2016-2026 Sean McArthur
 
-### rfd 0.16.0
+### rfd 0.17.2
 
 License: MIT (offered: MIT). Source: https://github.com/PolyMeilex/rfd
 
@@ -1727,11 +1709,9 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/serde-rs/s
 
 Authors: Erick Tryzelaar, David Tolnay
 
-### serde_json 1.0.151
+### serde_json 1.0.154
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/serde-rs/json
-
-Authors: Erick Tryzelaar, David Tolnay
 
 ### serde_repr 0.1.21
 
@@ -1945,7 +1925,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/composefs/
 
 Copyright (c) The tar-rs Project Contributors
 
-### tauri 2.12.1
+### tauri 2.12.2
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/tauri
 
@@ -1963,19 +1943,19 @@ License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-plugin-dialog 2.8.1
+### tauri-plugin-dialog 2.8.4
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/plugins-workspace
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-plugin-fs 2.6.0
+### tauri-plugin-fs 2.7.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/plugins-workspace
 
 Copyright (c) 2017 - Present Tauri Apps Contributors
 
-### tauri-plugin-updater 2.12.0
+### tauri-plugin-updater 2.14.1
 
 License: MIT (offered: Apache-2.0 OR MIT). Source: https://github.com/tauri-apps/plugins-workspace
 
@@ -2453,12 +2433,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows-sys 0.60.2
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows-sys 0.61.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
@@ -2472,12 +2446,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 Copyright (c) Microsoft Corporation.
 
 ### windows-targets 0.52.6
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows-targets 0.53.5
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2507,12 +2475,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows_aarch64_gnullvm 0.53.1
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows_aarch64_msvc 0.42.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
@@ -2520,12 +2482,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 Copyright (c) Microsoft Corporation.
 
 ### windows_aarch64_msvc 0.52.6
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows_aarch64_msvc 0.53.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2543,19 +2499,7 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows_i686_gnu 0.53.1
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows_i686_gnullvm 0.52.6
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows_i686_gnullvm 0.53.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2573,12 +2517,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows_i686_msvc 0.53.1
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows_x86_64_gnu 0.42.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
@@ -2586,12 +2524,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 Copyright (c) Microsoft Corporation.
 
 ### windows_x86_64_gnu 0.52.6
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows_x86_64_gnu 0.53.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 
@@ -2609,12 +2541,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 
 Copyright (c) Microsoft Corporation.
 
-### windows_x86_64_gnullvm 0.53.1
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
 ### windows_x86_64_msvc 0.42.2
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
@@ -2622,12 +2548,6 @@ License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/
 Copyright (c) Microsoft Corporation.
 
 ### windows_x86_64_msvc 0.52.6
-
-License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
-
-Copyright (c) Microsoft Corporation.
-
-### windows_x86_64_msvc 0.53.1
 
 License: MIT (offered: MIT OR Apache-2.0). Source: https://github.com/microsoft/windows-rs
 

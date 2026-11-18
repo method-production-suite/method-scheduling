@@ -9,8 +9,8 @@ publish = false
 # serde only, pinned to the versions Method Budget uses (decisions.md, entry 3).
 [dependencies]
 method-schedule-core = { path = "../method-schedule-core" }
-serde = { version = "=1.0.229", features = ["derive"] }
-serde_json = "=1.0.151"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 # The engine's seeded generators for the fuzz and property tests: no new crate
 # (decision 172).
