@@ -1,16 +1,10 @@
 //! The `split` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `split.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
+use super::{finish, CmdResult, DocLock, Shell};
 use crate::split::*;
-use crate::view::{self, BoardDto, View};
+use crate::view::{self, BoardDto};
 use method_schedule_core::model::BoardId;
-use std::path::PathBuf;
 
 /// Board `board` as the page draws it, for the board beside the board shown (not an
 /// edit, and the board shown stays as it is).

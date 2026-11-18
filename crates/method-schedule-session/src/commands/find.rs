@@ -1,12 +1,7 @@
 //! The `find` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `find.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
+use super::{finish, CmdResult, DocLock, Shell};
 use crate::find::*;
 use crate::view::View;
 

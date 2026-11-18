@@ -1,12 +1,7 @@
 //! The `flagcolors` commands shared by the desktop app and the browser host (each desktop
 //! command in method-schedule-app's `flagcolors.rs` is a one-line call to its function here).
 
-#![allow(unused_imports)]
-
-use super::{
-    board_edit, edit, edit_with, finish, sheet_edit, sheet_order, strip_edit, today, CmdResult,
-    DocLock, Shell,
-};
+use super::{finish, CmdResult, DocLock, Shell};
 use crate::flagcolors::*;
 
 /// Red Flag Types > a type's color, one undo step.
