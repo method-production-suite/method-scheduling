@@ -211,8 +211,8 @@ automatically on both, and by hand on Linux eventually. Windows hand tests are d
 
 | Item | Size | Refs |
 |---|---|---|
-| Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md "Not yet" |
-| Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, which is what's left: tried on 2026-11-06, a Windows-only dependency and targets in `deny.toml` still fail on zvariant, zvariant_derive and zbus_names, and add about 430 lines to `Cargo.lock` for a feature with no Windows hand test (deferred). Wait for the plugin to move off them. The handler (a second launch's file to `on_opened`) is small | S | APP.md "Not yet" |
+| Printing and Save as PDF without the dialog on both; PDF document properties (D96) checked | M | APP.md |
+| Single instance on Windows and Linux, and the system recent documents list. Waiting on a dependency: tauri-plugin-single-instance reaches D-Bus on Linux through zbus crates RustSec lists as unmaintained (RUSTSEC-2026-0370, 0371, 0372), which `cargo deny` refuses; once the plugin moves off them, which is what's left: tried on 2026-11-06, a Windows-only dependency and targets in `deny.toml` still fail on zvariant, zvariant_derive and zbus_names, and add about 430 lines to `Cargo.lock` for a feature with no Windows hand test (deferred). Wait for the plugin to move off them. The handler (a second launch's file to `on_opened`) is small | S | APP.md |
 | The suite's shared updater: replace `tauri-plugin-updater`'s install and `updater.rs`'s policy code with `method_update` from `method-libs` (pinned by full commit, `method-libs` added to the crate-age git allow list), keeping our Help menu and dialogs; after 0.1.0 ships. The crate's README has the migration notes. (The release workflow already compiles before any signing key is unpacked, #53.) | M | D213, D214, SUITE-STANDARDS.md section 1 |
 
 **Exit**: the live check list from screen block 3 passes on Linux, and both systems'
@@ -266,6 +266,47 @@ year's announcement (D244, 2026-11-05).
 
 **Exit**: each item ships behind its own menu entry or option, documented, with the
 exchange at version 1 read by Method Budget.
+
+---
+
+## Later
+
+Smaller things the app doesn't do yet, in no milestone. Picked up when a feature touches
+them, or by anyone: the three with an issue are open to newcomers. This is the one list
+(APP.md kept its own until 2026-11-17 and now points here); single instance and printing
+without the dialog are M3's rows.
+
+- **The board**: a Paste Special (as a move, or above the selection), the rest of the strip designer (scaling to the content; entries 87 and 185), a
+  category's elements more than once on one layout (entry 194), sending only what an edit changed (the
+  whole board view is still sent; at 1,500 strips the view and its JSON cost about 3 ms,
+  entries 24 and 39; a budget test holds an edit plus the view under 5 ms, entry 176)
+  (the command line chooses a board with `--board` since entry 132).
+- **The split screen**: dragging strips between the board and a pane beside it (another
+  board, or a calendar date).
+- **More of red flags**: flag notes in Find (issue #8; decisions.md, entries 33 and 36; the table
+  of every flag and adding to several elements at once came with entry 114).
+- Dragging whole days on the calendar.
+- **More of the breakdown**: splitting a sheet (Duplicate Sheet is the way for now);
+  pasting elements onto several sheets at once; a custom drag order in the Elements tab;
+  links by episode for series; an image marked for reports; property values in Find and
+  the strip designer.
+- **More of the day out of days**: the minimum drop gap from a row, and explaining one
+  cell from a right-click.
+- **More of reports and export**: the rest of the report designer (dragging fields,
+  named fonts, footer fields); paper sizes other than Letter (issue #9); the shooting schedule as a
+  spreadsheet; tab-delimited text (issue #6: the writer has it; no export offers it yet).
+- **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
+  and a find bar per tab.
+- **More of What Changed and merging**: the changes a merge brings in shown per conflict
+  pick side by side.
+- **Beyond the reference app**: daylight saving rules other than the US and Canada's, the EU's,
+  Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (a location
+  with none keeps one UTC offset; decisions.md, entries 193 and 230), and
+  sending call sheets (it needs a service, BYD-03).
+- **Updates and releases**: updates on Windows and Linux. The update manifest lists only
+  the Mac app (`scripts/update-manifest.py`); the Windows and Linux downloads are installed
+  by hand. Signed, notarized releases with the updater and its key are in (entries 196,
+  213 and 214; APP.md, "Updates and releases").
 
 ---
 

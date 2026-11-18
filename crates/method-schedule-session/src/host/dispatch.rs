@@ -212,26 +212,13 @@ pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Val
     None
 }
 
-#[allow(unused_imports)]
 mod app_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
     use crate::board;
-    use crate::calendar::{self, EventInput};
-    use crate::clipboard;
-    use crate::elements;
-    use crate::explain::ExplainDto;
+    use crate::calendar::EventInput;
     use crate::redflags;
-    use crate::session::{self, Session};
-    use crate::sheet;
-    use crate::view::{
-        self, CalendarDto, DoodGridDto, ElementDaysDto, ElementsDto, SheetDto, View,
-    };
-    use method_schedule_core::model::{BoardId, SheetId};
     use serde::Deserialize;
     use serde_json::Value;
-    use std::path::{Path, PathBuf};
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::sync::{Arc, Mutex, MutexGuard};
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
@@ -1507,10 +1494,8 @@ mod app_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod breakdown_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::breakdown::*;
     use serde::Deserialize;
     use serde_json::Value;
 
@@ -1548,10 +1533,8 @@ mod breakdown_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod events_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::events::*;
     use serde::Deserialize;
     use serde_json::Value;
 
@@ -1583,11 +1566,9 @@ mod events_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod find_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
     use crate::find::*;
-    use crate::view::View;
     use serde::Deserialize;
     use serde_json::Value;
 
@@ -1628,10 +1609,8 @@ mod find_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod flagcolors_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::flagcolors::*;
     use serde::Deserialize;
     use serde_json::Value;
 
@@ -1664,15 +1643,11 @@ mod flagcolors_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod layouts_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::board::EditResult;
     use crate::layouts::*;
-    use method_schedule_core::Schedule;
     use serde::Deserialize;
     use serde_json::Value;
-    use std::path::{Path, PathBuf};
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
@@ -1788,21 +1763,10 @@ mod layouts_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod plan_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::plan::*;
-    use crate::session;
-    use crate::view::View;
-    use method_schedule_core::drift::{lock, unlock};
-    use method_schedule_core::fdx;
-    use method_schedule_core::fountain::ImportedScript;
-    use method_schedule_core::model::{BoardId, StripId};
-    use method_schedule_core::plan::{self as p};
-    use method_schedule_core::revise::{import_tagged, revise, revision_text};
     use serde::Deserialize;
     use serde_json::Value;
-    use std::sync::Mutex;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
@@ -2207,14 +2171,9 @@ mod plan_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod reports_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::reports::*;
-    use method_schedule_core::model::Schedule;
-    use method_schedule_format::pdf_info::PdfInfo;
     use serde::Deserialize;
-    use serde::Serialize;
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
@@ -2246,13 +2205,9 @@ mod reports_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod reportsetup_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::board::EditResult;
     use crate::reportsetup::*;
-    use method_schedule_core::headers::HeaderId;
-    use method_schedule_core::model::Schedule;
     use serde::Deserialize;
     use serde_json::Value;
 
@@ -2434,15 +2389,10 @@ mod reportsetup_cmds {
     }
 }
 
-#[allow(unused_imports)]
 mod split_cmds {
     use super::super::{args, to_reply, DocState, Error, W};
-    use crate::split::*;
-    use crate::view::{self, BoardDto, View};
-    use method_schedule_core::model::BoardId;
     use serde::Deserialize;
     use serde_json::Value;
-    use std::path::PathBuf;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;

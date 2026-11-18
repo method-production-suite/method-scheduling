@@ -12,7 +12,7 @@ This is phase 2: one schedule per window, any of its boards and sub-boards, and 
 Breakdown, Elements, Day out of days, Calendar, Reports, Conflicts and Red flags tabs, with drag and
 drop, banners, sorting, a strip layout, cut, copy and paste, and duplicating and merging strips on
 the board, red flags on elements, Find and Replace, printing, PDF and spreadsheet
-export, Explain this count, What Changed and Merge Changes From. "Not yet" at the end lists what comes later.
+export, Explain this count, What Changed and Merge Changes From. What comes later is in ROADMAP.md.
 
 ## Run and build
 
@@ -1610,45 +1610,5 @@ so computer use could drive it), on a ZTEST schedule built from an invented scri
 
 ## Not yet
 
-Brought up to date on 2026-10-13 (feature review): built since the list was written and
-taken off it are banner sizes and alignment, the strip designer's later lines, custom
-text, merged cells and alignment, the MCP server choosing a board, the red flag table
-with its element filter and one flag for several elements, report layouts in layout
-files, the daily category totals and the one-line spreadsheet following the strip
-layout, printing the board, Find matches highlighted on the board, and the reference
-app's key equivalents (behavior note 19).
-
-- **Single instance handling** on Windows and Linux (a second launch with a file starts a
-  second copy), and the system-wide recent documents list.
-- **The board**: a Paste Special (as a move, or above the selection), the rest of the strip designer (scaling to the content; entries 87 and 185), a
-  category's elements more than once on one layout (entry 194), sending only what an edit changed (the
-  whole board view is still sent; at 1,500 strips the view and its JSON cost about 3 ms,
-  entries 24 and 39; a budget test holds an edit plus the view under 5 ms, entry 176)
-  (the command line chooses a board with `--board` since entry 132).
-- **The split screen**: dragging strips between the board and a pane beside it (another
-  board, or a calendar date).
-- **More of red flags**: flag notes in Find (decisions.md, entries 33 and 36; the table
-  of every flag and adding to several elements at once came with entry 114).
-- Dragging whole days on the calendar.
-- **More of the breakdown**: splitting a sheet (Duplicate Sheet is the way for now);
-  pasting elements onto several sheets at once; a custom drag order in the Elements tab;
-  links by episode for series; an image marked for reports; property values in Find and
-  the strip designer.
-- **More of the day out of days**: the minimum drop gap from a row, and explaining one
-  cell from a right-click.
-- **More of reports and export**: the rest of the report designer (dragging fields,
-  named fonts, footer fields); paper sizes other than Letter; Save as PDF without the
-  dialog on Windows and Linux; the shooting schedule as a spreadsheet; tab-delimited
-  text (the writer has it; no export offers it yet).
-- **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
-  and a find bar per tab.
-- **More of What Changed and merging**: the changes a merge brings in shown per conflict
-  pick side by side.
-- **Beyond the reference app**: daylight saving rules other than the US and Canada's, the EU's,
-  Australia's south-east, New Zealand's, Israel's, Egypt's and mainland Chile's (a location
-  with none keeps one UTC offset; decisions.md, entries 193 and 230), and
-  sending call sheets (it needs a service, BYD-03).
-- **Updates and releases**: updates on Windows and Linux. The update manifest lists only
-  the Mac app (`scripts/update-manifest.py`); the Windows and Linux downloads are installed
-  by hand. Signed, notarized releases with the updater and its key are in (entries 196,
-  213 and 214; "Updates and releases" above).
+What the app doesn't do yet is listed once, in [ROADMAP.md](ROADMAP.md) (the milestone
+tables and "Later").
