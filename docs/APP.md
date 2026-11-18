@@ -538,6 +538,10 @@ flag on KIT for 2027-03-02 marks scene 3, that date and KIT's cell.
     has focus (past 80 rows a row out of view is scrolled to and drawn). The panel is
     worked out again after every change while it is open; Close or Escape shuts it
     (decisions.md, entry 26).
+  - **Explain one day**: right-click a cell (horizontal or Vertical) for Explain *date*,
+    which opens the row's panel with that date marked in the grid and its line scrolled
+    into view, or Explain This Count. Both are off for a header field's rows, which are
+    values from the sheets, not elements.
   - **Sort, switches and views** (decision 59): a click on the ID, Element, Work, Hold,
     Start or Finish heading sorts by it (again: the other way; Total is no sort key and
     does not); **Sort…** takes up to four keys (board ID, name, start, finish, work days, hold days), each ascending or

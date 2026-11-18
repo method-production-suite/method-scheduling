@@ -290,11 +290,13 @@ without the dialog are M3's rows.
   pasting elements onto several sheets at once; a custom drag order in the Elements tab;
   links by episode for series; an image marked for reports; property values in Find and
   the strip designer.
-- **More of the day out of days**: the minimum drop gap from a row, and explaining one
-  cell from a right-click.
+- **More of the day out of days**: the minimum drop gap from a row (explaining one cell
+  from a right-click came on 2026-11-18).
 - **More of reports and export**: the rest of the report designer (dragging fields,
-  named fonts, footer fields); paper sizes other than Letter (issue #9); the shooting schedule as a
-  spreadsheet; tab-delimited text (issue #6: the writer has it; no export offers it yet).
+  named fonts, footer fields); paper sizes other than Letter (issue #9);
+  tab-delimited text (issue #6: the writer has it; no export offers it yet). The shooting
+  schedule as a spreadsheet is File > Export's Breakdown (a row per scene with its day,
+  date and a column per category) beside the One-line export's banners and day totals.
 - **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
   and a find bar per tab.
 - **More of What Changed and merging**: the changes a merge brings in shown per conflict
