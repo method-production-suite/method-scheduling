@@ -855,6 +855,7 @@ const dood = createDood($('dood'), {
     refreshDood();
   },
   setRule: (element, field, on) => command(invoke('set_element_field', { element, field, value: on ? 'true' : 'false' })),
+  setGap: (element, days) => command(invoke('set_element_field', { element, field: 'min_drop_gap', value: days })),
   setCodes: (codes) => command(invoke('set_dood_codes', { codes })),
 });
 

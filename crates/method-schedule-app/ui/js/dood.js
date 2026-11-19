@@ -13,7 +13,8 @@
 // Hold, Start or Finish heading sorts by it (again: the other way); Sort… sorts by
 // up to four keys. The sort lasts until the tab or sub-board changes and is never saved
 // (behavior note 27). Each row's H and D boxes are the element's hold and drop switches
-// (one undo step each). Without holds shows the grid
+// (one undo step each), and its G box the element's minimum drop gap in days (Enter or
+// leaving the box sets it; Escape puts it back). Without holds shows the grid
 // as if no element held; Vertical turns it on its side (a row per date, a column per
 // element); Codes… changes the code letters the schedule keeps.
 //
@@ -156,7 +157,7 @@ function codesDialog(codes, submit) {
  * `actions.pickHeader(key)` a header field (set, location, I/E and the rest) as one;
  * `actions.explain(element)` resolves with explain_count's panel; `actions.say(text,
  * isError)` shows a message; `actions.sort(keys)` and `actions.noHolds(on)` change the
- * session's view; `actions.setRule(element, field, on)` and `actions.setCodes(map)` change
+ * session's view; `actions.setRule(element, field, on)`, `actions.setGap(element, days)` and `actions.setCodes(map)` change
  * the schedule (each resolves, or rejects with a sentence). Returns { render(dto),
  * explainSelected() }.
  */
@@ -283,6 +284,7 @@ export function createDood(host, actions) {
     for (const [label, , cls] of SUMMARY) cells.push(SORT_BY[label] ? el('th', { class: `g-sum ${cls} g-sort`, text: label, title: `Sort by ${label.toLowerCase()}`, attrs: { scope: 'col' }, data: { sort: label } }) : el('th', { class: `g-sum ${cls}`, text: label, title: 'Work plus hold', attrs: { scope: 'col' } }));
     cells.push(el('th', { class: 'g-sum s-holds', text: 'H', title: 'Holds: the element\'s hold switch', attrs: { scope: 'col' } }));
     cells.push(el('th', { class: 'g-sum s-drops', text: 'D', title: 'Drops: the element\'s drop switch (needs holds)', attrs: { scope: 'col' } }));
+    cells.push(el('th', { class: 'g-sum s-gap', text: 'G', title: 'Gap: the element\'s minimum drop gap in days (a gap shorter than this is held, not dropped)', attrs: { scope: 'col' } }));
     cells[0].classList.add('g-sort');
     cells[0].dataset.sort = 'ID';
     cells[1].classList.add('g-sort');
@@ -347,10 +349,18 @@ export function createDood(host, actions) {
       const box = el('input', { class: 'g-rule', attrs: { type: 'checkbox', checked: r[field] === true, 'aria-label': `${r.name} ${what}` }, title: `${r.name}: ${what} ${r[field] ? 'on' : 'off'}`, data: { rule: field, element: r.element } });
       tr.append(el('td', { class: `g-sum ${cls}` }, box));
     }
+    const gap = String(r.min_drop_gap ?? '');
+    const box = el('input', { class: 'g-gap', attrs: { type: 'text', inputmode: 'numeric', maxlength: '3', value: gap, 'aria-label': `${r.name} minimum drop gap in days` }, title: `${r.name}: minimum drop gap ${gap} ${gap === '1' ? 'day' : 'days'}`, data: { element: r.element, was: gap } });
+    tr.append(el('td', { class: 'g-sum s-gap' }, box));
     return tr;
   }
 
   tbody.addEventListener('change', (e) => {
+    const gap = e.target.closest('input.g-gap');
+    if (gap) {
+      setGap(gap);
+      return;
+    }
     const box = e.target.closest('input.g-rule');
     if (!box) return;
     const on = box.checked;
@@ -360,7 +370,37 @@ export function createDood(host, actions) {
     });
   });
 
-  const width = () => 2 + dto.dates.length + SUMMARY.length + 2;
+  /** Sets the row's gap from its box, once: Enter and then leaving the box send one edit. */
+  function setGap(gap) {
+    const value = gap.value.trim();
+    const was = gap.dataset.was;
+    if (value === was) return;
+    gap.dataset.was = value;
+    actions.setGap(Number(gap.dataset.element), value).catch((err) => {
+      gap.dataset.was = was;
+      gap.value = was;
+      actions.say(err, true);
+    });
+  }
+
+  // The gap box: Enter or leaving it sets it, Escape puts it back.
+  tbody.addEventListener('keydown', (e) => {
+    const gap = e.target.closest && e.target.closest('input.g-gap');
+    if (!gap) return;
+    if (e.key === 'Enter') {
+      setGap(gap);
+      gap.blur();
+      scroller.focus({ preventScroll: true });
+    } else if (e.key === 'Escape') {
+      gap.value = gap.dataset.was;
+      gap.blur();
+      scroller.focus({ preventScroll: true });
+    } else return;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  const width = () => 2 + dto.dates.length + SUMMARY.length + 3;
 
   /** The grid on its side: a row per date, a column per element, the counts at the foot. */
   function drawVertical() {
@@ -488,6 +528,8 @@ export function createDood(host, actions) {
 
   scroller.addEventListener('keydown', (e) => {
     if (!dto || !dto.rows.length || e.metaKey || e.ctrlKey || e.altKey) return;
+    // Typing in a row's gap box moves no selection.
+    if (e.target.closest && e.target.closest('input.g-gap')) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       const i = rowIndex(selected);
       const next = i < 0 ? (e.key === 'ArrowDown' ? 0 : dto.rows.length - 1) : Math.min(Math.max(i + (e.key === 'ArrowDown' ? 1 : -1), 0), dto.rows.length - 1);

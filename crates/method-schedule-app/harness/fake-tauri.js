@@ -1582,6 +1582,7 @@ const commands = {
       const e = model.elements.find((x) => x.id === r.element);
       r.holds = Boolean(e && e.holds);
       r.drops = Boolean(e && e.drops);
+      r.min_drop_gap = e && e.gap ? e.gap : 1;
     }
     const val = (r, k) => (k === 'board_id' ? r.board_id || null : k === 'name' ? r.name : r[k] === undefined ? null : r[k]);
     g.rows.sort((a, b) => {

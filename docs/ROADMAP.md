@@ -290,8 +290,6 @@ without the dialog are M3's rows.
   pasting elements onto several sheets at once; a custom drag order in the Elements tab;
   links by episode for series; an image marked for reports; property values in Find and
   the strip designer.
-- **More of the day out of days**: the minimum drop gap from a row (explaining one cell
-  from a right-click came on 2026-11-18).
 - **More of reports and export**: the rest of the report designer (dragging fields,
   named fonts, footer fields); paper sizes other than Letter (issue #9);
   tab-delimited text (issue #6: the writer has it; no export offers it yet). The shooting
