@@ -548,7 +548,9 @@ flag on KIT for 2027-03-02 marks scene 3, that date and KIT's cell.
     descending. Rows missing a value go last, ties keep their order, and the sort lasts
     while the tab and the sub-board are shown: leaving the tab or picking another
     sub-board clears it, and Sort… then opens with no keys (entry 145; it is never saved). Each row's **H** and **D** boxes are
-    the element's hold and drop switches, one undo step each. **Without holds** shows the
+    the element's hold and drop switches, one undo step each, and its **G** box the
+    element's minimum drop gap in days (Enter or leaving the box sets it, one undo step;
+    Escape puts it back; a value outside 1 to 999 is refused). **Without holds** shows the
     grid as if no element held (a session view). **Vertical** turns the grid on its side:
     a row per date, a column per element, the counts at the foot. **Saturdays** and
     **Sundays** each show or hide that day's columns (rows when vertical), remembered for
@@ -1221,7 +1223,7 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | Command | Arguments | Returns |
 |---|---|---|
 | `get_view` | | the view (the board shown, every board's id and name, `conflicts`: how many the board shown has, `red_flag_types`: `[{id, name, uses}]`; each sub-board carries `red_flags`, its clash count, and each clashing strip its clashes in words) |
-| `dood_grid` | `sub_board`, `category` (may be null: Cast), `header` (a `reports::HeaderField` key: `set`, `location`, `unit`, `episode`, `int_ext`, `time_of_day`, `script_day`, `sequence`, or null), `sort` (up to four of `board_id`, `name`, `start`, `finish`, `work`, `hold`, each with `:desc`), `no_holds` | the day out of days grid: dates, rows of codes (the schedule's letters) with each row's summary and hold and drop switches; `codes` for the legend, `headers` for the picker, `excluded` when every element of the category is left off the board (no cell marked as a conflict) |
+| `dood_grid` | `sub_board`, `category` (may be null: Cast), `header` (a `reports::HeaderField` key: `set`, `location`, `unit`, `episode`, `int_ext`, `time_of_day`, `script_day`, `sequence`, or null), `sort` (up to four of `board_id`, `name`, `start`, `finish`, `work`, `hold`, each with `:desc`), `no_holds` | the day out of days grid: dates, rows of codes (the schedule's letters) with each row's summary, hold and drop switches and `min_drop_gap`; `codes` for the legend, `headers` for the picker, `excluded` when every element of the category is left off the board (no cell marked as a conflict) |
 | `new_schedule` | | the view, or null when cancelled |
 | `open_schedule` | | the view, or null when cancelled |
 | `save_schedule` | `save_as` | the view, or null when cancelled |

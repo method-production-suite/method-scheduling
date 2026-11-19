@@ -557,6 +557,8 @@ pub struct DoodRowDto {
     /// The element's own switches, which the row edits (decision 59).
     pub holds: bool,
     pub drops: bool,
+    /// The element's minimum drop gap in days, also edited from the row.
+    pub min_drop_gap: u32,
     /// The cells that clash with a red flag: the date's index and the clash in words.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub red_flags: Vec<DoodFlagDto>,
@@ -2507,6 +2509,7 @@ pub fn dood_grid_for(
             total: sum.total,
             holds: e.rules.holds,
             drops: e.rules.drops,
+            min_drop_gap: e.rules.min_drop_gap,
             red_flags: flags_on_row(&flagged, r.element, first, width),
             warnings,
         });

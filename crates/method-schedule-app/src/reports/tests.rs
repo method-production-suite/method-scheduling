@@ -701,4 +701,12 @@ fn the_dood_report_starts_on_the_weeks_first_day() {
     assert_eq!(first("mon"), ("2027-03-01".to_string(), "Mon"));
     let tab = crate::view::dood_grid(s.schedule(), sub(&s), None).unwrap();
     assert_eq!(tab.dates[0].date, "2027-03-01");
+    // Each row carries the element's own drop gap, which the row's G box edits.
+    for r in &tab.rows {
+        let e = s
+            .schedule()
+            .element(method_schedule_core::model::ElementId(r.element))
+            .unwrap();
+        assert_eq!(r.min_drop_gap, e.rules.min_drop_gap);
+    }
 }

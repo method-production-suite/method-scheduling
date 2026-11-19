@@ -1298,14 +1298,16 @@ table.cal-month { width: 100%; border-collapse: collapse; table-layout: fixed; b
 .dood-grid th[aria-sort="ascending"]::after { content: " \2191"; }
 .dood-grid th[aria-sort="descending"]::after { content: " \2193"; }
 .dood-grid .s-holds, .dood-grid .s-drops { width: 20px; min-width: 20px; max-width: 20px; text-align: center; padding: 0; }
-.dood-grid .s-drops { right: 0; }
-.dood-grid .s-holds { right: 20px; }
-.dood-grid .s-total { right: 40px; }
-.dood-grid .s-finish { right: 72px; }
-.dood-grid .s-start { right: 144px; }
-.dood-grid .s-hold { right: 216px; }
-.dood-grid .s-work { right: 248px; }
+.dood-grid .s-gap { width: 30px; min-width: 30px; max-width: 30px; text-align: center; padding: 0; right: 0; }
+.dood-grid .s-drops { right: 30px; }
+.dood-grid .s-holds { right: 50px; }
+.dood-grid .s-total { right: 70px; }
+.dood-grid .s-finish { right: 102px; }
+.dood-grid .s-start { right: 174px; }
+.dood-grid .s-hold { right: 246px; }
+.dood-grid .s-work { right: 278px; }
 .dood-grid input.g-rule { margin: 0; vertical-align: middle; }
+.dood-grid input.g-gap { width: 26px; margin: 0; padding: 0 1px; text-align: right; font: inherit; }
 table.dood-grid.dood-vertical { width: auto; }
 .dood-vertical .v-date { position: sticky; left: 0; z-index: 1; min-width: 118px; text-align: left; font-weight: 400; background: var(--surface); }
 .dood-vertical .v-sd { min-width: 30px; color: var(--accent); }
