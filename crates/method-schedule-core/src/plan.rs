@@ -2336,4 +2336,80 @@ mod tests {
         remove_day_breaks(&mut s, board, sub).unwrap();
         assert!(s.plan.days_shot.is_empty() && s.plan.scenes_shot.is_empty());
     }
+
+    /// What people type is read without a panic whatever it is, and every value reads
+    /// back from its own text.
+    #[test]
+    fn typed_values_never_panic_and_read_back() {
+        use crate::testgen::{fuzz_rng, rounds};
+        const BITS: &[&str] = &[
+            "0",
+            "1",
+            "9",
+            "12",
+            "23",
+            "59",
+            "60",
+            "90",
+            "180",
+            "999",
+            "1000",
+            ":",
+            "::",
+            ".",
+            "-",
+            "+",
+            "--",
+            " ",
+            "\t",
+            "N",
+            "S",
+            "E",
+            "W",
+            "n",
+            "w",
+            "UTC",
+            "utc",
+            "GMT",
+            "é",
+            "\u{0}",
+            "\u{feff}",
+            "日",
+            "4294967296",
+            "00",
+            "000000",
+            "1234567",
+            "e",
+        ];
+        let mut rng = fuzz_rng(0x7e_4a1);
+        for _ in 0..rounds(3000) {
+            let t: String = (0..rng.below(6))
+                .map(|_| BITS[rng.below(BITS.len() as u64) as usize])
+                .collect();
+            let _ = parse_degrees(&t, 90);
+            let _ = parse_degrees(&t, 180);
+            let _ = parse_offset(&t);
+            let _ = parse_daylight_saving(&t);
+            let _ = parse_clock(&t);
+            let _ = parse_hours(&t);
+            let _ = parse_crew_offset(&t);
+            let _ = parse_offset_periods(&t);
+            let below = |rng: &mut crate::testgen::Rng, n: i64| rng.below(n as u64) as i64;
+            let deg = (below(&mut rng, 180_000_001) - 90_000_000) as i32;
+            assert_eq!(parse_degrees(&degrees_text(deg), 90), Ok(deg), "{deg}");
+            let off = (below(&mut rng, 14 * 60 * 2 + 1) - 14 * 60) as i32;
+            assert_eq!(parse_offset(&offset_text(off)), Ok(off), "{off}");
+            let clock = below(&mut rng, 24 * 60) as u32;
+            assert_eq!(parse_clock(&clock_text(clock as i32)), Ok(clock), "{clock}");
+            let hours = below(&mut rng, 1000 * 60) as u32;
+            assert_eq!(parse_hours(&hours_text(hours)), Ok(hours), "{hours}");
+            let crew =
+                (below(&mut rng, MAX_CREW_OFFSET as i64 * 2 + 1) - MAX_CREW_OFFSET as i64) as i32;
+            assert_eq!(
+                parse_crew_offset(&crew_offset_text(crew)),
+                Ok(crew),
+                "{crew}"
+            );
+        }
+    }
 }
