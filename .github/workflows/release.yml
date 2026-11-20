@@ -111,6 +111,9 @@ jobs:
     # without SHA256SUMS.minisig.
     needs: check
     runs-on: ubuntu-latest
+    # The signing secrets live in the "release" environment, which only main and v*
+    # tags may use; jobs that read none of them stay outside it.
+    environment: release
     timeout-minutes: 10
     permissions:
       contents: read
@@ -158,6 +161,9 @@ jobs:
             target: ""
             bundles: deb,appimage
     runs-on: ${{ matrix.os }}
+    # The signing secrets live in the "release" environment, which only main and v*
+    # tags may use; jobs that read none of them stay outside it.
+    environment: release
     timeout-minutes: 90
     env:
       # Which optional secrets exist (true or false), never their values.
@@ -439,6 +445,9 @@ jobs:
     # key is here and the write token isn't: only the draft job can write, and it holds no key.
     needs: [check, build]
     runs-on: ubuntu-latest
+    # The signing secrets live in the "release" environment, which only main and v*
+    # tags may use; jobs that read none of them stay outside it.
+    environment: release
     timeout-minutes: 15
     permissions:
       contents: read
