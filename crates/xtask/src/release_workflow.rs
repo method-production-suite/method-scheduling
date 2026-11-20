@@ -157,3 +157,51 @@ fn the_check_catches_cargo_after_a_secret() {
     let good = bad.replace("cargo tauri bundle", "cargo-tauri bundle");
     assert!(violations(&good).is_empty());
 }
+
+/// Each job's whole text (its settings and steps), from `jobs:` on, by the YAML's
+/// indentation.
+fn job_blocks(workflow: &str) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    let mut in_jobs = false;
+    for line in workflow.lines() {
+        if line == "jobs:" {
+            in_jobs = true;
+            continue;
+        }
+        if !in_jobs {
+            continue;
+        }
+        let job = line
+            .strip_prefix("  ")
+            .and_then(|l| l.strip_suffix(':'))
+            .filter(|n| !n.starts_with(' ') && !n.is_empty());
+        if let Some(name) = job {
+            out.push((name.to_string(), String::new()));
+        } else if let Some((_, text)) = out.last_mut() {
+            text.push_str(line);
+            text.push('\n');
+        }
+    }
+    out
+}
+
+/// The signing secrets live in the `release` environment (main and `v*` tags only): every
+/// job that reads a secret runs in it, and no other job does.
+#[test]
+fn only_the_jobs_with_secrets_use_the_release_environment() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github/workflows/release.yml");
+    let workflow = std::fs::read_to_string(&path).expect("release.yml");
+    let mut with_env = Vec::new();
+    for (job, text) in job_blocks(&workflow) {
+        let reads = text.contains("secrets.");
+        let env = text.lines().any(|l| l == "    environment: release");
+        assert_eq!(
+            reads, env,
+            "{job}: reads a secret {reads}, in the environment {env}"
+        );
+        if env {
+            with_env.push(job);
+        }
+    }
+    assert_eq!(with_env, ["signing-probe", "build", "assemble"]);
+}
