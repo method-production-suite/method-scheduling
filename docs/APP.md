@@ -729,8 +729,10 @@ flag on KIT for 2027-03-02 marks scene 3, that date and KIT's cell.
   everything, every sheet field, one header field (Scenes, I/E, Set, Time of day,
   Synopsis, Location, Script pages, Script day, Unit, Sequence, Episode, Comments),
   element names, category names, banner text or event names; **Where**: the whole
-  schedule, or the sub-board picked in the board bar (its sheets, banners and events, and
-  the elements on them with their categories). Results come in board order (each board's
+  schedule, the sub-board picked in the board bar (its sheets, banners and events, and
+  the elements on them with their categories), or the shown board's Boneyard (its
+  unscheduled scenes and the elements on them with their categories; Replace then changes
+  nothing on the schedule's sub-boards). Results come in board order (each board's
   sub-boards' strips, each sub-board's events after its strips, scenes only in a Boneyard,
   then categories each followed by its elements), each with its place (`Scene 12, Set`,
   `Cast element`, `Banner on Main`, `Event on Unit B, 2027-03-04`) and what the field holds
@@ -1315,7 +1317,7 @@ differs from the one last saved, so undoing back to the saved state is clean.
 | `recovery_list` | | `[{ key, name, title, saved_at_ms }]`, newest first |
 | `open_recovered` | `key` | the view, or null when cancelled |
 | `discard_recovered` | `key` | the remaining list |
-| `find_text` | `query` (`{text, match_case, whole_word, field, sub_board}`; `field` a key of `method_schedule_core::find::FieldFilter` or null for everything, `sub_board` null for the whole schedule) | `{count, hits, truncated}`: at most 1,000 `hits`, each `{key, kind, field, place, context, sheet, element, category, board, sub_board, strip, event, date}` in board order, `context` cut to 160 characters |
+| `find_text` | `query` (`{text, match_case, whole_word, field, sub_board, boneyard}`; `field` a key of `method_schedule_core::find::FieldFilter` or null for everything, `sub_board` null for the whole schedule, `boneyard` a board id to search only that board's Boneyard, not with `sub_board`) | `{count, hits, truncated}`: at most 1,000 `hits`, each `{key, kind, field, place, context, sheet, element, category, board, sub_board, strip, event, date}` in board order, `context` cut to 160 characters |
 | `replace_text` | `query` (as above), `with`, `picks` (the checked results' keys) | the view, with a notice saying how many places changed |
 | `conflicts_view` | `board` | `{board, board_name, count, conflicts, clash_count, event_clashes, undated, truncated}`: a conflict is `{element, name, category, date, weekday, bookings}`, a booking `{sub_board, sub_board_name, day, sheets: [{sheet, scene, strip}]}`, an event clash adds `events: [{sub_board, sub_board_name, index, name}]`; at most 1,000 of each |
 | `explain_count` | `sub_board`, `element` | the Explain panel for that element on the sub-board: name, category, totals, the summary sentences, `gaps` (`{after, before, days, outcome, text}`) and `days` (`{date, code, counted, text}`) |

@@ -46,6 +46,10 @@ pub struct QueryArg {
     /// The sub-board to search, or null for the whole schedule.
     #[serde(default)]
     pub sub_board: Option<u32>,
+    /// A board whose Boneyard alone to search (its unscheduled sheets and their
+    /// elements); null otherwise. Not with `sub_board`.
+    #[serde(default)]
+    pub boneyard: Option<u32>,
     /// An advanced search's rows (decision 77): `{field, op, value}`, at most
     /// [`MAX_CONDITIONS`].
     #[serde(default)]
@@ -132,9 +136,20 @@ pub fn query(s: &Schedule, q: &QueryArg) -> Result<Query, String> {
         None | Some("") => None,
         Some(k) => Some(FieldFilter::parse(k).ok_or("That isn't a field Find knows.")?),
     };
-    let scope = match q.sub_board {
-        None => Scope::Schedule,
-        Some(sub) => {
+    let scope = match (q.sub_board, q.boneyard) {
+        (Some(_), Some(_)) => {
+            return Err("Search one sub-board or the Boneyard, not both.".to_string());
+        }
+        (None, Some(board)) => {
+            let b = s
+                .boards
+                .iter()
+                .find(|b| b.id.0 == board)
+                .ok_or("That board is no longer in the schedule.")?;
+            Scope::Boneyard { board: b.id }
+        }
+        (None, None) => Scope::Schedule,
+        (Some(sub), None) => {
             let (b, sb) = crate::view::sub_ref(s, sub)?;
             Scope::SubBoard {
                 board: b.id,
@@ -593,6 +608,13 @@ mod tests {
         let f = find(s.schedule(), &x).unwrap();
         assert_eq!(f.hits.len(), 1);
         assert_eq!(f.hits[0].place, "Scene 3, Set");
+        // The Boneyard alone: scene 4 (CABINET).
+        x.sub_board = None;
+        x.whole_word = false;
+        x.boneyard = Some(s.schedule().boards[0].id.0);
+        let f = find(s.schedule(), &x).unwrap();
+        let places: Vec<&str> = f.hits.iter().map(|h| h.place.as_str()).collect();
+        assert_eq!(places, ["Scene 4, Set"]);
 
         // Element and category names, with the category to open.
         let f = find(s.schedule(), &q("a")).unwrap();
@@ -619,6 +641,17 @@ mod tests {
         assert_eq!(
             find(s.schedule(), &x).unwrap_err(),
             "That sub-board is no longer in the schedule."
+        );
+        x.boneyard = Some(s.schedule().boards[0].id.0);
+        assert_eq!(
+            find(s.schedule(), &x).unwrap_err(),
+            "Search one sub-board or the Boneyard, not both."
+        );
+        x.sub_board = None;
+        x.boneyard = Some(999_999);
+        assert_eq!(
+            find(s.schedule(), &x).unwrap_err(),
+            "That board is no longer in the schedule."
         );
         assert!(find(s.schedule(), &q(&"x".repeat(MAX_TEXT + 1))).is_err());
         assert_eq!(find(s.schedule(), &q("")).unwrap().count, 0);
