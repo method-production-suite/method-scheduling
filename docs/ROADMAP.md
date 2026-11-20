@@ -19,11 +19,20 @@ section. Everything else on this page goes ahead without waiting.
   the first release with a signed checksum list the launcher can require.
 
 **Needs the owner's hands or hardware**
-- **The update and both-chips tests**, about five minutes on the Mac, now on the newest
-  release: the in-app update from the version installed, both chips in the app, the Intel
-  half opening under Rosetta (the one that needs the screen), and a checksum. The commands
-  are in [research/release-0.3.0.md](research/release-0.3.0.md); use the newest version
-  number in them.
+- **The update and both-chips tests**, about five minutes on the Mac, on 0.8.0 (the
+  newest release). Ready to run:
+  1. **The update.** With any earlier version installed, Help > Check for Updates offers
+     0.8.0, installs it and restarts into it (Method Schedule > About says 0.8.0).
+  2. **Both chips.** In Terminal, this prints `x86_64 arm64`:
+     `lipo -archs "/Applications/Method Schedule.app/Contents/MacOS/method-schedule-app"`
+  3. **The Intel half opens** (the one check that needs the screen). In Terminal:
+     `arch -x86_64 "/Applications/Method Schedule.app/Contents/MacOS/method-schedule-app"`
+     opens the window under Rosetta; Help > Open Sample shows Field Station; then quit.
+  4. **A checksum.** Download `Method-Schedule-macOS.dmg` and `SHA256SUMS` from the v0.8.0
+     release; in that folder, `shasum -a 256 -c SHA256SUMS --ignore-missing` prints
+     `Method-Schedule-macOS.dmg: OK`.
+
+  Background and the earlier runs: [research/release-0.3.0.md](research/release-0.3.0.md).
 - **Left over from screen block 8** (2026-11-06; results in
   [research/screen-block-8.md](research/screen-block-8.md)), about ten minutes, on the owner's
   yes: printing on a physical printer, the fixed rule under a field in a saved PDF, and in
