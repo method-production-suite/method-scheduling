@@ -177,6 +177,33 @@ pub const READS: &[&str] = &[
     "board_view",
 ];
 
+/// One command's arm: its arguments read as the page sends them (`snake` keys, or `camel`
+/// for the commands whose desktop side takes camelCase), refused in words when they don't
+/// fit, then `$call`'s result as the reply. Each field is bound by name for `$call`.
+macro_rules! call {
+    ($command:expr, $a:expr, snake { $($(#[$fa:meta])* $f:ident : $t:ty),* $(,)? } => $call:block) => {{
+        #[derive(serde::Deserialize)]
+        struct A {
+            $($(#[$fa])* $f: $t,)*
+        }
+        match $crate::host::args::<A>($command, $a) {
+            Ok(A { $($f),* }) => $crate::host::to_reply($call),
+            Err(e) => return Some(Err(e)),
+        }
+    }};
+    ($command:expr, $a:expr, camel { $($(#[$fa:meta])* $f:ident : $t:ty),* $(,)? } => $call:block) => {{
+        #[derive(serde::Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct A {
+            $($(#[$fa])* $f: $t,)*
+        }
+        match $crate::host::args::<A>($command, $a) {
+            Ok(A { $($f),* }) => $crate::host::to_reply($call),
+            Err(e) => return Some(Err(e)),
+        }
+    }};
+}
+
 /// Runs a desktop command; `None` when it isn't one of [`COMMANDS`].
 pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
     if let Some(r) = app_cmds::dispatch(command, a, state) {
@@ -213,11 +240,11 @@ pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Val
 }
 
 mod app_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
+    use super::super::{to_reply, DocState, Error, W};
     use crate::board;
     use crate::calendar::EventInput;
     use crate::redflags;
-    use serde::Deserialize;
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
@@ -225,1719 +252,934 @@ mod app_cmds {
         let _ = &window;
         Some(match command {
             "get_view" => to_reply(crate::commands::app::get_view(&window, state)),
-            "dood_grid" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    category: Option<u32>,
-                    #[serde(default)]
-                    header: Option<String>,
-                    #[serde(default)]
-                    sort: Option<Vec<String>>,
-                    #[serde(default)]
-                    no_holds: Option<bool>,
-                }
-                let A {
-                    sub_board,
-                    category,
-                    header,
-                    sort,
-                    no_holds,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::dood_grid(
+            "dood_grid" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                category: Option<u32>,
+                #[serde(default)]
+                header: Option<String>,
+                #[serde(default)]
+                sort: Option<Vec<String>>,
+                #[serde(default)]
+                no_holds: Option<bool>,
+            } => {
+                crate::commands::app::dood_grid(
                     state, sub_board, category, header, sort, no_holds,
-                ))
-            }
-            "explain_count" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    element: u32,
-                }
-                let A { sub_board, element } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::explain_count(
+                )
+            }),
+            "explain_count" => call!(command, a, snake {
+                sub_board: u32,
+                element: u32,
+            } => {
+                crate::commands::app::explain_count(
                     state, sub_board, element,
-                ))
-            }
-            "conflicts_view" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::conflicts_view(state, board))
-            }
+                )
+            }),
+            "conflicts_view" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::app::conflicts_view(state, board)
+            }),
             "undo" => to_reply(crate::commands::app::undo(&window, state)),
             "redo" => to_reply(crate::commands::app::redo(&window, state)),
-            "move_strips" => {
-                #[derive(Deserialize)]
-                struct A {
-                    board: u32,
-                    strips: Vec<u32>,
-                    #[serde(default)]
-                    sub_board: Option<u32>,
-                    index: usize,
-                }
-                let A {
-                    board,
-                    strips,
-                    sub_board,
-                    index,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_strips(
+            "move_strips" => call!(command, a, snake {
+                board: u32,
+                strips: Vec<u32>,
+                #[serde(default)]
+                sub_board: Option<u32>,
+                index: usize,
+            } => {
+                crate::commands::app::move_strips(
                     &window, state, board, strips, sub_board, index,
-                ))
-            }
-            "insert_day_break" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    index: usize,
-                }
-                let A { sub_board, index } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::insert_day_break(
+                )
+            }),
+            "insert_day_break" => call!(command, a, snake {
+                sub_board: u32,
+                index: usize,
+            } => {
+                crate::commands::app::insert_day_break(
                     &window, state, sub_board, index,
-                ))
-            }
-            "delete_strips" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    strips: Vec<u32>,
-                }
-                let A { board, strips } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_strips(
+                )
+            }),
+            "delete_strips" => call!(command, a, camel {
+                board: u32,
+                strips: Vec<u32>,
+            } => {
+                crate::commands::app::delete_strips(
                     &window, state, board, strips,
-                ))
-            }
-            "insert_banner" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    index: usize,
-                    text: String,
-                    duration: String,
-                    #[serde(default)]
-                    style: Option<board::BannerStyleInput>,
-                }
-                let A {
-                    sub_board,
-                    index,
-                    text,
-                    duration,
-                    style,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::insert_banner(
+                )
+            }),
+            "insert_banner" => call!(command, a, snake {
+                sub_board: u32,
+                index: usize,
+                text: String,
+                duration: String,
+                #[serde(default)]
+                style: Option<board::BannerStyleInput>,
+            } => {
+                crate::commands::app::insert_banner(
                     &window, state, sub_board, index, text, duration, style,
-                ))
-            }
-            "set_banner" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    strip: u32,
-                    text: String,
-                    duration: String,
-                    #[serde(default)]
-                    style: Option<board::BannerStyleInput>,
-                }
-                let A {
-                    board,
-                    strip,
-                    text,
-                    duration,
-                    style,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_banner(
+                )
+            }),
+            "set_banner" => call!(command, a, camel {
+                board: u32,
+                strip: u32,
+                text: String,
+                duration: String,
+                #[serde(default)]
+                style: Option<board::BannerStyleInput>,
+            } => {
+                crate::commands::app::set_banner(
                     &window, state, board, strip, text, duration, style,
-                ))
-            }
-            "sort_strips" => {
-                #[derive(Deserialize)]
-                struct A {
-                    board: u32,
-                    #[serde(default)]
-                    sub_board: Option<u32>,
-                    keys: Vec<board::SortKeyInput>,
-                }
-                let A {
-                    board,
-                    sub_board,
-                    keys,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::sort_strips(
+                )
+            }),
+            "sort_strips" => call!(command, a, snake {
+                board: u32,
+                #[serde(default)]
+                sub_board: Option<u32>,
+                keys: Vec<board::SortKeyInput>,
+            } => {
+                crate::commands::app::sort_strips(
                     &window, state, board, sub_board, keys,
-                ))
-            }
-            "set_strip_layout" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    columns: Vec<board::LayoutColumnInput>,
-                    #[serde(default)]
-                    size: Option<String>,
-                    #[serde(default)]
-                    marks: Option<board::MarksInput>,
-                }
-                let A {
-                    board,
-                    columns,
-                    size,
-                    marks,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_strip_layout(
+                )
+            }),
+            "set_strip_layout" => call!(command, a, camel {
+                board: u32,
+                columns: Vec<board::LayoutColumnInput>,
+                #[serde(default)]
+                size: Option<String>,
+                #[serde(default)]
+                marks: Option<board::MarksInput>,
+            } => {
+                crate::commands::app::set_strip_layout(
                     &window, state, board, columns, size, marks,
-                ))
-            }
-            "continue_scene" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    strip: u32,
-                }
-                let A { board, strip } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::continue_scene(
+                )
+            }),
+            "continue_scene" => call!(command, a, camel {
+                board: u32,
+                strip: u32,
+            } => {
+                crate::commands::app::continue_scene(
                     &window, state, board, strip,
-                ))
-            }
-            "set_day_look" => {
-                #[derive(Deserialize)]
-                struct A {
-                    board: u32,
-                    look: board::DayLookInput,
-                }
-                let A { board, look } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_day_look(
+                )
+            }),
+            "set_day_look" => call!(command, a, snake {
+                board: u32,
+                look: board::DayLookInput,
+            } => {
+                crate::commands::app::set_day_look(
                     &window, state, board, look,
-                ))
-            }
-            "set_strip_colors" => {
-                #[derive(Deserialize)]
-                struct A {
-                    rules: Vec<board::ColorRuleInput>,
-                    #[serde(default)]
-                    scene_text: Option<String>,
-                    #[serde(default)]
-                    banner_text: Option<String>,
-                    #[serde(default)]
-                    break_text: Option<String>,
-                }
-                let A {
-                    rules,
-                    scene_text,
-                    banner_text,
-                    break_text,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_strip_colors(
+                )
+            }),
+            "set_strip_colors" => call!(command, a, snake {
+                rules: Vec<board::ColorRuleInput>,
+                #[serde(default)]
+                scene_text: Option<String>,
+                #[serde(default)]
+                banner_text: Option<String>,
+                #[serde(default)]
+                break_text: Option<String>,
+            } => {
+                crate::commands::app::set_strip_colors(
                     &window,
                     state,
                     rules,
                     scene_text,
                     banner_text,
                     break_text,
-                ))
-            }
-            "show_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::show_board(&window, state, board))
-            }
-            "add_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_board(&window, state, name))
-            }
-            "duplicate_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    name: String,
-                }
-                let A { board, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::duplicate_board(
+                )
+            }),
+            "show_board" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::app::show_board(&window, state, board)
+            }),
+            "add_board" => call!(command, a, camel {
+                name: String,
+            } => {
+                crate::commands::app::add_board(&window, state, name)
+            }),
+            "duplicate_board" => call!(command, a, camel {
+                board: u32,
+                name: String,
+            } => {
+                crate::commands::app::duplicate_board(
                     &window, state, board, name,
-                ))
-            }
-            "rename_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    name: String,
-                }
-                let A { board, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::rename_board(
+                )
+            }),
+            "rename_board" => call!(command, a, camel {
+                board: u32,
+                name: String,
+            } => {
+                crate::commands::app::rename_board(
                     &window, state, board, name,
-                ))
-            }
-            "move_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    to: usize,
-                }
-                let A { board, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_board(&window, state, board, to))
-            }
-            "delete_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_board(&window, state, board))
-            }
-            "add_sub_board" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    name: String,
-                }
-                let A { board, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_sub_board(
+                )
+            }),
+            "move_board" => call!(command, a, camel {
+                board: u32,
+                to: usize,
+            } => {
+                crate::commands::app::move_board(&window, state, board, to)
+            }),
+            "delete_board" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::app::delete_board(&window, state, board)
+            }),
+            "add_sub_board" => call!(command, a, camel {
+                board: u32,
+                name: String,
+            } => {
+                crate::commands::app::add_sub_board(
                     &window, state, board, name,
-                ))
-            }
-            "rename_sub_board" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    name: String,
-                }
-                let A { sub_board, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::rename_sub_board(
+                )
+            }),
+            "rename_sub_board" => call!(command, a, snake {
+                sub_board: u32,
+                name: String,
+            } => {
+                crate::commands::app::rename_sub_board(
                     &window, state, sub_board, name,
-                ))
-            }
-            "move_sub_board" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    to: usize,
-                }
-                let A { sub_board, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_sub_board(
+                )
+            }),
+            "move_sub_board" => call!(command, a, snake {
+                sub_board: u32,
+                to: usize,
+            } => {
+                crate::commands::app::move_sub_board(
                     &window, state, sub_board, to,
-                ))
-            }
-            "delete_sub_board" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                }
-                let A { sub_board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_sub_board(
+                )
+            }),
+            "delete_sub_board" => call!(command, a, snake {
+                sub_board: u32,
+            } => {
+                crate::commands::app::delete_sub_board(
                     &window, state, sub_board,
-                ))
-            }
-            "auto_day_breaks" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    by: String,
-                    limit: String,
-                }
-                let A {
-                    sub_board,
-                    by,
-                    limit,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::auto_day_breaks(
+                )
+            }),
+            "auto_day_breaks" => call!(command, a, snake {
+                sub_board: u32,
+                by: String,
+                limit: String,
+            } => {
+                crate::commands::app::auto_day_breaks(
                     &window, state, sub_board, by, limit,
-                ))
-            }
-            "remove_day_breaks" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                }
-                let A { sub_board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::remove_day_breaks(
+                )
+            }),
+            "remove_day_breaks" => call!(command, a, snake {
+                sub_board: u32,
+            } => {
+                crate::commands::app::remove_day_breaks(
                     &window, state, sub_board,
-                ))
-            }
-            "set_start_date" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    date: Option<String>,
-                }
-                let A { sub_board, date } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_start_date(
+                )
+            }),
+            "set_start_date" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                date: Option<String>,
+            } => {
+                crate::commands::app::set_start_date(
                     &window, state, sub_board, date,
-                ))
-            }
-            "get_sheet" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    #[serde(default)]
-                    sheet: Option<u32>,
-                    #[serde(default)]
-                    index: Option<usize>,
-                    #[serde(default)]
-                    order: Option<String>,
-                }
-                let A {
-                    board,
-                    sheet,
-                    index,
-                    order,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::get_sheet(
+                )
+            }),
+            "get_sheet" => call!(command, a, camel {
+                board: u32,
+                #[serde(default)]
+                sheet: Option<u32>,
+                #[serde(default)]
+                index: Option<usize>,
+                #[serde(default)]
+                order: Option<String>,
+            } => {
+                crate::commands::app::get_sheet(
                     state, board, sheet, index, order,
-                ))
-            }
-            "set_sheet_field" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    field: String,
-                    value: String,
-                }
-                let A {
-                    sheet,
-                    field,
-                    value,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_sheet_field(
+                )
+            }),
+            "set_sheet_field" => call!(command, a, camel {
+                sheet: u32,
+                field: String,
+                value: String,
+            } => {
+                crate::commands::app::set_sheet_field(
                     &window, state, sheet, field, value,
-                ))
-            }
-            "set_sheet_pages" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    pages: String,
-                    eighths: String,
-                }
-                let A {
-                    sheet,
-                    pages,
-                    eighths,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_sheet_pages(
+                )
+            }),
+            "set_sheet_pages" => call!(command, a, camel {
+                sheet: u32,
+                pages: String,
+                eighths: String,
+            } => {
+                crate::commands::app::set_sheet_pages(
                     &window, state, sheet, pages, eighths,
-                ))
-            }
-            "tag_element" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    element: u32,
-                }
-                let A { sheet, element } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::tag_element(
+                )
+            }),
+            "tag_element" => call!(command, a, camel {
+                sheet: u32,
+                element: u32,
+            } => {
+                crate::commands::app::tag_element(
                     &window, state, sheet, element,
-                ))
-            }
-            "set_quantity" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    element: u32,
-                    count: String,
-                    daily: bool,
-                }
-                let A {
-                    sheet,
-                    element,
-                    count,
-                    daily,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_quantity(
+                )
+            }),
+            "set_quantity" => call!(command, a, camel {
+                sheet: u32,
+                element: u32,
+                count: String,
+                daily: bool,
+            } => {
+                crate::commands::app::set_quantity(
                     &window, state, sheet, element, count, daily,
-                ))
-            }
-            "create_element" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    category: String,
-                    name: String,
-                }
-                let A {
-                    sheet,
-                    category,
-                    name,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::create_element(
+                )
+            }),
+            "create_element" => call!(command, a, camel {
+                sheet: u32,
+                category: String,
+                name: String,
+            } => {
+                crate::commands::app::create_element(
                     &window, state, sheet, category, name,
-                ))
-            }
-            "untag_element" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    element: u32,
-                }
-                let A { sheet, element } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::untag_element(
+                )
+            }),
+            "untag_element" => call!(command, a, camel {
+                sheet: u32,
+                element: u32,
+            } => {
+                crate::commands::app::untag_element(
                     &window, state, sheet, element,
-                ))
-            }
-            "new_sheet" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    #[serde(default)]
-                    after: Option<u32>,
-                }
-                let A { board, after } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::new_sheet(
+                )
+            }),
+            "new_sheet" => call!(command, a, camel {
+                board: u32,
+                #[serde(default)]
+                after: Option<u32>,
+            } => {
+                crate::commands::app::new_sheet(
                     &window, state, board, after,
-                ))
-            }
-            "delete_sheet" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    sheet: u32,
-                    #[serde(default)]
-                    order: Option<String>,
-                }
-                let A {
-                    board,
-                    sheet,
-                    order,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_sheet(
+                )
+            }),
+            "delete_sheet" => call!(command, a, camel {
+                board: u32,
+                sheet: u32,
+                #[serde(default)]
+                order: Option<String>,
+            } => {
+                crate::commands::app::delete_sheet(
                     &window, state, board, sheet, order,
-                ))
-            }
-            "merge_sheets_preview" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    sheets: Vec<u32>,
-                }
-                let A { board, sheets } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::merge_sheets_preview(
+                )
+            }),
+            "merge_sheets_preview" => call!(command, a, camel {
+                board: u32,
+                sheets: Vec<u32>,
+            } => {
+                crate::commands::app::merge_sheets_preview(
                     state, board, sheets,
-                ))
-            }
-            "merge_sheets" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    sheets: Vec<u32>,
-                }
-                let A { board, sheets } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::merge_sheets(
+                )
+            }),
+            "merge_sheets" => call!(command, a, camel {
+                board: u32,
+                sheets: Vec<u32>,
+            } => {
+                crate::commands::app::merge_sheets(
                     &window, state, board, sheets,
-                ))
-            }
-            "duplicate_sheets" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    sheets: Vec<u32>,
-                }
-                let A { board, sheets } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::duplicate_sheets(
+                )
+            }),
+            "duplicate_sheets" => call!(command, a, camel {
+                board: u32,
+                sheets: Vec<u32>,
+            } => {
+                crate::commands::app::duplicate_sheets(
                     &window, state, board, sheets,
-                ))
-            }
-            "paste_strips" => {
-                #[derive(Deserialize)]
-                struct A {
-                    board: u32,
-                    #[serde(default)]
-                    sub_board: Option<u32>,
-                    index: usize,
-                }
-                let A {
-                    board,
-                    sub_board,
-                    index,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::paste_strips(
+                )
+            }),
+            "paste_strips" => call!(command, a, snake {
+                board: u32,
+                #[serde(default)]
+                sub_board: Option<u32>,
+                index: usize,
+            } => {
+                crate::commands::app::paste_strips(
                     &window, state, board, sub_board, index,
-                ))
-            }
-            "paste_elements" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                }
-                let A { sheet } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::paste_elements(&window, state, sheet))
-            }
-            "elements_view" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    category: Option<u32>,
-                    #[serde(default)]
-                    header: Option<String>,
-                }
-                let A {
-                    sub_board,
-                    category,
-                    header,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::elements_view(
+                )
+            }),
+            "paste_elements" => call!(command, a, camel {
+                sheet: u32,
+            } => {
+                crate::commands::app::paste_elements(&window, state, sheet)
+            }),
+            "elements_view" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                category: Option<u32>,
+                #[serde(default)]
+                header: Option<String>,
+            } => {
+                crate::commands::app::elements_view(
                     state, sub_board, category, header,
-                ))
-            }
-            "add_category" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_category(&window, state, name))
-            }
-            "set_category_field" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    field: String,
-                    value: String,
-                }
-                let A {
-                    category,
-                    field,
-                    value,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_category_field(
+                )
+            }),
+            "add_category" => call!(command, a, camel {
+                name: String,
+            } => {
+                crate::commands::app::add_category(&window, state, name)
+            }),
+            "set_category_field" => call!(command, a, camel {
+                category: u32,
+                field: String,
+                value: String,
+            } => {
+                crate::commands::app::set_category_field(
                     &window, state, category, field, value,
-                ))
-            }
-            "move_category" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    to: usize,
-                }
-                let A { category, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_category(
+                )
+            }),
+            "move_category" => call!(command, a, camel {
+                category: u32,
+                to: usize,
+            } => {
+                crate::commands::app::move_category(
                     &window, state, category, to,
-                ))
-            }
-            "delete_category" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                }
-                let A { category } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_category(
+                )
+            }),
+            "delete_category" => call!(command, a, camel {
+                category: u32,
+            } => {
+                crate::commands::app::delete_category(
                     &window, state, category,
-                ))
-            }
-            "apply_category_defaults" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                }
-                let A { category } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::apply_category_defaults(
+                )
+            }),
+            "apply_category_defaults" => call!(command, a, camel {
+                category: u32,
+            } => {
+                crate::commands::app::apply_category_defaults(
                     &window, state, category,
-                ))
-            }
-            "set_element_field" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    field: String,
-                    value: String,
-                }
-                let A {
-                    element,
-                    field,
-                    value,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_element_field(
+                )
+            }),
+            "set_element_field" => call!(command, a, camel {
+                element: u32,
+                field: String,
+                value: String,
+            } => {
+                crate::commands::app::set_element_field(
                     &window, state, element, field, value,
-                ))
-            }
-            "element_days" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    element: u32,
-                }
-                let A { sub_board, element } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::element_days(
+                )
+            }),
+            "element_days" => call!(command, a, snake {
+                sub_board: u32,
+                element: u32,
+            } => {
+                crate::commands::app::element_days(
                     state, sub_board, element,
-                ))
-            }
-            "add_property" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    name: String,
-                }
-                let A { category, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_property(
+                )
+            }),
+            "add_property" => call!(command, a, camel {
+                category: u32,
+                name: String,
+            } => {
+                crate::commands::app::add_property(
                     &window, state, category, name,
-                ))
-            }
-            "rename_property" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    at: usize,
-                    name: String,
-                }
-                let A { category, at, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::rename_property(
+                )
+            }),
+            "rename_property" => call!(command, a, camel {
+                category: u32,
+                at: usize,
+                name: String,
+            } => {
+                crate::commands::app::rename_property(
                     &window, state, category, at, name,
-                ))
-            }
-            "move_property" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    at: usize,
-                    to: usize,
-                }
-                let A { category, at, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_property(
+                )
+            }),
+            "move_property" => call!(command, a, camel {
+                category: u32,
+                at: usize,
+                to: usize,
+            } => {
+                crate::commands::app::move_property(
                     &window, state, category, at, to,
-                ))
-            }
-            "delete_property" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    at: usize,
-                }
-                let A { category, at } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_property(
+                )
+            }),
+            "delete_property" => call!(command, a, camel {
+                category: u32,
+                at: usize,
+            } => {
+                crate::commands::app::delete_property(
                     &window, state, category, at,
-                ))
-            }
-            "set_property_multi_line" => {
-                #[derive(Deserialize)]
-                struct A {
-                    category: u32,
-                    at: usize,
-                    multi_line: bool,
-                }
-                let A {
-                    category,
-                    at,
-                    multi_line,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_property_multi_line(
+                )
+            }),
+            "set_property_multi_line" => call!(command, a, snake {
+                category: u32,
+                at: usize,
+                multi_line: bool,
+            } => {
+                crate::commands::app::set_property_multi_line(
                     &window, state, category, at, multi_line,
-                ))
-            }
-            "set_property_value" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    name: String,
-                    value: String,
-                }
-                let A {
-                    element,
-                    name,
-                    value,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_property_value(
+                )
+            }),
+            "set_property_value" => call!(command, a, camel {
+                element: u32,
+                name: String,
+                value: String,
+            } => {
+                crate::commands::app::set_property_value(
                     &window, state, element, name, value,
-                ))
-            }
-            "set_links" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    links: Vec<u32>,
-                    retroactive: bool,
-                }
-                let A {
-                    element,
-                    links,
-                    retroactive,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_links(
+                )
+            }),
+            "set_links" => call!(command, a, camel {
+                element: u32,
+                links: Vec<u32>,
+                retroactive: bool,
+            } => {
+                crate::commands::app::set_links(
                     &window,
                     state,
                     element,
                     links,
                     retroactive,
-                ))
-            }
-            "remove_element_image" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    at: usize,
-                }
-                let A { element, at } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::remove_element_image(
+                )
+            }),
+            "remove_element_image" => call!(command, a, camel {
+                element: u32,
+                at: usize,
+            } => {
+                crate::commands::app::remove_element_image(
                     &window, state, element, at,
-                ))
-            }
-            "merge_elements" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    survivor: u32,
-                    others: Vec<u32>,
-                }
-                let A { survivor, others } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::merge_elements(
+                )
+            }),
+            "merge_elements" => call!(command, a, camel {
+                survivor: u32,
+                others: Vec<u32>,
+            } => {
+                crate::commands::app::merge_elements(
                     &window, state, survivor, others,
-                ))
-            }
-            "move_element" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    category: u32,
-                }
-                let A { element, category } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_element(
+                )
+            }),
+            "move_element" => call!(command, a, camel {
+                element: u32,
+                category: u32,
+            } => {
+                crate::commands::app::move_element(
                     &window, state, element, category,
-                ))
-            }
-            "renumber_elements" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    start: String,
-                    #[serde(default)]
-                    order: Option<Vec<u32>>,
-                }
-                let A {
-                    category,
-                    start,
-                    order,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::renumber_elements(
+                )
+            }),
+            "renumber_elements" => call!(command, a, camel {
+                category: u32,
+                start: String,
+                #[serde(default)]
+                order: Option<Vec<u32>>,
+            } => {
+                crate::commands::app::renumber_elements(
                     &window, state, category, start, order,
-                ))
-            }
-            "delete_element" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    element: u32,
-                    unlink: bool,
-                }
-                let A { element, unlink } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_element(
+                )
+            }),
+            "delete_element" => call!(command, a, camel {
+                element: u32,
+                unlink: bool,
+            } => {
+                crate::commands::app::delete_element(
                     &window, state, element, unlink,
-                ))
-            }
-            "red_flags_view" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                }
-                let A { sub_board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::red_flags_view(state, sub_board))
-            }
-            "set_red_flag" => {
-                #[derive(Deserialize)]
-                struct A {
-                    element: u32,
-                    flag: redflags::RedFlagInput,
-                }
-                let A { element, flag } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_red_flag(
+                )
+            }),
+            "red_flags_view" => call!(command, a, snake {
+                sub_board: u32,
+            } => {
+                crate::commands::app::red_flags_view(state, sub_board)
+            }),
+            "set_red_flag" => call!(command, a, snake {
+                element: u32,
+                flag: redflags::RedFlagInput,
+            } => {
+                crate::commands::app::set_red_flag(
                     &window, state, element, flag,
-                ))
-            }
-            "delete_red_flag" => {
-                #[derive(Deserialize)]
-                struct A {
-                    flag: u32,
-                }
-                let A { flag } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_red_flag(&window, state, flag))
-            }
-            "add_red_flag_type" => {
-                #[derive(Deserialize)]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_red_flag_type(
+                )
+            }),
+            "delete_red_flag" => call!(command, a, snake {
+                flag: u32,
+            } => {
+                crate::commands::app::delete_red_flag(&window, state, flag)
+            }),
+            "add_red_flag_type" => call!(command, a, snake {
+                name: String,
+            } => {
+                crate::commands::app::add_red_flag_type(
                     &window, state, name,
-                ))
-            }
-            "rename_red_flag_type" => {
-                #[derive(Deserialize)]
-                struct A {
-                    red_flag_type: u32,
-                    name: String,
-                }
-                let A {
-                    red_flag_type,
-                    name,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::rename_red_flag_type(
+                )
+            }),
+            "rename_red_flag_type" => call!(command, a, snake {
+                red_flag_type: u32,
+                name: String,
+            } => {
+                crate::commands::app::rename_red_flag_type(
                     &window,
                     state,
                     red_flag_type,
                     name,
-                ))
-            }
-            "move_red_flag_type" => {
-                #[derive(Deserialize)]
-                struct A {
-                    red_flag_type: u32,
-                    to: usize,
-                }
-                let A { red_flag_type, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::move_red_flag_type(
+                )
+            }),
+            "move_red_flag_type" => call!(command, a, snake {
+                red_flag_type: u32,
+                to: usize,
+            } => {
+                crate::commands::app::move_red_flag_type(
                     &window,
                     state,
                     red_flag_type,
                     to,
-                ))
-            }
-            "delete_red_flag_type" => {
-                #[derive(Deserialize)]
-                struct A {
-                    red_flag_type: u32,
-                }
-                let A { red_flag_type } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_red_flag_type(
+                )
+            }),
+            "delete_red_flag_type" => call!(command, a, snake {
+                red_flag_type: u32,
+            } => {
+                crate::commands::app::delete_red_flag_type(
                     &window,
                     state,
                     red_flag_type,
-                ))
-            }
+                )
+            }),
             "add_standard_red_flag_types" => to_reply(
                 crate::commands::app::add_standard_red_flag_types(&window, state),
             ),
-            "add_red_flags" => {
-                #[derive(Deserialize)]
-                struct A {
-                    flags: redflags::AddFlagsInput,
-                }
-                let A { flags } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::add_red_flags(&window, state, flags))
-            }
-            "delete_red_flags" => {
-                #[derive(Deserialize)]
-                struct A {
-                    flags: Vec<u32>,
-                }
-                let A { flags } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_red_flags(
+            "add_red_flags" => call!(command, a, snake {
+                flags: redflags::AddFlagsInput,
+            } => {
+                crate::commands::app::add_red_flags(&window, state, flags)
+            }),
+            "delete_red_flags" => call!(command, a, snake {
+                flags: Vec<u32>,
+            } => {
+                crate::commands::app::delete_red_flags(
                     &window, state, flags,
-                ))
-            }
-            "calendar_view" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    year: Option<i32>,
-                    #[serde(default)]
-                    month: Option<u32>,
-                    #[serde(default)]
-                    week_start: Option<String>,
-                    #[serde(default)]
-                    fields: Option<Vec<String>>,
-                    #[serde(default)]
-                    span: Option<bool>,
-                }
-                let A {
-                    sub_board,
-                    year,
-                    month,
-                    week_start,
-                    fields,
-                    span,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::calendar_view(
+                )
+            }),
+            "calendar_view" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                year: Option<i32>,
+                #[serde(default)]
+                month: Option<u32>,
+                #[serde(default)]
+                week_start: Option<String>,
+                #[serde(default)]
+                fields: Option<Vec<String>>,
+                #[serde(default)]
+                span: Option<bool>,
+            } => {
+                crate::commands::app::calendar_view(
                     state, sub_board, year, month, week_start, fields, span,
-                ))
-            }
-            "set_day_kind" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    date: String,
-                    kind: String,
-                }
-                let A {
-                    sub_board,
-                    date,
-                    kind,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_day_kind(
+                )
+            }),
+            "set_day_kind" => call!(command, a, snake {
+                sub_board: u32,
+                date: String,
+                kind: String,
+            } => {
+                crate::commands::app::set_day_kind(
                     &window, state, sub_board, date, kind,
-                ))
-            }
-            "set_weekly_off" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    days: Vec<String>,
-                }
-                let A { sub_board, days } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_weekly_off(
+                )
+            }),
+            "set_weekly_off" => call!(command, a, snake {
+                sub_board: u32,
+                days: Vec<String>,
+            } => {
+                crate::commands::app::set_weekly_off(
                     &window, state, sub_board, days,
-                ))
-            }
-            "save_event" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    index: Option<usize>,
-                    event: EventInput,
-                }
-                let A {
-                    sub_board,
-                    index,
-                    event,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::save_event(
+                )
+            }),
+            "save_event" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                index: Option<usize>,
+                event: EventInput,
+            } => {
+                crate::commands::app::save_event(
                     &window, state, sub_board, index, event,
-                ))
-            }
-            "set_calendar_hidden" => {
-                #[derive(Deserialize)]
-                struct A {
-                    hidden: Vec<String>,
-                }
-                let A { hidden } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::set_calendar_hidden(
+                )
+            }),
+            "set_calendar_hidden" => call!(command, a, snake {
+                hidden: Vec<String>,
+            } => {
+                crate::commands::app::set_calendar_hidden(
                     &window, state, hidden,
-                ))
-            }
-            "delete_event" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    index: usize,
-                }
-                let A { sub_board, index } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::app::delete_event(
+                )
+            }),
+            "delete_event" => call!(command, a, snake {
+                sub_board: u32,
+                index: usize,
+            } => {
+                crate::commands::app::delete_event(
                     &window, state, sub_board, index,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod breakdown_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "set_sheet_field_order" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    fields: Vec<String>,
-                    #[serde(default)]
-                    hidden: Option<Vec<String>>,
-                    #[serde(default)]
-                    widths: Option<std::collections::BTreeMap<String, String>>,
-                    #[serde(default)]
-                    rows: Option<Vec<u8>>,
-                }
-                let A {
-                    fields,
-                    hidden,
-                    widths,
-                    rows,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::breakdown::set_sheet_field_order(
+            "set_sheet_field_order" => call!(command, a, camel {
+                fields: Vec<String>,
+                #[serde(default)]
+                hidden: Option<Vec<String>>,
+                #[serde(default)]
+                widths: Option<std::collections::BTreeMap<String, String>>,
+                #[serde(default)]
+                rows: Option<Vec<u8>>,
+            } => {
+                crate::commands::breakdown::set_sheet_field_order(
                     &window, state, fields, hidden, widths, rows,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod events_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "move_event_to" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    index: usize,
-                    date: String,
-                }
-                let A {
-                    sub_board,
-                    index,
-                    date,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::events::move_event_to(
+            "move_event_to" => call!(command, a, snake {
+                sub_board: u32,
+                index: usize,
+                date: String,
+            } => {
+                crate::commands::events::move_event_to(
                     &window, state, sub_board, index, date,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod find_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
+    use super::super::{DocState, Error, W};
     use crate::find::*;
-    use serde::Deserialize;
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "find_text" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    query: QueryArg,
-                }
-                let A { query } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::find::find_text(state, query))
-            }
-            "replace_text" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    query: QueryArg,
-                    with: String,
-                    picks: Vec<String>,
-                }
-                let A { query, with, picks } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::find::replace_text(
+            "find_text" => call!(command, a, camel {
+                query: QueryArg,
+            } => {
+                crate::commands::find::find_text(state, query)
+            }),
+            "replace_text" => call!(command, a, camel {
+                query: QueryArg,
+                with: String,
+                picks: Vec<String>,
+            } => {
+                crate::commands::find::replace_text(
                     &window, state, query, with, picks,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod flagcolors_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "set_red_flag_type_color" => {
-                #[derive(Deserialize)]
-                struct A {
-                    red_flag_type: u32,
-                    color: String,
-                }
-                let A {
-                    red_flag_type,
-                    color,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::flagcolors::set_red_flag_type_color(
+            "set_red_flag_type_color" => call!(command, a, snake {
+                red_flag_type: u32,
+                color: String,
+            } => {
+                crate::commands::flagcolors::set_red_flag_type_color(
                     &window,
                     state,
                     red_flag_type,
                     color,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod layouts_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
+    use super::super::{DocState, Error, W};
     use crate::layouts::*;
-    use serde::Deserialize;
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "add_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    name: String,
-                    kind: String,
-                    layout: LayoutInput,
-                    #[serde(default)]
-                    board: Option<u32>,
-                }
-                let A {
-                    name,
-                    kind,
-                    layout,
-                    board,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::add_layout(
+            "add_layout" => call!(command, a, snake {
+                name: String,
+                kind: String,
+                layout: LayoutInput,
+                #[serde(default)]
+                board: Option<u32>,
+            } => {
+                crate::commands::layouts::add_layout(
                     &window, state, name, kind, layout, board,
-                ))
-            }
-            "save_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    id: u32,
-                    layout: LayoutInput,
-                }
-                let A { id, layout } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::save_layout(
+                )
+            }),
+            "save_layout" => call!(command, a, snake {
+                id: u32,
+                layout: LayoutInput,
+            } => {
+                crate::commands::layouts::save_layout(
                     &window, state, id, layout,
-                ))
-            }
-            "rename_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    id: u32,
-                    name: String,
-                }
-                let A { id, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::rename_layout(
+                )
+            }),
+            "rename_layout" => call!(command, a, snake {
+                id: u32,
+                name: String,
+            } => {
+                crate::commands::layouts::rename_layout(
                     &window, state, id, name,
-                ))
-            }
-            "move_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    id: u32,
-                    to: usize,
-                }
-                let A { id, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::move_layout(
+                )
+            }),
+            "move_layout" => call!(command, a, snake {
+                id: u32,
+                to: usize,
+            } => {
+                crate::commands::layouts::move_layout(
                     &window, state, id, to,
-                ))
-            }
-            "delete_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    id: u32,
-                }
-                let A { id } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::delete_layout(&window, state, id))
-            }
-            "use_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    board: u32,
-                    kind: String,
-                    #[serde(default)]
-                    id: Option<u32>,
-                }
-                let A { board, kind, id } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::use_layout(
+                )
+            }),
+            "delete_layout" => call!(command, a, snake {
+                id: u32,
+            } => {
+                crate::commands::layouts::delete_layout(&window, state, id)
+            }),
+            "use_layout" => call!(command, a, snake {
+                board: u32,
+                kind: String,
+                #[serde(default)]
+                id: Option<u32>,
+            } => {
+                crate::commands::layouts::use_layout(
                     &window, state, board, kind, id,
-                ))
-            }
-            "use_one_line_layout" => {
-                #[derive(Deserialize)]
-                struct A {
-                    #[serde(default)]
-                    id: Option<u32>,
-                }
-                let A { id } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::layouts::use_one_line_layout(
+                )
+            }),
+            "use_one_line_layout" => call!(command, a, snake {
+                #[serde(default)]
+                id: Option<u32>,
+            } => {
+                crate::commands::layouts::use_one_line_layout(
                     &window, state, id,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod plan_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{to_reply, DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "timeline_data" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    #[serde(default)]
-                    strip: Option<u32>,
-                }
-                let A { sub_board, strip } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::timeline_data(
+            "timeline_data" => call!(command, a, snake {
+                sub_board: u32,
+                #[serde(default)]
+                strip: Option<u32>,
+            } => {
+                crate::commands::plan::timeline_data(
                     state, sub_board, strip,
-                ))
-            }
-            "push_past_wrap" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    day: u32,
-                    strips: Vec<u32>,
-                }
-                let A {
-                    sub_board,
-                    day,
-                    strips,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::push_past_wrap(
+                )
+            }),
+            "push_past_wrap" => call!(command, a, snake {
+                sub_board: u32,
+                day: u32,
+                strips: Vec<u32>,
+            } => {
+                crate::commands::plan::push_past_wrap(
                     &window, state, sub_board, day, strips,
-                ))
-            }
-            "set_call_time" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    day: u32,
-                    call: String,
-                }
-                let A { day, call } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_call_time(
+                )
+            }),
+            "set_call_time" => call!(command, a, camel {
+                day: u32,
+                call: String,
+            } => {
+                crate::commands::plan::set_call_time(
                     &window, state, day, call,
-                ))
-            }
-            "set_day_crew_call" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    day: u32,
-                    department: String,
-                    value: String,
-                }
-                let A {
-                    day,
-                    department,
-                    value,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_day_crew_call(
+                )
+            }),
+            "set_day_crew_call" => call!(command, a, camel {
+                day: u32,
+                department: String,
+                value: String,
+            } => {
+                crate::commands::plan::set_day_crew_call(
                     &window, state, day, department, value,
-                ))
-            }
-            "set_person_call" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    day: u32,
-                    element: u32,
-                    call: String,
-                    wrap: String,
-                }
-                let A {
-                    day,
-                    element,
-                    call,
-                    wrap,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_person_call(
+                )
+            }),
+            "set_person_call" => call!(command, a, camel {
+                day: u32,
+                element: u32,
+                call: String,
+                wrap: String,
+            } => {
+                crate::commands::plan::set_person_call(
                     &window, state, day, element, call, wrap,
-                ))
-            }
-            "set_shot" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    day: u32,
-                    eighths: String,
-                    complete: bool,
-                }
-                let A {
-                    sheet,
-                    day,
-                    eighths,
-                    complete,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_shot(
+                )
+            }),
+            "set_shot" => call!(command, a, camel {
+                sheet: u32,
+                day: u32,
+                eighths: String,
+                complete: bool,
+            } => {
+                crate::commands::plan::set_shot(
                     &window, state, sheet, day, eighths, complete,
-                ))
-            }
-            "set_long_day" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    value: String,
-                }
-                let A { value } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_long_day(&window, state, value))
-            }
+                )
+            }),
+            "set_long_day" => call!(command, a, camel {
+                value: String,
+            } => {
+                crate::commands::plan::set_long_day(&window, state, value)
+            }),
             "locations_data" => to_reply(crate::commands::plan::locations_data(state)),
             "drafts_data" => to_reply(crate::commands::plan::drafts_data(state)),
             "conflicts_data" => to_reply(crate::commands::plan::conflicts_data(state)),
-            "settle_conflicts" => {
-                #[derive(Deserialize)]
-                struct A {
-                    #[serde(default)]
-                    keys: Option<Vec<String>>,
-                }
-                let A { keys } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::settle_conflicts(
+            "settle_conflicts" => call!(command, a, snake {
+                #[serde(default)]
+                keys: Option<Vec<String>>,
+            } => {
+                crate::commands::plan::settle_conflicts(
                     &window, state, keys,
-                ))
-            }
-            "set_location" => {
-                #[derive(Deserialize)]
-                struct A {
-                    name: String,
-                    latitude: String,
-                    longitude: String,
-                    utc_offset: String,
-                    daylight_saving: String,
-                    // Left out keeps the location's periods (decision 244).
-                    #[serde(default)]
-                    offsets: Option<String>,
-                }
-                let A {
-                    name,
-                    latitude,
-                    longitude,
-                    utc_offset,
-                    daylight_saving,
-                    offsets,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_location(
+                )
+            }),
+            "set_location" => call!(command, a, snake {
+                name: String,
+                latitude: String,
+                longitude: String,
+                utc_offset: String,
+                daylight_saving: String,
+                // Left out keeps the location's periods (decision 244).
+                #[serde(default)]
+                offsets: Option<String>,
+            } => {
+                crate::commands::plan::set_location(
                     &window,
                     state,
                     name,
@@ -1946,269 +1188,151 @@ mod plan_cmds {
                     utc_offset,
                     daylight_saving,
                     offsets,
-                ))
-            }
-            "rename_draft" => {
-                #[derive(Deserialize)]
-                struct A {
-                    color: String,
-                    name: String,
-                }
-                let A { color, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::rename_draft(
+                )
+            }),
+            "rename_draft" => call!(command, a, snake {
+                color: String,
+                name: String,
+            } => {
+                crate::commands::plan::rename_draft(
                     &window, state, color, name,
-                ))
-            }
-            "set_order_weights" => {
-                #[derive(Deserialize)]
-                struct A {
-                    values: Vec<u32>,
-                }
-                let A { values } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_order_weights(
+                )
+            }),
+            "set_order_weights" => call!(command, a, snake {
+                values: Vec<u32>,
+            } => {
+                crate::commands::plan::set_order_weights(
                     &window, state, values,
-                ))
-            }
-            "set_location_guide" => {
-                #[derive(Deserialize)]
-                struct A {
-                    name: String,
-                    address: String,
-                    directions: String,
-                }
-                let A {
-                    name,
-                    address,
-                    directions,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_location_guide(
+                )
+            }),
+            "set_location_guide" => call!(command, a, snake {
+                name: String,
+                address: String,
+                directions: String,
+            } => {
+                crate::commands::plan::set_location_guide(
                     &window, state, name, address, directions,
-                ))
-            }
-            "remove_location_map" => {
-                #[derive(Deserialize)]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::remove_location_map(
+                )
+            }),
+            "remove_location_map" => call!(command, a, snake {
+                name: String,
+            } => {
+                crate::commands::plan::remove_location_map(
                     &window, state, name,
-                ))
-            }
-            "rest_data" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::rest_data(state, board))
-            }
-            "set_turnaround" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    category: u32,
-                    value: String,
-                }
-                let A { category, value } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_turnaround(
+                )
+            }),
+            "rest_data" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::plan::rest_data(state, board)
+            }),
+            "set_turnaround" => call!(command, a, camel {
+                category: u32,
+                value: String,
+            } => {
+                crate::commands::plan::set_turnaround(
                     &window, state, category, value,
-                ))
-            }
+                )
+            }),
             "crew_data" => to_reply(crate::commands::plan::crew_data(state)),
-            "set_crew_call" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    department: String,
-                    value: String,
-                }
-                let A { department, value } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::set_crew_call(
+            "set_crew_call" => call!(command, a, camel {
+                department: String,
+                value: String,
+            } => {
+                crate::commands::plan::set_crew_call(
                     &window, state, department, value,
-                ))
-            }
-            "locks_data" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::locks_data(state, board))
-            }
-            "lock_schedule" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                    name: String,
-                }
-                let A { board, name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::lock_schedule(
+                )
+            }),
+            "locks_data" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::plan::locks_data(state, board)
+            }),
+            "lock_schedule" => call!(command, a, camel {
+                board: u32,
+                name: String,
+            } => {
+                crate::commands::plan::lock_schedule(
                     &window, state, board, name,
-                ))
-            }
-            "delete_lock" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::delete_lock(&window, state, name))
-            }
-            "drift_data" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    name: String,
-                }
-                let A { name } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::drift_data(state, name))
-            }
-            "pin_strips" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    strips: Vec<u32>,
-                    pinned: bool,
-                }
-                let A { strips, pinned } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::pin_strips(
+                )
+            }),
+            "delete_lock" => call!(command, a, camel {
+                name: String,
+            } => {
+                crate::commands::plan::delete_lock(&window, state, name)
+            }),
+            "drift_data" => call!(command, a, camel {
+                name: String,
+            } => {
+                crate::commands::plan::drift_data(state, name)
+            }),
+            "pin_strips" => call!(command, a, camel {
+                strips: Vec<u32>,
+                pinned: bool,
+            } => {
+                crate::commands::plan::pin_strips(
                     &window, state, strips, pinned,
-                ))
-            }
-            "suggest_order" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                }
-                let A { sub_board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::suggest_order(state, sub_board))
-            }
-            "apply_suggested_order" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    order: Vec<u32>,
-                }
-                let A { sub_board, order } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::apply_suggested_order(
+                )
+            }),
+            "suggest_order" => call!(command, a, snake {
+                sub_board: u32,
+            } => {
+                crate::commands::plan::suggest_order(state, sub_board)
+            }),
+            "apply_suggested_order" => call!(command, a, snake {
+                sub_board: u32,
+                order: Vec<u32>,
+            } => {
+                crate::commands::plan::apply_suggested_order(
                     &window, state, sub_board, order,
-                ))
-            }
-            "call_sheet_data" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    day: u32,
-                }
-                let A { sub_board, day } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::call_sheet_data(
+                )
+            }),
+            "call_sheet_data" => call!(command, a, snake {
+                sub_board: u32,
+                day: u32,
+            } => {
+                crate::commands::plan::call_sheet_data(
                     state, sub_board, day,
-                ))
-            }
-            "shoot_day_count" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                }
-                let A { sub_board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::plan::shoot_day_count(state, sub_board))
-            }
+                )
+            }),
+            "shoot_day_count" => call!(command, a, snake {
+                sub_board: u32,
+            } => {
+                crate::commands::plan::shoot_day_count(state, sub_board)
+            }),
             _ => return None,
         })
     }
 }
 
 mod reports_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "report_data" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    index: usize,
-                    #[serde(default)]
-                    week_start: Option<String>,
-                }
-                let A {
-                    sub_board,
-                    index,
-                    week_start,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reports::report_data(
+            "report_data" => call!(command, a, snake {
+                sub_board: u32,
+                index: usize,
+                #[serde(default)]
+                week_start: Option<String>,
+            } => {
+                crate::commands::reports::report_data(
                     state, sub_board, index, week_start,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod reportsetup_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
+    use super::super::{to_reply, DocState, Error, W};
     use crate::reportsetup::*;
-    use serde::Deserialize;
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
@@ -2216,215 +1340,117 @@ mod reportsetup_cmds {
         let _ = &window;
         Some(match command {
             "report_list" => to_reply(crate::commands::reportsetup::report_list(state)),
-            "save_report" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    index: usize,
-                    name: String,
-                    options: OptionsDto,
-                }
-                let A {
-                    index,
-                    name,
-                    options,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::save_report(
+            "save_report" => call!(command, a, camel {
+                index: usize,
+                name: String,
+                options: OptionsDto,
+            } => {
+                crate::commands::reportsetup::save_report(
                     &window, state, index, name, options,
-                ))
-            }
-            "duplicate_report" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    index: usize,
-                }
-                let A { index } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::duplicate_report(
+                )
+            }),
+            "duplicate_report" => call!(command, a, camel {
+                index: usize,
+            } => {
+                crate::commands::reportsetup::duplicate_report(
                     &window, state, index,
-                ))
-            }
-            "move_report" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    index: usize,
-                    to: usize,
-                }
-                let A { index, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::move_report(
+                )
+            }),
+            "move_report" => call!(command, a, camel {
+                index: usize,
+                to: usize,
+            } => {
+                crate::commands::reportsetup::move_report(
                     &window, state, index, to,
-                ))
-            }
-            "delete_report" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    index: usize,
-                }
-                let A { index } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::delete_report(
+                )
+            }),
+            "delete_report" => call!(command, a, camel {
+                index: usize,
+            } => {
+                crate::commands::reportsetup::delete_report(
                     &window, state, index,
-                ))
-            }
-            "save_header_layout" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    design: HeaderDto,
-                }
-                let A { design } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::save_header_layout(
+                )
+            }),
+            "save_header_layout" => call!(command, a, camel {
+                design: HeaderDto,
+            } => {
+                crate::commands::reportsetup::save_header_layout(
                     &window, state, design,
-                ))
-            }
-            "delete_header_layout" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    id: u32,
-                }
-                let A { id } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::delete_header_layout(
+                )
+            }),
+            "delete_header_layout" => call!(command, a, camel {
+                id: u32,
+            } => {
+                crate::commands::reportsetup::delete_header_layout(
                     &window, state, id,
-                ))
-            }
-            "move_header_layout" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    id: u32,
-                    to: usize,
-                }
-                let A { id, to } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::move_header_layout(
+                )
+            }),
+            "move_header_layout" => call!(command, a, camel {
+                id: u32,
+                to: usize,
+            } => {
+                crate::commands::reportsetup::move_header_layout(
                     &window, state, id, to,
-                ))
-            }
-            "set_production" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    field: String,
-                    value: String,
-                }
-                let A { field, value } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::set_production(
+                )
+            }),
+            "set_production" => call!(command, a, camel {
+                field: String,
+                value: String,
+            } => {
+                crate::commands::reportsetup::set_production(
                     &window, state, field, value,
-                ))
-            }
-            "set_dood_codes" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    codes: std::collections::BTreeMap<String, String>,
-                }
-                let A { codes } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::set_dood_codes(
+                )
+            }),
+            "set_dood_codes" => call!(command, a, camel {
+                codes: std::collections::BTreeMap<String, String>,
+            } => {
+                crate::commands::reportsetup::set_dood_codes(
                     &window, state, codes,
-                ))
-            }
-            "set_prep_wrap" => {
-                #[derive(Deserialize)]
-                struct A {
-                    sub_board: u32,
-                    prep_start: String,
-                    wrap_end: String,
-                }
-                let A {
-                    sub_board,
-                    prep_start,
-                    wrap_end,
-                } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::set_prep_wrap(
+                )
+            }),
+            "set_prep_wrap" => call!(command, a, snake {
+                sub_board: u32,
+                prep_start: String,
+                wrap_end: String,
+            } => {
+                crate::commands::reportsetup::set_prep_wrap(
                     &window, state, sub_board, prep_start, wrap_end,
-                ))
-            }
-            "set_calendar_fields" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    fields: Vec<String>,
-                }
-                let A { fields } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::reportsetup::set_calendar_fields(
+                )
+            }),
+            "set_calendar_fields" => call!(command, a, camel {
+                fields: Vec<String>,
+            } => {
+                crate::commands::reportsetup::set_calendar_fields(
                     &window, state, fields,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }
 }
 
 mod split_cmds {
-    use super::super::{args, to_reply, DocState, Error, W};
-    use serde::Deserialize;
+    use super::super::{DocState, Error, W};
+
     use serde_json::Value;
 
     pub fn dispatch(command: &str, a: &Value, state: &DocState) -> Option<Result<Value, Error>> {
         let window = W;
         let _ = &window;
         Some(match command {
-            "board_view" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    board: u32,
-                }
-                let A { board } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::split::board_view(state, board))
-            }
-            "remove_sheet_image" => {
-                #[derive(Deserialize)]
-                #[serde(rename_all = "camelCase")]
-                struct A {
-                    sheet: u32,
-                    at: usize,
-                }
-                let A { sheet, at } = match args::<A>(command, a) {
-                    Ok(v) => v,
-                    Err(e) => return Some(Err(e)),
-                };
-                to_reply(crate::commands::split::remove_sheet_image(
+            "board_view" => call!(command, a, camel {
+                board: u32,
+            } => {
+                crate::commands::split::board_view(state, board)
+            }),
+            "remove_sheet_image" => call!(command, a, camel {
+                sheet: u32,
+                at: usize,
+            } => {
+                crate::commands::split::remove_sheet_image(
                     &window, state, sheet, at,
-                ))
-            }
+                )
+            }),
             _ => return None,
         })
     }

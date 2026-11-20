@@ -212,4 +212,93 @@ mod tests {
         assert!(!s.plan.is_omitted(sheets[0]));
         s.check().unwrap();
     }
+
+    /// Reads `text` and, when it reads, imports it into a fresh schedule: neither may
+    /// panic, and an import that succeeds leaves a schedule that passes `check`.
+    fn reads_and_imports_sanely(text: &str, why: &str) {
+        let Ok(script) = parse(text) else {
+            return;
+        };
+        let mut s = method_schedule_core::Schedule::with_default_categories("Fuzz");
+        let cast = s.cast_or_add();
+        if s.import_script(&script, cast).is_ok() {
+            s.check().unwrap_or_else(|e| panic!("{why}: {e}"));
+        }
+    }
+
+    #[test]
+    fn mutated_files_never_panic() {
+        use method_schedule_core::testgen::{fuzz_rng, mutate_bytes, rounds};
+        const SNIPPETS: &[&[u8]] = &[
+            b"{",
+            b"}",
+            b"[",
+            b"]",
+            b",",
+            b":",
+            b"\"",
+            b"\\",
+            b"null",
+            b"-1",
+            b"1e999",
+            b"4294967296",
+            b"\"\\ud800\"",
+            b"\"\\u0000\"",
+            b"\xEF\xBB\xBF",
+            b"\0",
+        ];
+        // Values no writer sends: long, empty, control characters, wrong shapes.
+        let odd = [
+            serde_json::json!(""),
+            serde_json::json!("   "),
+            serde_json::json!("\u{0}\n\t\u{7f}"),
+            serde_json::json!("x".repeat(70_000)),
+            serde_json::json!(u32::MAX),
+            serde_json::json!(0),
+            serde_json::json!(-1),
+            serde_json::json!(null),
+            serde_json::json!([]),
+            serde_json::json!(["MARA", "", "MARA", "\u{0}", "y".repeat(5_000)]),
+            serde_json::json!({}),
+        ];
+        let keys = [
+            "index",
+            "number",
+            "heading",
+            "int_ext",
+            "set",
+            "time",
+            "story_day",
+            "page",
+            "eighths",
+            "cast",
+            "nonspeaking",
+            "omitted",
+            "title",
+            "summary",
+            "act",
+        ];
+        let base: serde_json::Value = serde_json::from_str(FILE).unwrap();
+        let n = base["scenes"].as_array().unwrap().len() as u64;
+        let mut rng = fuzz_rng(0x5c_e2e5);
+        for case in 0..rounds(1500) {
+            let why = format!("mscenes mutation case {case}");
+            if rng.below(2) == 0 {
+                let mut bytes = FILE.as_bytes().to_vec();
+                mutate_bytes(&mut rng, &mut bytes, SNIPPETS);
+                reads_and_imports_sanely(&String::from_utf8_lossy(&bytes), &why);
+            } else {
+                let mut v = base.clone();
+                for _ in 0..=rng.below(3) {
+                    let at = rng.below(n) as usize;
+                    let key = keys[rng.below(keys.len() as u64) as usize];
+                    v["scenes"][at][key] = odd[rng.below(odd.len() as u64) as usize].clone();
+                }
+                if rng.below(4) == 0 {
+                    v["episode"] = odd[rng.below(odd.len() as u64) as usize].clone();
+                }
+                reads_and_imports_sanely(&v.to_string(), &why);
+            }
+        }
+    }
 }
