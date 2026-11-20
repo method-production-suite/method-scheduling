@@ -253,6 +253,9 @@ mod tests {
                 "/net/host/kit.png",
                 "/Network/Servers/host/kit.png",
                 "/NET/host/kit.png",
+                "/Users/../net/host/kit.png",
+                "/Users/../Network/Servers/host/kit.png",
+                "/Users/me/../../net/host/kit.png",
             ] {
                 assert_eq!(resolve_image_path(Some(&doc), p), None, "{p}");
             }

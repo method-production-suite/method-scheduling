@@ -448,6 +448,10 @@ pub fn resolve_image_path(doc: Option<&Path>, stored: &str) -> Option<PathBuf> {
         }
     }
     if p.is_absolute() {
+        // `..` could climb back to a folder refused below; a picture's path never needs it.
+        if p.components().any(|c| c == Component::ParentDir) {
+            return None;
+        }
         // The Mac mounts `/net/<host>/...` from that host on first look; its disks
         // usually ignore case, so `/NET` is the same folder.
         if let Some(Component::Normal(top)) = p.components().nth(1) {
