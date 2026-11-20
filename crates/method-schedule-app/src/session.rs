@@ -121,7 +121,6 @@ mod tests {
     use crate::safety::tests::temp_dir;
     use std::fs;
 
-    #[allow(dead_code)]
     fn harbor_light() -> fountain::ImportedScript {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../fixtures/scripts/harbor-light.fountain");
