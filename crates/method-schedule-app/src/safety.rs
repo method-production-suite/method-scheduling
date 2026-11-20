@@ -303,13 +303,31 @@ fn remove_if_present(path: &Path) -> io::Result<()> {
     }
 }
 
-/// Reads a file of at most [`MAX_FILE_BYTES`].
+/// Reads a plain file of at most [`MAX_FILE_BYTES`]. Refused when it is anything else
+/// (a folder, a device, a pipe), and when it grows past the limit while being read, so
+/// a file named by a recent list or another app can never read without end.
 pub fn read_limited(path: &Path) -> io::Result<Vec<u8>> {
-    let meta = fs::metadata(path)?;
-    if meta.len() > MAX_FILE_BYTES {
-        return Err(io::Error::other("the file is larger than 64 MB"));
+    use std::io::Read;
+    let too_big = || io::Error::other("the file is larger than 64 MB");
+    let not_a_file = || io::Error::other("that is not a file");
+    // Looked at before opening, as opening a pipe waits for a writer; and again after.
+    if !fs::metadata(path)?.is_file() {
+        return Err(not_a_file());
     }
-    fs::read(path)
+    let file = fs::File::open(path)?;
+    let meta = file.metadata()?;
+    if !meta.is_file() {
+        return Err(not_a_file());
+    }
+    if meta.len() > MAX_FILE_BYTES {
+        return Err(too_big());
+    }
+    let mut bytes = Vec::with_capacity(meta.len() as usize);
+    file.take(MAX_FILE_BYTES + 1).read_to_end(&mut bytes)?;
+    if bytes.len() as u64 > MAX_FILE_BYTES {
+        return Err(too_big());
+    }
+    Ok(bytes)
 }
 
 /// Whether two paths name the same file: the same path, or the same file once links and
@@ -346,7 +364,7 @@ impl StampAt for DiskStamp {
     }
 
     fn check(&self, path: &Path) -> DiskCheck {
-        match fs::read(path) {
+        match read_limited(path) {
             Ok(bytes) if self.matches(&bytes) => DiskCheck::Same,
             Ok(_) => DiskCheck::Changed,
             Err(e) if e.kind() == io::ErrorKind::NotFound => DiskCheck::Missing,
@@ -976,6 +994,24 @@ pub(crate) mod tests {
         let dir = std::env::temp_dir().join(format!("method-schedule-app-{name}-{}", unique()));
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn read_limited_reads_plain_files_only() {
+        let dir = temp_dir("read-limited");
+        let file = dir.join("a.mtsc");
+        fs::write(&file, b"schedule").unwrap();
+        assert_eq!(read_limited(&file).unwrap(), b"schedule");
+        assert_eq!(
+            read_limited(&dir).unwrap_err().to_string(),
+            "that is not a file"
+        );
+        assert!(read_limited(&dir.join("missing")).is_err());
+        #[cfg(unix)]
+        {
+            let e = read_limited(Path::new("/dev/zero")).unwrap_err();
+            assert_eq!(e.to_string(), "that is not a file");
+        }
     }
 
     #[test]
