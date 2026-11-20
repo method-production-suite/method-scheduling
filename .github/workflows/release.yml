@@ -436,7 +436,9 @@ jobs:
           name: updater-${{ matrix.name }}
           path: updater/*
           if-no-files-found: ignore
-          retention-days: 30
+          # Signed update archives: only the assemble job needs them, so they go after a
+          # day like release-files rather than staying downloadable for a month.
+          retention-days: 1
 
   assemble:
     name: the release files
@@ -560,6 +562,12 @@ jobs:
           case "$version" in *-*) prerelease=(--prerelease) ;; esac
           ls -l dist
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # Only a draft takes new files: a published release's files are never
+            # replaced by a run (a person publishes; a fix is a new version).
+            if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" != true ]; then
+              echo "::error::$TAG is already published; its files are not replaced. Release a new version instead."
+              exit 1
+            fi
             gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
