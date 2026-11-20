@@ -196,6 +196,9 @@ pub enum Scope {
         board: BoardId,
         sub_board: SubBoardId,
     },
+    /// One board's Boneyard: the sheets of its unscheduled strips, and the elements on
+    /// those sheets with their categories.
+    Boneyard { board: BoardId },
 }
 
 /// A search.
@@ -750,6 +753,10 @@ fn places(s: &Schedule, q: &Query) -> Result<Vec<Location>, Error> {
                 .ok_or(Error::NoSuchSubBoard(sub_board))?;
             vec![(board, sb)]
         }
+        Scope::Boneyard { board } => {
+            s.board(board).ok_or(Error::NoSuchBoard(board))?;
+            Vec::new()
+        }
     };
     for (board, sb) in &subs {
         for st in &sb.strips {
@@ -799,6 +806,22 @@ fn places(s: &Schedule, q: &Query) -> Result<Vec<Location>, Error> {
                 }
                 for ev in &sb.calendar.events {
                     els.extend(ev.elements.iter().copied());
+                }
+            }
+            Some(els)
+        }
+        Scope::Boneyard { board } => {
+            let mut els = HashSet::new();
+            for st in s
+                .board(board)
+                .map(|b| b.boneyard.as_slice())
+                .unwrap_or_default()
+            {
+                if let StripKind::Sheet(id) = st.kind {
+                    push_sheet(&mut out, id);
+                    if let Some(h) = s.sheet(id) {
+                        els.extend(h.elements.iter().copied());
+                    }
                 }
             }
             Some(els)
@@ -1360,6 +1383,27 @@ mod tests {
         sub.scope = Scope::SubBoard {
             board: b,
             sub_board: SubBoardId(9999),
+        };
+        assert!(find(&s, &sub).is_err());
+        // The Boneyard: scene 4 (CABINET) only, and no element (it has none).
+        sub.scope = Scope::Boneyard { board: b };
+        sub.text = "cabin".into();
+        assert_eq!(
+            contexts(&find(&s, &sub).unwrap()),
+            [
+                "Scene 4 set: CABINET",
+                "Scene 4 synopsis: Ada walks to the CABINET."
+            ]
+        );
+        sub.text = "ada".into();
+        sub.field = Some(FieldFilter::Element);
+        assert!(
+            find(&s, &sub).unwrap().is_empty(),
+            "Ada works only on scheduled scenes"
+        );
+        sub.field = None;
+        sub.scope = Scope::Boneyard {
+            board: BoardId(9999),
         };
         assert!(find(&s, &sub).is_err());
         assert!(find(&s, &Query::new("")).unwrap().is_empty());

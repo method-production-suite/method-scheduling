@@ -4,7 +4,8 @@
 //
 // A search has its text, Match case, Whole word, a field (everything, every sheet field,
 // one header field, element names, category names, banner text or event names) and a
-// scope (the whole schedule, or the sub-board picked in the board bar). Results come in
+// scope (the whole schedule, the sub-board picked in the board bar, or the shown board's
+// Boneyard: its unscheduled scenes and their elements). Results come in
 // board order with their place and a line of context; a click goes there (main.js does
 // the going), Enter and Shift+Enter in the search box, or Find Next and Find Previous
 // anywhere, step through them. The panel searches again after every change to the
@@ -72,6 +73,7 @@ const SEARCH_DELAY_MS = 180;
  *   replace(query, with, picks)    the replace_text command; resolves with the notice
  *   goTo(hit, { keepFocus })       shows the result's place
  *   subBoard()                     { id, name } of the sub-board picked, or null
+ *   board()                        { id, name, many } of the board shown (many: more than one), or null
  *   found(hits)                    the results now (none when closed), for the board's marks
  *   selectOnBoard(hits)            selects the board's strips the results name
  *   closed()                       after the panel closes
@@ -175,7 +177,8 @@ export function createFind(host, ctx) {
     const conds = liveConds();
     if (!st.text && !conds.length) return null;
     const sub = st.scope === 'sub' ? ctx.subBoard() : null;
-    const q = { text: st.text, match_case: st.matchCase, whole_word: st.wholeWord, field: st.field || null, sub_board: sub ? sub.id : null };
+    const yard = st.scope === 'boneyard' ? ctx.board() : null;
+    const q = { text: st.text, match_case: st.matchCase, whole_word: st.wholeWord, field: st.field || null, sub_board: sub ? sub.id : null, boneyard: yard ? yard.id : null };
     if (conds.length) {
       q.conditions = conds.map((c) => ({ field: c.field, op: c.op, value: NO_VALUE.has(c.op) ? '' : c.value }));
       q.any = st.any;
@@ -271,7 +274,7 @@ export function createFind(host, ctx) {
     search();
   });
   scope.addEventListener('change', () => {
-    st.scope = scope.value === 'sub' ? 'sub' : 'schedule';
+    st.scope = scope.value === 'sub' || scope.value === 'boneyard' ? scope.value : 'schedule';
     search();
   });
   mode.addEventListener('click', () => {
@@ -393,8 +396,10 @@ export function createFind(host, ctx) {
     const sub = ctx.subBoard();
     const options = [el('option', { text: 'The whole schedule', attrs: { value: 'schedule' } })];
     if (sub) options.push(el('option', { text: `Sub-board ${sub.name}`, attrs: { value: 'sub' } }));
+    const board = ctx.board();
+    if (board) options.push(el('option', { text: board.many ? `The Boneyard of ${board.name}` : 'The Boneyard', attrs: { value: 'boneyard' } }));
     scope.replaceChildren(...options);
-    if (!sub) st.scope = 'schedule';
+    if ((!sub && st.scope === 'sub') || (!board && st.scope === 'boneyard')) st.scope = 'schedule';
     scope.value = st.scope;
   }
 

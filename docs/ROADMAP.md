@@ -295,8 +295,8 @@ without the dialog are M3's rows.
   tab-delimited text (issue #6: the writer has it; no export offers it yet). The shooting
   schedule as a spreadsheet is File > Export's Breakdown (a row per scene with its day,
   date and a column per category) beside the One-line export's banners and day totals.
-- **More of Find and Replace**: red flag notes, replacing in the Boneyard's scenes only,
-  and a find bar per tab.
+- **More of Find and Replace**: red flag notes and a find bar per tab (the Boneyard as a
+  place to search and replace came on 2026-11-20).
 - **More of What Changed and merging**: the changes a merge brings in shown per conflict
   pick side by side.
 - **Beyond the reference app**: daylight saving rules other than the US and Canada's, the EU's,

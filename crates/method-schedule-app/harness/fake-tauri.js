@@ -3162,6 +3162,9 @@ function findPlaces(m, q) {
     }
   };
   let scopeSub = null;
+  const yard = q.boneyard === null || q.boneyard === undefined ? null : q.boneyard;
+  if (yard !== null && q.sub_board !== null && q.sub_board !== undefined) throw 'Search one sub-board or the Boneyard, not both.';
+  if (yard !== null && !m.boards.some((b) => b.id === yard)) throw 'That board is no longer in the schedule.';
   if (q.sub_board !== null && q.sub_board !== undefined) {
     scopeSub = q.sub_board;
     if (!m.boards.some((b) => listsOf(m, b.id).subs.some((sb) => sb.id === scopeSub))) throw 'That sub-board is no longer in the schedule.';
@@ -3170,7 +3173,7 @@ function findPlaces(m, q) {
   for (const b of m.boards) {
     const lists = listsOf(m, b.id);
     for (const sb of lists.subs) {
-      if (scopeSub !== null && sb.id !== scopeSub) continue;
+      if (yard !== null || (scopeSub !== null && sb.id !== scopeSub)) continue;
       const where = many ? `${b.name}, ${sb.name}` : sb.name;
       for (const st of sb.strips) {
         if (st.kind === 'scene') pushSheet(st);
@@ -3184,7 +3187,14 @@ function findPlaces(m, q) {
     }
   }
   let inScope = null;
-  if (scopeSub === null) {
+  if (yard !== null) {
+    inScope = new Set();
+    for (const st of listsOf(m, yard).boneyard)
+      if (st.kind === 'scene') {
+        pushSheet(st);
+        st.els.forEach((e) => inScope.add(e));
+      }
+  } else if (scopeSub === null) {
     for (const b of m.boards) for (const st of listsOf(m, b.id).boneyard) if (st.kind === 'scene') pushSheet(st);
   } else {
     inScope = new Set();

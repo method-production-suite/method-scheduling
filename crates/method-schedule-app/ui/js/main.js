@@ -423,6 +423,10 @@ const find = createFind($('findpanel'), {
     const sb = state.view && state.view.board.sub_boards.find((x) => x.id === state.subBoard);
     return sb ? { id: sb.id, name: sb.name } : null;
   },
+  board: () => {
+    const b = state.view && state.view.board;
+    return b ? { id: b.id, name: b.name, many: (state.view.boards || []).length > 1 } : null;
+  },
   closed: () => {
     if (state.tab === 'board') $('board').focus({ preventScroll: true });
   },
