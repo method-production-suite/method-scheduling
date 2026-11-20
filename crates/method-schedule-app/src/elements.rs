@@ -246,6 +246,24 @@ mod tests {
                 assert_eq!(resolved, Some(dir.join(p)), "{p}");
             }
         }
+        // Nor are the Mac's automounted network folders.
+        #[cfg(unix)]
+        {
+            for p in [
+                "/net/host/kit.png",
+                "/Network/Servers/host/kit.png",
+                "/NET/host/kit.png",
+            ] {
+                assert_eq!(resolve_image_path(Some(&doc), p), None, "{p}");
+            }
+            let local = dir.join("real.png");
+            let local = local.to_string_lossy();
+            assert_eq!(
+                resolve_image_path(Some(&doc), &local),
+                Some(dir.join("real.png"))
+            );
+            assert!(resolve_image_path(Some(&doc), "/netflix/x.png").is_some());
+        }
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

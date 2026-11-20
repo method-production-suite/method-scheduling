@@ -434,8 +434,9 @@ pub fn stored_image_path(doc: Option<&Path>, picked: &Path) -> String {
 
 /// Where a stored image path points: as it is when absolute, else from the schedule
 /// file's folder. `None` for a relative path in a schedule never saved, and for a
-/// network share or a device (`\\server\share`, `\\?\UNC\`, `\\.\`): a schedule from
-/// elsewhere may name any path, and reading one of those reaches out over the network.
+/// network share or a device (`\\server\share`, `\\?\UNC\`, `\\.\`, and the Mac's
+/// automounted `/net/` and `/Network/`): a schedule from elsewhere may name any path, and
+/// reading one of those reaches out over the network.
 pub fn resolve_image_path(doc: Option<&Path>, stored: &str) -> Option<PathBuf> {
     let p = Path::new(stored);
     if let Some(Component::Prefix(prefix)) = p.components().next() {
@@ -447,6 +448,14 @@ pub fn resolve_image_path(doc: Option<&Path>, stored: &str) -> Option<PathBuf> {
         }
     }
     if p.is_absolute() {
+        // The Mac mounts `/net/<host>/...` from that host on first look; its disks
+        // usually ignore case, so `/NET` is the same folder.
+        if let Some(Component::Normal(top)) = p.components().nth(1) {
+            let top = top.to_string_lossy();
+            if top.eq_ignore_ascii_case("net") || top.eq_ignore_ascii_case("network") {
+                return None;
+            }
+        }
         return Some(p.to_path_buf());
     }
     if p.components().any(|c| !matches!(c, Component::Normal(_))) {
