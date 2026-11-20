@@ -130,11 +130,10 @@ pub fn from_str(text: &str) -> Result<Schedule, FormatError> {
     if let Some(given) = given.get("schedule") {
         as_written("schedule", given, &written)?;
     }
-    if given
-        .get("extensions")
-        .is_some_and(serde_json::Value::is_null)
-    {
-        return Err(default_given("extensions", "null"));
+    for key in ["template", "extensions"] {
+        if given.get(key).is_some_and(serde_json::Value::is_null) {
+            return Err(default_given(key, "null"));
+        }
     }
     if file.template == Some(true) {
         if let Some(why) = s.template_problem() {
@@ -3551,6 +3550,11 @@ pub(crate) mod tests {
         let unmarked = plain.replacen("{\n", "{\n  \"template\": false,\n", 1);
         let e = from_str(&unmarked).unwrap_err().to_string();
         assert!(e.contains("is the default"), "{e}");
+        // `"template": null` too: it would read as a schedule and write back without it.
+        let nulled = t.replacen("\"template\": true", "\"template\": null", 1);
+        assert_ne!(nulled, t);
+        let e = from_str(&nulled).unwrap_err().to_string();
+        assert!(e.contains("template null is the default"), "{e}");
 
         // Strangers are refused.
         let bad = text.replace("\"#3366cc\"", "\"blue\"");
