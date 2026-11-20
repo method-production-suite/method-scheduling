@@ -121,6 +121,8 @@ fn the_release_signs_its_checksums() {
     assert!(!job_text("assemble").contains("contents: write"));
     assert!(!steps("draft").iter().any(|s| s.contains("secrets.")));
     assert!(at("draft", "sha256sum -c SHA256SUMS") < at("draft", "gh release create"));
+    // A published release's files are never replaced: only a draft takes an upload.
+    assert!(at("draft", "--json isDraft") < at("draft", "gh release upload"));
     let probe = at("signing-probe", "scripts/sign-file.sh");
     let proved = at("signing-probe", "scripts/verify-file.sh");
     assert!(probe < proved);

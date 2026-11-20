@@ -4,6 +4,9 @@
 .mcp.json
 *.pem
 *.key
+*.p12
+*.p8
+*.pfx
 id_rsa*
 
 # OS / editor
