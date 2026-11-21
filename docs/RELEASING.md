@@ -56,7 +56,7 @@ commands for each step; how the build, signing and updates work is in
   empty (Actions > release > Run workflow), and wait for green. It builds, signs and
   notarizes all three systems and runs every check, and drafts nothing. It is the only full
   build before a release (SUITE-STANDARDS.md section 6).
-- **Tag** on main: `git tag vX.Y.Z && git push origin vX.Y.Z` (as the owner's
+- **Tag** on main: `git tag -a vX.Y.Z -m "Method Schedule X.Y.Z" && git push origin vX.Y.Z`, an annotated tag so it carries the suite identity as tagger (as the owner's
   account, through the repository's credential helper). `release.yml` drafts the release
   with `Method-Schedule-macOS.dmg`, `Method-Schedule-windows-x64-setup.exe`,
   `Method-Schedule-linux-amd64.deb`, `Method-Schedule-linux-x86_64.AppImage` and, when the
