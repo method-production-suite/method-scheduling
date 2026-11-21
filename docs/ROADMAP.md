@@ -15,23 +15,21 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- **v0.9.0**, the merged security fixes plus four features from main: the tag and publish
-  wait for the owner's yes on the rehearsed merge commit of the release-prep PR (MOrg puts
-  the run and the headline to him).
-- v0.8.0 was published on 2026-11-17 (tag on bcf59a6, rehearsal run 44195720055),
-  the first release with a signed checksum list the launcher can require.
+- None open. v0.9.0 was published on 2026-11-21 (tag on 6f75c11, rehearsal run 44842629121):
+  the security fixes since 0.8.0, explaining one day of the day out of days, the drop gap
+  box and Find in the Boneyard.
 
 **Needs the owner's hands or hardware**
-- **The update and both-chips tests**, about five minutes on the Mac, on 0.8.0 (the
+- **The update and both-chips tests**, about five minutes on the Mac, on 0.9.0 (the
   newest release). Ready to run:
   1. **The update.** With any earlier version installed, Help > Check for Updates offers
-     0.8.0, installs it and restarts into it (Method Schedule > About says 0.8.0).
+     0.9.0, installs it and restarts into it (Method Schedule > About says 0.9.0).
   2. **Both chips.** In Terminal, this prints `x86_64 arm64`:
      `lipo -archs "/Applications/Method Schedule.app/Contents/MacOS/method-schedule-app"`
   3. **The Intel half opens** (the one check that needs the screen). In Terminal:
      `arch -x86_64 "/Applications/Method Schedule.app/Contents/MacOS/method-schedule-app"`
      opens the window under Rosetta; Help > Open Sample shows Field Station; then quit.
-  4. **A checksum.** Download `Method-Schedule-macOS.dmg` and `SHA256SUMS` from the v0.8.0
+  4. **A checksum.** Download `Method-Schedule-macOS.dmg` and `SHA256SUMS` from the v0.9.0
      release; in that folder, `shasum -a 256 -c SHA256SUMS --ignore-missing` prints
      `Method-Schedule-macOS.dmg: OK`.
 
