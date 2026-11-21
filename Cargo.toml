@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 edition = "2021"
 # The one place the version lives: every crate inherits it.
-version = "0.8.0"
+version = "0.9.0"
 license = "MIT OR Apache-2.0"
 
 # Every third-party crate is pinned to one exact version, here and only here (each crate

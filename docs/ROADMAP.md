@@ -15,7 +15,10 @@ Kept current by each roadmap PR (MOrg's loop, 2026-10-18). A weekly digest reads
 section. Everything else on this page goes ahead without waiting.
 
 **Go-aheads**
-- None open. v0.8.0 was published on 2026-11-17 (tag on bcf59a6, rehearsal run 44195720055),
+- **v0.9.0**, the merged security fixes plus four features from main: the tag and publish
+  wait for the owner's yes on the rehearsed merge commit of the release-prep PR (MOrg puts
+  the run and the headline to him).
+- v0.8.0 was published on 2026-11-17 (tag on bcf59a6, rehearsal run 44195720055),
   the first release with a signed checksum list the launcher can require.
 
 **Needs the owner's hands or hardware**
